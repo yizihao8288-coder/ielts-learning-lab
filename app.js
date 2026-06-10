@@ -53,6 +53,129 @@ const exampleTemplates = [
   "A clear example of {word} appeared in the listening passage.",
 ];
 
+const wordNotes = {
+  accommodation: {
+    en: "A place where someone lives or stays, especially temporarily.",
+    zh: "住处；住宿；临时居所",
+  },
+  analysis: {
+    en: "A careful study of something in order to understand its parts, causes, or effects.",
+    zh: "分析；解析",
+  },
+  approach: {
+    en: "A way of dealing with a problem, task, or situation.",
+    zh: "方法；方式；处理途径",
+  },
+  assessment: {
+    en: "A judgement or evaluation of someone or something.",
+    zh: "评估；评价；考核",
+  },
+  available: {
+    en: "Able to be used, obtained, or reached.",
+    zh: "可获得的；可使用的；有空的",
+  },
+  community: {
+    en: "A group of people who live in the same area or share something in common.",
+    zh: "社区；群体；共同体",
+  },
+  consequence: {
+    en: "A result or effect of an action or situation.",
+    zh: "结果；后果；影响",
+  },
+  consistent: {
+    en: "Not changing in behaviour, quality, or standard over time.",
+    zh: "一致的；始终如一的；稳定的",
+  },
+  consumer: {
+    en: "A person who buys or uses goods or services.",
+    zh: "消费者；用户",
+  },
+  context: {
+    en: "The situation or background that helps explain the meaning of something.",
+    zh: "背景；语境；上下文",
+  },
+  efficient: {
+    en: "Working well without wasting time, money, or energy.",
+    zh: "高效的；效率高的",
+  },
+  environment: {
+    en: "The natural world or the conditions in which people, animals, or plants live.",
+    zh: "环境；自然环境；生活条件",
+  },
+  evidence: {
+    en: "Facts, signs, or information that help prove whether something is true.",
+    zh: "证据；根据",
+  },
+  factor: {
+    en: "One of the things that influences a situation, result, or decision.",
+    zh: "因素；要素",
+  },
+  finance: {
+    en: "The management of money, especially by organisations or governments.",
+    zh: "金融；资金；财务",
+  },
+  impact: {
+    en: "A strong effect or influence on someone or something.",
+    zh: "影响；冲击；作用",
+  },
+  individual: {
+    en: "A single person, considered separately from a group.",
+    zh: "个人；个体；单独的",
+  },
+  infrastructure: {
+    en: "The basic systems and services that a city, country, or organisation needs.",
+    zh: "基础设施",
+  },
+  interpretation: {
+    en: "An explanation of the meaning of something.",
+    zh: "解释；理解；诠释",
+  },
+  maintenance: {
+    en: "The work needed to keep something in good condition.",
+    zh: "维护；保养；维修",
+  },
+  method: {
+    en: "A planned way of doing something.",
+    zh: "方法；办法",
+  },
+  policy: {
+    en: "A plan or set of rules used by an organisation or government.",
+    zh: "政策；方针；原则",
+  },
+  priority: {
+    en: "Something that is more important than other things and should be dealt with first.",
+    zh: "优先事项；重点",
+  },
+  process: {
+    en: "A series of actions or changes that happen to achieve a result.",
+    zh: "过程；流程；步骤",
+  },
+  requirement: {
+    en: "Something that is needed or officially demanded.",
+    zh: "要求；必要条件",
+  },
+  research: {
+    en: "Detailed study of a subject in order to discover new information.",
+    zh: "研究；调查",
+  },
+  resource: {
+    en: "Something such as money, materials, time, or people that can be used.",
+    zh: "资源；资料；财力",
+  },
+  significant: {
+    en: "Important or large enough to be noticed.",
+    zh: "重要的；显著的；有意义的",
+  },
+  strategy: {
+    en: "A plan designed to achieve a long-term aim.",
+    zh: "策略；战略；规划",
+  },
+  sustainable: {
+    en: "Able to continue over time without damaging the environment or using too many resources.",
+    zh: "可持续的；不破坏环境的",
+  },
+};
+
 const wordInput = document.querySelector("#wordInput");
 const optionCount = document.querySelector("#optionCount");
 const rateControl = document.querySelector("#rateControl");
@@ -155,6 +278,16 @@ function buildChoices(answer) {
   });
 
   return shuffle([answer, ...distractors]);
+}
+
+function getWordNote(word) {
+  return (
+    wordNotes[normaliseKey(word)] || {
+      en: "No built-in definition is available for this word yet.",
+      zh: "暂无内置中文释义",
+      missing: true,
+    }
+  );
 }
 
 function preferredVoiceScore(voice) {
@@ -480,7 +613,7 @@ function selectChoice(selectedWord) {
   stopCurrentAudio();
   window.speechSynthesis?.cancel();
   state.isSpeaking = false;
-  renderListeningState(isCorrect ? "正确，进入下一题" : "请选择下一步");
+  renderListeningState(isCorrect ? "正确，请查看释义" : "请查看答案和释义");
 
   if (isCorrect) {
     state.score += 1;
@@ -504,11 +637,7 @@ function selectChoice(selectedWord) {
     }
   });
 
-  reviewPanel.innerHTML = isCorrect
-    ? `<strong>正确。</strong> 例句：${escapeHtml(current.example)}`
-    : `<strong>答案：${escapeHtml(current.word)}</strong> 你选择了 ${escapeHtml(
-        selectedWord,
-      )}。例句：${escapeHtml(current.example)}`;
+  renderAnswerReview(current, selectedWord, isCorrect);
 
   updateProgress();
   updateActionButtons();
@@ -518,9 +647,42 @@ function selectChoice(selectedWord) {
     nextButton.innerHTML = '<span class="button-icon" aria-hidden="true">✓</span>完成';
   }
 
-  if (isCorrect) {
-    scheduleAutoAdvance();
-  }
+}
+
+function renderAnswerReview(current, selectedWord, isCorrect) {
+  const note = getWordNote(current.word);
+  const statusText = isCorrect ? "正确" : "答错了";
+  const selectedText = isCorrect
+    ? "你选中了正确答案。"
+    : `你选择了 ${escapeHtml(selectedWord)}，正确答案是 ${escapeHtml(current.word)}。`;
+  const missingText = note.missing
+    ? '<p class="review-warning">这个词暂时不在内置释义库里，建议你之后补充准确释义。</p>'
+    : "";
+
+  reviewPanel.innerHTML = `
+    <article class="word-review ${isCorrect ? "is-correct" : "is-wrong"}">
+      <div class="review-header">
+        <span class="review-status">${statusText}</span>
+        <strong>${escapeHtml(current.word)}</strong>
+      </div>
+      <p class="review-selected">${selectedText}</p>
+      <dl class="definition-list">
+        <div>
+          <dt>English definition</dt>
+          <dd>${escapeHtml(note.en)}</dd>
+        </div>
+        <div>
+          <dt>中文释义</dt>
+          <dd>${escapeHtml(note.zh)}</dd>
+        </div>
+        <div>
+          <dt>Example sentence</dt>
+          <dd>${escapeHtml(current.example)}</dd>
+        </div>
+      </dl>
+      ${missingText}
+    </article>
+  `;
 }
 
 function nextRound() {
