@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IELTS British Listening Trainer</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="input-panel" aria-labelledby="setup-title">
+        <div class="brand-row">
+          <div>
+            <p class="eyebrow">IELTS Listening</p>
+            <h1 id="setup-title">英式单词听辨训练</h1>
+          </div>
+          <div class="voice-pill" id="voiceStatus">检测语音中</div>
+        </div>
+
+        <label class="field-label" for="wordInput">单词表</label>
+        <textarea
+          id="wordInput"
+          spellcheck="false"
+          placeholder="accommodation
+environment
+evidence
+significant
+
+每行一个单词，也可以用逗号分隔。例句会自动生成。"
+        ></textarea>
+
+        <div class="setup-grid">
+          <label class="control">
+            <span>题目选项</span>
+            <select id="optionCount">
+              <option value="4" selected>4</option>
+              <option value="3">3</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+            </select>
+          </label>
+
+          <label class="control">
+            <span>语速</span>
+            <input id="rateControl" type="range" min="0.65" max="1.1" step="0.05" value="0.85" />
+          </label>
+
+          <label class="control">
+            <span>发音</span>
+            <select id="voiceSelect"></select>
+          </label>
+
+          <label class="switch">
+            <input id="strictMode" type="checkbox" checked />
+            <span>严格一次</span>
+          </label>
+        </div>
+
+        <div class="action-row">
+          <button class="primary-button" id="startButton" type="button">
+            <span class="button-icon" aria-hidden="true">▶</span>
+            开始训练
+          </button>
+          <button class="secondary-button" id="sampleButton" type="button">
+            <span class="button-icon" aria-hidden="true">＋</span>
+            示例单词
+          </button>
+        </div>
+      </section>
+
+      <section class="quiz-panel" aria-labelledby="quiz-title">
+        <div class="quiz-top">
+          <div>
+            <p class="eyebrow">Current Round</p>
+            <h2 id="quiz-title">等待开始</h2>
+          </div>
+          <div class="score-box" aria-live="polite">
+            <span id="scoreValue">0</span>
+            <small>正确</small>
+          </div>
+        </div>
+
+        <div class="meter" aria-label="训练进度">
+          <div id="progressBar"></div>
+        </div>
+
+        <div class="listening-stage" id="listeningStage">
+          <div class="sound-orbit" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <p id="roundState">输入单词后开始</p>
+        </div>
+
+        <div class="choice-grid" id="choices" role="list"></div>
+
+        <div class="quiz-actions">
+          <button class="secondary-button" id="listenButton" type="button" disabled>
+            <span class="button-icon" aria-hidden="true">🔊</span>
+            朗读
+          </button>
+          <button class="primary-button" id="nextButton" type="button" disabled>
+            <span class="button-icon" aria-hidden="true">→</span>
+            下一题
+          </button>
+        </div>
+
+        <div class="review-panel" id="reviewPanel" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
