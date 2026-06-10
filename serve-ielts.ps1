@@ -77,6 +77,15 @@ function Get-InstalledVoiceList {
   }
 }
 
+function ConvertTo-SsmlText {
+  param([string] $Text)
+
+  $Escaped = [System.Security.SecurityElement]::Escape($Text)
+  $Escaped = $Escaped -replace "([,;:])", '$1<break time="170ms"/>'
+  $Escaped = $Escaped -replace "([.!?])", '$1<break time="300ms"/>'
+  return "<speak version='1.0' xml:lang='en-GB'><prosody rate='medium' pitch='-2%'>$Escaped</prosody></speak>"
+}
+
 function New-TtsAudio {
   param(
     [string] $Text,
@@ -103,7 +112,11 @@ function New-TtsAudio {
     $MappedRate = [Math]::Round(($Rate - 0.85) * 20)
     $Synth.Rate = [Math]::Max(-10, [Math]::Min(10, [int] $MappedRate))
     $Synth.SetOutputToWaveStream($Stream)
-    $Synth.Speak($Text)
+    try {
+      $Synth.SpeakSsml((ConvertTo-SsmlText $Text))
+    } catch {
+      $Synth.Speak($Text)
+    }
     return $Stream.ToArray()
   } finally {
     $Synth.Dispose()

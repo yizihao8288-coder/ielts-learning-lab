@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>IELTS British Listening Trainer</title>
+    <title>IELTS Listening Trainer</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -12,12 +12,36 @@
         <div class="brand-row">
           <div>
             <p class="eyebrow">IELTS Listening</p>
-            <h1 id="setup-title">英式单词听辨训练</h1>
+            <h1 id="setup-title">英式单词练习</h1>
           </div>
           <div class="voice-pill" id="voiceStatus">检测语音中</div>
         </div>
 
-        <label class="field-label" for="wordInput">单词表</label>
+        <div class="mode-tabs" role="radiogroup" aria-label="练习模式">
+          <label class="mode-option">
+            <input type="radio" name="quizMode" value="listening" checked />
+            <span>
+              <strong>听力模式</strong>
+              <small>听后选词，并查看释义</small>
+            </span>
+          </label>
+          <label class="mode-option">
+            <input type="radio" name="quizMode" value="dictation" />
+            <span>
+              <strong>填空模式</strong>
+              <small>例句挖空，手写单词</small>
+            </span>
+          </label>
+          <label class="mode-option">
+            <input type="radio" name="quizMode" value="reading" />
+            <span>
+              <strong>阅读模式</strong>
+              <small>看例句，选择释义</small>
+            </span>
+          </label>
+        </div>
+
+        <label class="field-label" for="wordInput">单词列表</label>
         <textarea
           id="wordInput"
           spellcheck="false"
@@ -26,12 +50,12 @@ environment
 evidence
 significant
 
-每行一个单词，也可以用逗号分隔。例句会自动生成。"
+每行一个单词，也可以用逗号或分号分隔。自定义格式：word|example|中文释义|English definition。"
         ></textarea>
 
         <div class="setup-grid">
           <label class="control">
-            <span>题目选项</span>
+            <span>选项数量</span>
             <select id="optionCount">
               <option value="4" selected>4</option>
               <option value="3">3</option>
@@ -45,27 +69,48 @@ significant
             <input id="rateControl" type="range" min="0.65" max="1.1" step="0.05" value="0.85" />
           </label>
 
-          <label class="control">
+          <label class="control control-wide">
             <span>发音</span>
             <select id="voiceSelect"></select>
           </label>
 
           <label class="switch">
-            <input id="strictMode" type="checkbox" checked />
-            <span>严格一次</span>
+            <input id="autoSpeak" type="checkbox" checked />
+            <span>自动朗读</span>
           </label>
         </div>
 
         <div class="action-row">
           <button class="primary-button" id="startButton" type="button">
             <span class="button-icon" aria-hidden="true">▶</span>
-            开始训练
+            开始练习
           </button>
           <button class="secondary-button" id="sampleButton" type="button">
             <span class="button-icon" aria-hidden="true">＋</span>
             示例单词
           </button>
         </div>
+
+        <section class="book-panel" aria-labelledby="book-title">
+          <div class="book-header">
+            <div>
+              <p class="eyebrow">History</p>
+              <h2 id="book-title">收藏本</h2>
+            </div>
+          </div>
+          <div class="book-tabs" role="tablist" aria-label="收藏本模式">
+            <button class="book-tab active" type="button" data-book-tab="listening">
+              听力 <span data-book-count="listening">0</span>
+            </button>
+            <button class="book-tab" type="button" data-book-tab="dictation">
+              填空 <span data-book-count="dictation">0</span>
+            </button>
+            <button class="book-tab" type="button" data-book-tab="reading">
+              阅读 <span data-book-count="reading">0</span>
+            </button>
+          </div>
+          <div class="book-list" id="bookList" aria-live="polite"></div>
+        </section>
       </section>
 
       <section class="quiz-panel" aria-labelledby="quiz-title">
@@ -80,7 +125,7 @@ significant
           </div>
         </div>
 
-        <div class="meter" aria-label="训练进度">
+        <div class="meter" aria-label="练习进度">
           <div id="progressBar"></div>
         </div>
 
@@ -90,15 +135,33 @@ significant
             <span></span>
             <span></span>
           </div>
-          <p id="roundState">输入单词后开始</p>
+          <p id="roundState">选择模式并输入单词后开始</p>
+          <div class="blank-sentence" id="blankSentence" aria-live="polite"></div>
         </div>
 
-        <div class="choice-grid" id="choices" role="list"></div>
+        <div class="choice-grid" id="choices" role="list" hidden></div>
+
+        <form class="answer-form" id="answerForm" hidden>
+          <label class="sr-only" for="answerInput">填写缺失单词</label>
+          <input
+            id="answerInput"
+            type="text"
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+            placeholder="输入你听到的单词"
+            disabled
+          />
+          <button class="primary-button" id="checkButton" type="submit" disabled>
+            <span class="button-icon" aria-hidden="true">✓</span>
+            检查
+          </button>
+        </form>
 
         <div class="quiz-actions">
           <button class="secondary-button" id="listenButton" type="button" disabled>
             <span class="button-icon" aria-hidden="true">🔊</span>
-            朗读
+            朗读 / 重听
           </button>
           <button class="primary-button" id="nextButton" type="button" disabled>
             <span class="button-icon" aria-hidden="true">→</span>
