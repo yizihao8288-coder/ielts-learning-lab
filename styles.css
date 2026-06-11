@@ -303,6 +303,24 @@ input[type="range"] {
   line-height: 1.2;
 }
 
+.book-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.book-review-button {
+  min-width: 86px;
+  white-space: nowrap;
+}
+
+.book-utility-button {
+  min-height: 38px;
+  min-width: 58px;
+  padding: 8px 12px;
+}
+
 .book-tabs {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -455,6 +473,14 @@ input[type="range"] {
   transform: translateY(-1px);
 }
 
+.save-status {
+  min-height: 22px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 button:disabled {
   cursor: not-allowed;
   opacity: 0.48;
@@ -478,6 +504,31 @@ button:disabled {
   border-radius: 8px;
   background: var(--accent-soft);
   color: var(--accent-strong);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-align: center;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    transform 0.16s ease;
+}
+
+.score-box:hover:not(:disabled) {
+  border-color: rgba(23, 108, 93, 0.44);
+  background: #d5eee5;
+  transform: translateY(-1px);
+}
+
+.score-box:focus-visible {
+  outline: 3px solid rgba(30, 121, 98, 0.22);
+  outline-offset: 3px;
+}
+
+.score-box:disabled {
+  cursor: default;
+  opacity: 0.62;
+  transform: none;
 }
 
 .score-box span {
@@ -738,14 +789,27 @@ button:disabled {
 
 .review-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 10px;
   margin-bottom: 8px;
+}
+
+.review-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
 }
 
 .review-header strong {
   font-size: 1.35rem;
   line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.review-word-actions {
+  margin-left: auto;
 }
 
 .review-status {
@@ -797,7 +861,44 @@ button:disabled {
   overflow-wrap: anywhere;
 }
 
-.missed-list {
+.meaning-editor {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+  border-top: 1px solid var(--line);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.meaning-editor label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.meaning-editor input {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  padding: 10px 12px;
+  text-transform: none;
+}
+
+.meaning-editor input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(30, 121, 98, 0.12);
+  outline: none;
+}
+
+.missed-list,
+.correct-list {
   display: grid;
   gap: 12px;
   margin: 12px 0 0;
@@ -805,7 +906,20 @@ button:disabled {
   list-style: none;
 }
 
-.missed-list li {
+.review-summary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.review-missed-button {
+  min-width: 170px;
+}
+
+.missed-list li,
+.correct-list li {
   display: grid;
   gap: 4px;
   border: 1px solid var(--line);
@@ -814,12 +928,74 @@ button:disabled {
   padding: 12px;
 }
 
+.correct-list li {
+  border-color: rgba(23, 112, 69, 0.24);
+}
+
+.correct-item-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.correct-item-top strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.correct-item-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.correct-icon-button {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  place-items: center;
+  border: 1px solid rgba(23, 108, 93, 0.24);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--accent);
+  font-size: 1rem;
+  font-weight: 850;
+  line-height: 1;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    color 0.16s ease,
+    transform 0.16s ease;
+}
+
+.correct-icon-button:hover {
+  border-color: rgba(23, 108, 93, 0.42);
+  background: var(--accent-soft);
+  transform: translateY(-1px);
+}
+
+.correct-remove-button {
+  border-color: rgba(182, 58, 58, 0.2);
+  color: var(--wrong);
+}
+
+.correct-remove-button:hover {
+  border-color: rgba(182, 58, 58, 0.36);
+  background: #fdecec;
+  color: var(--wrong);
+}
+
 .missed-list span,
-.missed-list small {
+.missed-list small,
+.correct-list span,
+.correct-list small {
   color: var(--muted);
 }
 
-.missed-list small {
+.missed-list small,
+.correct-list small {
   font-size: 0.88rem;
   line-height: 1.45;
 }
@@ -866,7 +1042,8 @@ button:disabled {
   .mode-tabs,
   .setup-grid,
   .choice-grid,
-  .answer-form {
+  .answer-form,
+  .meaning-editor {
     grid-template-columns: 1fr;
   }
 

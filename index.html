@@ -50,7 +50,9 @@ environment
 evidence
 significant
 
-每行一个单词，也可以用逗号或分号分隔。自定义格式：word|example|中文释义|English definition。"
+每行一个单词，也可以用逗号或分号分隔。
+无 API 时使用：word|中文释义|English example
+例：category|类别；种类|The books are arranged by category, such as history, science, and literature."
         ></textarea>
 
         <div class="setup-grid">
@@ -85,17 +87,34 @@ significant
             <span class="button-icon" aria-hidden="true">▶</span>
             开始练习
           </button>
+          <button class="secondary-button" id="saveTrainingButton" type="button">
+            <span class="button-icon" aria-hidden="true">💾</span>
+            保存训练
+          </button>
           <button class="secondary-button" id="sampleButton" type="button">
             <span class="button-icon" aria-hidden="true">＋</span>
             示例单词
           </button>
         </div>
+        <p class="save-status" id="saveStatus" aria-live="polite"></p>
 
         <section class="book-panel" aria-labelledby="book-title">
           <div class="book-header">
             <div>
               <p class="eyebrow">History</p>
               <h2 id="book-title">收藏本</h2>
+            </div>
+            <div class="book-header-actions">
+              <button class="secondary-button book-utility-button" id="exportDataButton" type="button">
+                导出
+              </button>
+              <button class="secondary-button book-utility-button" id="importDataButton" type="button">
+                导入
+              </button>
+              <button class="secondary-button book-review-button" id="bookReviewButton" type="button" disabled>
+                <span class="button-icon" aria-hidden="true">↻</span>
+                复习
+              </button>
             </div>
           </div>
           <div class="book-tabs" role="tablist" aria-label="收藏本模式">
@@ -119,10 +138,10 @@ significant
             <p class="eyebrow">Current Round</p>
             <h2 id="quiz-title">等待开始</h2>
           </div>
-          <div class="score-box" aria-live="polite">
+          <button class="score-box" id="scoreBox" type="button" aria-label="查看本轮答对的单词">
             <span id="scoreValue">0</span>
             <small>正确</small>
-          </div>
+          </button>
         </div>
 
         <div class="meter" aria-label="练习进度">

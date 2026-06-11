@@ -3,6 +3,7 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Port = 8765
 $Address = [System.Net.IPAddress]::Parse("127.0.0.1")
+$StateFile = Join-Path $Root "trainer-state.json"
 
 $MimeTypes = @{
   ".html" = "text/html; charset=utf-8"
@@ -54,6 +55,29 @@ function Get-QueryMap {
   }
 
   return $Map
+}
+
+function Read-RequestBody {
+  param(
+    [System.IO.StreamReader] $Reader,
+    [hashtable] $Headers
+  )
+
+  if (-not $Headers.ContainsKey("content-length")) {
+    return ""
+  }
+
+  $Length = [int] $Headers["content-length"]
+  if ($Length -le 0) {
+    return ""
+  }
+
+  $Buffer = New-Object char[] $Length
+  $Read = $Reader.ReadBlock($Buffer, 0, $Length)
+  if ($Read -le 0) {
+    return ""
+  }
+  return -join $Buffer[0..($Read - 1)]
 }
 
 function Get-InstalledVoiceList {
@@ -124,6 +148,72 @@ function New-TtsAudio {
   }
 }
 
+function Get-GeneratedDefinition {
+  param([string] $Word)
+
+  $ApiKey = $env:OPENAI_API_KEY
+  if ([string]::IsNullOrWhiteSpace($ApiKey)) {
+    return $null
+  }
+
+  $Model = if ([string]::IsNullOrWhiteSpace($env:OPENAI_MODEL)) { "gpt-4o-mini" } else { $env:OPENAI_MODEL }
+  $BodyObject = @{
+    model = $Model
+    messages = @(
+      @{
+        role = "system"
+        content = "You generate IELTS vocabulary notes for a learner. Return only strict JSON with keys word, zh, en, example. Use the target word or phrase exactly as provided. zh must be concise Simplified Chinese for the most common IELTS listening/reading meaning. en must be a concise English definition. example must be one natural, grammatical IELTS-style sentence that uses the target naturally in context and shows its meaning or common collocation. If the target is a month, weekday, proper noun, unit, number, spelling item, or phrase, use it in its normal grammatical role. Do not write meta-language such as 'used the word', 'mentioned the word', 'connected the word', 'example of', 'the term', 'target word', or 'vocabulary word'. Do not write vague sentences about lectures focusing on the word. The example must help a learner infer the meaning from context and must contain the exact target word or phrase."
+      },
+      @{
+        role = "user"
+        content = "Target word or phrase: $Word"
+      }
+    )
+    temperature = 0.2
+    response_format = @{
+      type = "json_object"
+    }
+  }
+  $Body = $BodyObject | ConvertTo-Json -Depth 8
+
+  $Response = Invoke-RestMethod `
+    -Uri "https://api.openai.com/v1/chat/completions" `
+    -Method Post `
+    -Headers @{
+      Authorization = "Bearer $ApiKey"
+      "Content-Type" = "application/json"
+    } `
+    -Body $Body
+
+  $Content = $Response.choices[0].message.content
+  if ([string]::IsNullOrWhiteSpace($Content)) {
+    return $null
+  }
+
+  return $Content | ConvertFrom-Json
+}
+
+function Test-GeneratedDefinition {
+  param(
+    [object] $Definition,
+    [string] $Word
+  )
+
+  if ($null -eq $Definition) {
+    return $false
+  }
+
+  $Zh = [string] $Definition.zh
+  $En = [string] $Definition.en
+  $Example = [string] $Definition.example
+
+  if ([string]::IsNullOrWhiteSpace($Zh) -or [string]::IsNullOrWhiteSpace($En) -or [string]::IsNullOrWhiteSpace($Example)) {
+    return $false
+  }
+
+  return $Example.IndexOf($Word, [System.StringComparison]::OrdinalIgnoreCase) -ge 0
+}
+
 $Listener = [System.Net.Sockets.TcpListener]::new($Address, $Port)
 $Listener.Start()
 
@@ -136,10 +226,16 @@ try {
       $Reader = [System.IO.StreamReader]::new($Stream, [Text.Encoding]::ASCII, $false, 1024, $true)
       $RequestLine = $Reader.ReadLine()
 
+      $Headers = @{}
       while ($true) {
         $Line = $Reader.ReadLine()
         if ($null -eq $Line -or $Line -eq "") {
           break
+        }
+
+        $HeaderParts = $Line.Split(":", 2)
+        if ($HeaderParts.Length -eq 2) {
+          $Headers[$HeaderParts[0].Trim().ToLowerInvariant()] = $HeaderParts[1].Trim()
         }
       }
 
@@ -165,6 +261,40 @@ try {
         continue
       }
 
+      if ($RequestPath -eq "load-state") {
+        if (-not [System.IO.File]::Exists($StateFile)) {
+          $Body = ConvertTo-JsonBytes @{ error = "No saved state" }
+          Send-Response $Stream 404 "Not Found" "application/json; charset=utf-8" $Body
+          continue
+        }
+
+        $Body = [System.IO.File]::ReadAllBytes($StateFile)
+        Send-Response $Stream 200 "OK" "application/json; charset=utf-8" $Body
+        continue
+      }
+
+      if ($RequestPath -eq "save-state") {
+        $EncodedBody = Read-RequestBody $Reader $Headers
+        if ([string]::IsNullOrWhiteSpace($EncodedBody)) {
+          $Body = ConvertTo-JsonBytes @{ error = "Missing state" }
+          Send-Response $Stream 400 "Bad Request" "application/json; charset=utf-8" $Body
+          continue
+        }
+
+        try {
+          $Bytes = [Convert]::FromBase64String($EncodedBody.Trim())
+          $Json = [Text.Encoding]::UTF8.GetString($Bytes)
+          $null = $Json | ConvertFrom-Json
+          [System.IO.File]::WriteAllBytes($StateFile, $Bytes)
+          $Body = ConvertTo-JsonBytes @{ saved = $true; path = $StateFile }
+          Send-Response $Stream 200 "OK" "application/json; charset=utf-8" $Body
+        } catch {
+          $Body = ConvertTo-JsonBytes @{ error = "Invalid state" }
+          Send-Response $Stream 400 "Bad Request" "application/json; charset=utf-8" $Body
+        }
+        continue
+      }
+
       if ($RequestPath -eq "tts") {
         $Query = Get-QueryMap $QueryString
         $Text = if ($Query.ContainsKey("text")) { $Query["text"] } else { "" }
@@ -179,6 +309,44 @@ try {
 
         $Body = New-TtsAudio $Text $VoiceName $Rate
         Send-Response $Stream 200 "OK" "audio/wav" $Body
+        continue
+      }
+
+      if ($RequestPath -eq "define") {
+        $Query = Get-QueryMap $QueryString
+        $Word = if ($Query.ContainsKey("word")) { $Query["word"] } else { "" }
+
+        if ([string]::IsNullOrWhiteSpace($Word)) {
+          $Body = ConvertTo-JsonBytes @{ error = "Missing word" }
+          Send-Response $Stream 400 "Bad Request" "application/json; charset=utf-8" $Body
+          continue
+        }
+
+        try {
+          $Definition = Get-GeneratedDefinition $Word
+          if ($null -eq $Definition) {
+            $Body = ConvertTo-JsonBytes @{ error = "OPENAI_API_KEY is not configured" }
+            Send-Response $Stream 503 "Service Unavailable" "application/json; charset=utf-8" $Body
+            continue
+          }
+
+          if (-not (Test-GeneratedDefinition $Definition $Word)) {
+            $Body = ConvertTo-JsonBytes @{ error = "API returned an incomplete or invalid IELTS note" }
+            Send-Response $Stream 502 "Bad Gateway" "application/json; charset=utf-8" $Body
+            continue
+          }
+
+          $Body = ConvertTo-JsonBytes @{
+            word = if ($Definition.word) { $Definition.word } else { $Word }
+            zh = if ($Definition.zh) { $Definition.zh } else { "" }
+            en = if ($Definition.en) { $Definition.en } else { "" }
+            example = if ($Definition.example) { $Definition.example } else { "" }
+          }
+          Send-Response $Stream 200 "OK" "application/json; charset=utf-8" $Body
+        } catch {
+          $Body = ConvertTo-JsonBytes @{ error = "Definition generation failed" }
+          Send-Response $Stream 502 "Bad Gateway" "application/json; charset=utf-8" $Body
+        }
         continue
       }
 
