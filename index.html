@@ -80,6 +80,11 @@ significant
             <input id="autoSpeak" type="checkbox" checked />
             <span>自动朗读</span>
           </label>
+
+          <label class="switch">
+            <input id="skipFavoriteWords" type="checkbox" checked />
+            <span>跳过收藏本</span>
+          </label>
         </div>
 
         <div class="action-row">
@@ -90,6 +95,10 @@ significant
           <button class="secondary-button" id="saveTrainingButton" type="button">
             <span class="button-icon" aria-hidden="true">💾</span>
             保存训练
+          </button>
+          <button class="secondary-button" id="cleanKnownButton" type="button">
+            <span class="button-icon" aria-hidden="true">✓</span>
+            清理已会
           </button>
           <button class="secondary-button" id="sampleButton" type="button">
             <span class="button-icon" aria-hidden="true">＋</span>

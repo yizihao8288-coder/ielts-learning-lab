@@ -696,8 +696,10 @@ const optionCount = document.querySelector("#optionCount");
 const rateControl = document.querySelector("#rateControl");
 const voiceSelect = document.querySelector("#voiceSelect");
 const autoSpeak = document.querySelector("#autoSpeak");
+const skipFavoriteWords = document.querySelector("#skipFavoriteWords");
 const startButton = document.querySelector("#startButton");
 const saveTrainingButton = document.querySelector("#saveTrainingButton");
+const cleanKnownButton = document.querySelector("#cleanKnownButton");
 const sampleButton = document.querySelector("#sampleButton");
 const saveStatus = document.querySelector("#saveStatus");
 const scoreBox = document.querySelector("#scoreBox");
@@ -1418,6 +1420,78 @@ function parseEntries(rawText) {
   return entries;
 }
 
+function filterFavoriteEntriesForPractice(entries, mode) {
+  if (!skipFavoriteWords.checked) {
+    return { entries, skippedCount: 0 };
+  }
+
+  const favoriteKeys = new Set(Object.keys(state.favoriteBook[mode] || {}));
+  if (!favoriteKeys.size) {
+    return { entries, skippedCount: 0 };
+  }
+
+  const filteredEntries = entries.filter((entry) => !favoriteKeys.has(normaliseKey(entry.word)));
+  return {
+    entries: filteredEntries,
+    skippedCount: entries.length - filteredEntries.length,
+  };
+}
+
+function cleanKnownWordsFromInput() {
+  const mode = getSelectedMode();
+  const knownKeys = new Set(Object.keys(state.correctBook[mode] || {}));
+  if (!knownKeys.size) {
+    saveStatus.textContent = `${getModeLabel(mode)}还没有可清理的已会单词。`;
+    return;
+  }
+
+  let removedCount = 0;
+  const keptLines = [];
+
+  wordInput.value.split(/\r?\n/).forEach((line) => {
+    const cleanedLine = cleanInputLine(line);
+    if (!cleanedLine) {
+      keptLines.push(line);
+      return;
+    }
+
+    if (cleanedLine.includes("|") || cleanedLine.includes("\t")) {
+      const key = normaliseKey(cleanedLine.replace(/\t+/g, "|").split("|")[0] || "");
+      if (knownKeys.has(key)) {
+        removedCount += 1;
+        return;
+      }
+      keptLines.push(line);
+      return;
+    }
+
+    const words = cleanedLine.split(/[,\uFF0C;\uFF1B]/).map(cleanInputLine).filter(Boolean);
+    if (words.length <= 1) {
+      const key = normaliseKey(words[0] || cleanedLine);
+      if (knownKeys.has(key)) {
+        removedCount += 1;
+        return;
+      }
+      keptLines.push(line);
+      return;
+    }
+
+    const keptWords = words.filter((word) => !knownKeys.has(normaliseKey(word)));
+    removedCount += words.length - keptWords.length;
+    if (keptWords.length) keptLines.push(keptWords.join(", "));
+  });
+
+  if (!removedCount) {
+    saveStatus.textContent = "当前单词列表里没有已会单词需要清理。";
+    return;
+  }
+
+  wordInput.value = keptLines.join("\n").trim();
+  state.mode = mode;
+  saveCurrentModeInput();
+  saveStatus.textContent = `已从当前列表清理 ${removedCount} 个已会单词。`;
+}
+
 function isSpecificPracticeExample(example, word) {
   const cleaned = normaliseWord(example);
   if (!cleaned || !containsTargetWord(cleaned, word)) return false;
@@ -2107,20 +2181,27 @@ async function startQuiz() {
     return;
   }
 
-  const entries = parseEntries(wordInput.value);
+  const parsedEntries = parseEntries(wordInput.value);
+  const { entries, skippedCount } = filterFavoriteEntriesForPractice(parsedEntries, state.mode);
 
   if (!entries.length) {
-    quizTitle.textContent = "还没有单词";
-    roundState.textContent = "请先输入单词";
+    quizTitle.textContent = parsedEntries.length ? "已跳过收藏本" : "还没有单词";
+    roundState.textContent = parsedEntries.length ? "请点收藏本复习" : "请先输入单词";
     blankSentence.textContent = "";
     choices.hidden = true;
     choices.innerHTML = "";
     answerForm.hidden = true;
-    reviewPanel.textContent = "";
+    reviewPanel.innerHTML = parsedEntries.length
+      ? "<strong>输入列表里的单词都在当前模式收藏本里。</strong> 普通练习已跳过它们；需要练这些词时，请点收藏本里的“复习”。"
+      : "";
     setAnswerDisabled(true);
     listenButton.disabled = true;
     nextButton.disabled = true;
     return;
+  }
+
+  if (skippedCount) {
+    saveStatus.textContent = `普通练习已跳过收藏本中的 ${skippedCount} 个单词。`;
   }
 
   const apiResult = await loadApiGeneratedEntries(entries);
@@ -2705,6 +2786,7 @@ importDataButton.addEventListener("click", importTrainingData);
 voiceSelect.addEventListener("change", () => updateVoiceStatus(getSelectedVoice()));
 startButton.addEventListener("click", startQuiz);
 saveTrainingButton.addEventListener("click", () => saveTraining(true));
+cleanKnownButton.addEventListener("click", cleanKnownWordsFromInput);
 sampleButton.addEventListener("click", loadSampleWords);
 listenButton.addEventListener("click", () => speakCurrentRound(true));
 nextButton.addEventListener("click", nextRound);
