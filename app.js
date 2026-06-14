@@ -1251,6 +1251,26 @@ function removeFavoriteBookItem(mode, key) {
   renderFavoriteBook();
 }
 
+function addEntryToFavoriteBook(mode, entry, response = "") {
+  if (!bookModes.includes(mode)) return false;
+
+  const key = normaliseKey(entry.word);
+  if (!key) return false;
+
+  const note = getWordNote(entry);
+  state.favoriteBook[mode][key] = {
+    word: entry.word,
+    example: entry.example,
+    meaningZh: entry.meaningZh || note.zh,
+    meaningEn: entry.meaningEn || note.en,
+    response,
+    missedAt: Date.now(),
+  };
+  saveFavoriteBook();
+  renderFavoriteBook();
+  return true;
+}
+
 function moveCorrectItemToFavoriteBook(mode, key, shouldRenderCorrectAnswers = true) {
   if (!bookModes.includes(mode) || !state.correctBook[mode]?.[key]) return;
 
@@ -2446,15 +2466,24 @@ function completeAnswer({ current, isCorrect, response, mode }) {
 function renderAnswerReview(current, response, isCorrect, mode) {
   const note = getWordNote(current);
   const word = escapeHtml(current.word);
-  const correctKey = escapeHtml(normaliseKey(current.word));
-  const correctActions = isCorrect
-    ? `
-      <div class="correct-item-actions review-word-actions" aria-label="${word} 操作">
-        <button class="correct-icon-button" type="button" data-favorite-review-correct="${correctKey}" title="收藏到错题本" aria-label="收藏 ${word} 到错题本">☆</button>
-        <button class="correct-icon-button correct-remove-button" type="button" data-remove-review-correct="${correctKey}" title="移除答对记录" aria-label="移除 ${word} 的答对记录">×</button>
-      </div>
-    `
-    : "";
+  const rawKey = normaliseKey(current.word);
+  const correctKey = escapeHtml(rawKey);
+  const isFavorited = Boolean(state.favoriteBook[mode]?.[rawKey]);
+  const favoriteTitle = isFavorited ? "移出收藏本" : "收藏到错题本";
+  const reviewActions = `
+    <div class="correct-item-actions review-word-actions" aria-label="${word} 操作">
+      <button class="correct-icon-button favorite-toggle-button ${
+        isFavorited ? "is-favorite" : ""
+      }" type="button" data-toggle-review-favorite="${correctKey}" title="${favoriteTitle}" aria-label="${favoriteTitle}：${word}" aria-pressed="${String(
+        isFavorited,
+      )}">${isFavorited ? "★" : "☆"}</button>
+      ${
+        isCorrect
+          ? `<button class="correct-icon-button correct-remove-button" type="button" data-remove-review-correct="${correctKey}" title="移除答对记录" aria-label="移除 ${word} 的答对记录">×</button>`
+          : ""
+      }
+    </div>
+  `;
   const responseText =
     mode === "dictation"
       ? `你填写的是 ${escapeHtml(response)}。`
@@ -2476,7 +2505,7 @@ function renderAnswerReview(current, response, isCorrect, mode) {
           <span class="review-status">${isCorrect ? "正确" : "答错了"}</span>
           <strong>${word}</strong>
         </div>
-        ${correctActions}
+        ${reviewActions}
       </div>
       <p class="review-selected">${responseText}</p>
       <dl class="definition-list">
@@ -2819,11 +2848,38 @@ reviewPanel.addEventListener("submit", (event) => {
   }
 });
 reviewPanel.addEventListener("click", (event) => {
-  const favoriteReviewButton = event.target.closest("[data-favorite-review-correct]");
+  const favoriteReviewButton = event.target.closest("[data-toggle-review-favorite]");
   if (favoriteReviewButton) {
-    moveCorrectItemToFavoriteBook(state.mode, favoriteReviewButton.dataset.favoriteReviewCorrect, false);
-    const actions = favoriteReviewButton.closest(".review-word-actions");
-    if (actions) actions.replaceWith("已收藏到错题本。");
+    const key = favoriteReviewButton.dataset.toggleReviewFavorite;
+    const current = state.deck[state.currentIndex];
+    const isFavorited = Boolean(state.favoriteBook[state.mode]?.[key]);
+
+    if (isFavorited) {
+      removeFavoriteBookItem(state.mode, key);
+      favoriteReviewButton.classList.remove("is-favorite");
+      favoriteReviewButton.textContent = "☆";
+      favoriteReviewButton.title = "收藏到错题本";
+      favoriteReviewButton.setAttribute("aria-label", `收藏 ${current?.word || "当前单词"} 到错题本`);
+      favoriteReviewButton.setAttribute("aria-pressed", "false");
+      return;
+    }
+
+    let didFavorite = false;
+    if (state.correctBook[state.mode]?.[key]) {
+      moveCorrectItemToFavoriteBook(state.mode, key, false);
+      didFavorite = true;
+    } else if (current && normaliseKey(current.word) === key) {
+      const lastResult = [...state.results].reverse().find((result) => normaliseKey(result.word) === key);
+      didFavorite = addEntryToFavoriteBook(state.mode, current, lastResult?.response || "");
+    }
+
+    if (!didFavorite) return;
+
+    favoriteReviewButton.classList.add("is-favorite");
+    favoriteReviewButton.textContent = "★";
+    favoriteReviewButton.title = "移出收藏本";
+    favoriteReviewButton.setAttribute("aria-label", `移出收藏本：${current?.word || "当前单词"}`);
+    favoriteReviewButton.setAttribute("aria-pressed", "true");
     return;
   }
 

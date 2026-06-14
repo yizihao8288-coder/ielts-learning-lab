@@ -976,6 +976,12 @@ button:disabled {
   transform: translateY(-1px);
 }
 
+.favorite-toggle-button.is-favorite {
+  border-color: rgba(23, 108, 93, 0.42);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
 .correct-remove-button {
   border-color: rgba(182, 58, 58, 0.2);
   color: var(--wrong);
