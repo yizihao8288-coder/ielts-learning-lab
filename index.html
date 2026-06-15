@@ -201,6 +201,43 @@ significant
       </section>
     </main>
 
+    <div class="word-detail-backdrop" id="wordDetailDialog" role="dialog" aria-modal="true" aria-labelledby="wordDetailTitle" hidden>
+      <article class="word-detail-card">
+        <button class="word-detail-close" id="wordDetailClose" type="button" aria-label="关闭详情">×</button>
+        <p class="eyebrow" id="wordDetailMeta">Word detail</p>
+        <h2 id="wordDetailTitle"></h2>
+        <dl class="word-detail-list">
+          <div>
+            <dt>中文释义</dt>
+            <dd id="wordDetailZh"></dd>
+          </div>
+          <div>
+            <dt>English definition</dt>
+            <dd id="wordDetailEn"></dd>
+          </div>
+          <div>
+            <dt>Example sentence</dt>
+            <dd id="wordDetailExample"></dd>
+          </div>
+          <div>
+            <dt>上次答案</dt>
+            <dd id="wordDetailResponse"></dd>
+          </div>
+        </dl>
+        <div class="word-detail-actions">
+          <button class="primary-button" id="wordDetailSpeakWord" type="button">
+            <span class="button-icon" aria-hidden="true">🔊</span>
+            再读单词
+          </button>
+          <button class="secondary-button" id="wordDetailSpeakExample" type="button">
+            <span class="button-icon" aria-hidden="true">▶</span>
+            读例句
+          </button>
+        </div>
+        <p class="word-detail-status" id="wordDetailStatus" aria-live="polite"></p>
+      </article>
+    </div>
+
     <script src="app.js"></script>
   </body>
 </html>

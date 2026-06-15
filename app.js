@@ -723,6 +723,17 @@ const bookList = document.querySelector("#bookList");
 const bookReviewButton = document.querySelector("#bookReviewButton");
 const exportDataButton = document.querySelector("#exportDataButton");
 const importDataButton = document.querySelector("#importDataButton");
+const wordDetailDialog = document.querySelector("#wordDetailDialog");
+const wordDetailClose = document.querySelector("#wordDetailClose");
+const wordDetailMeta = document.querySelector("#wordDetailMeta");
+const wordDetailTitle = document.querySelector("#wordDetailTitle");
+const wordDetailZh = document.querySelector("#wordDetailZh");
+const wordDetailEn = document.querySelector("#wordDetailEn");
+const wordDetailExample = document.querySelector("#wordDetailExample");
+const wordDetailResponse = document.querySelector("#wordDetailResponse");
+const wordDetailSpeakWord = document.querySelector("#wordDetailSpeakWord");
+const wordDetailSpeakExample = document.querySelector("#wordDetailSpeakExample");
+const wordDetailStatus = document.querySelector("#wordDetailStatus");
 
 const state = {
   mode: "listening",
@@ -746,6 +757,7 @@ const state = {
   savedSessions: loadSavedSessions(),
   definitionServiceAvailable: true,
   isReviewingWrong: false,
+  detailEntry: null,
 };
 
 function getSelectedMode() {
@@ -1332,20 +1344,24 @@ function renderFavoriteBook() {
 
   bookList.innerHTML = entries
     .map(
-      (item) => `
+      (item) => {
+        const key = escapeHtml(normaliseKey(item.word));
+        return `
         <article class="book-item">
           <div class="book-item-top">
             <strong>${escapeHtml(item.word)}</strong>
             <div class="book-item-actions">
               <span>${formatBookDate(item.missedAt)}</span>
-              <button type="button" data-remove-book="${escapeHtml(normaliseKey(item.word))}">移除</button>
+              <button class="book-detail-button" type="button" data-open-word-detail data-detail-source="favorite" data-detail-mode="${state.bookMode}" data-detail-key="${key}">详情</button>
+              <button type="button" data-remove-book="${key}">移除</button>
             </div>
           </div>
           <p>上次答案：${escapeHtml(item.response || "未记录")}</p>
           <small>释义：${escapeHtml(item.meaningZh || "暂无释义")}</small>
           <small>${renderRevealedSentence(item.example || "", item.word)}</small>
         </article>
-      `,
+      `;
+      },
     )
     .join("");
 }
@@ -1356,6 +1372,98 @@ function formatBookDate(value) {
     month: "2-digit",
     day: "2-digit",
   });
+}
+
+function getCurrentDetailItem(mode, key) {
+  const current = state.deck[state.currentIndex];
+  if (!current || normaliseKey(current.word) !== key) return null;
+
+  const lastResult = [...state.results].reverse().find((result) => normaliseKey(result.word) === key);
+  return {
+    ...current,
+    response: lastResult?.response || "",
+    sourceLabel: state.isReviewingWrong ? "回顾中" : "当前题",
+    mode,
+  };
+}
+
+function getWordDetailItem(mode, key, source = "") {
+  if (!bookModes.includes(mode) || !key) return null;
+
+  if (source === "favorite" && state.favoriteBook[mode]?.[key]) {
+    return { ...state.favoriteBook[mode][key], sourceLabel: "收藏本", mode };
+  }
+
+  if (source === "correct" && state.correctBook[mode]?.[key]) {
+    return { ...state.correctBook[mode][key], sourceLabel: "已答对", mode };
+  }
+
+  if (source === "current") {
+    const currentItem = getCurrentDetailItem(mode, key);
+    if (currentItem) return currentItem;
+  }
+
+  if (state.favoriteBook[mode]?.[key]) {
+    return { ...state.favoriteBook[mode][key], sourceLabel: "收藏本", mode };
+  }
+
+  if (state.correctBook[mode]?.[key]) {
+    return { ...state.correctBook[mode][key], sourceLabel: "已答对", mode };
+  }
+
+  return getCurrentDetailItem(mode, key);
+}
+
+function openWordDetail(mode, key, source = "") {
+  const item = getWordDetailItem(mode, key, source);
+  if (!item) return;
+
+  const note = getWordNote(item);
+  const example = item.example || "";
+  state.detailEntry = {
+    word: item.word,
+    example,
+  };
+
+  wordDetailMeta.textContent = `${getModeLabel(mode)} · ${item.sourceLabel || "单词详情"}`;
+  wordDetailTitle.textContent = item.word;
+  wordDetailZh.textContent = note.zh || "暂无释义";
+  wordDetailEn.textContent = note.en || "No English definition yet.";
+  wordDetailExample.innerHTML = example ? renderRevealedSentence(example, item.word) : "暂无例句";
+  wordDetailResponse.textContent = item.response || "未记录";
+  wordDetailStatus.textContent = "";
+  wordDetailSpeakExample.disabled = !example;
+  wordDetailDialog.hidden = false;
+  wordDetailClose.focus();
+  void speakWordDetail("word");
+}
+
+function closeWordDetail() {
+  wordDetailDialog.hidden = true;
+  state.detailEntry = null;
+  wordDetailStatus.textContent = "";
+}
+
+async function speakWordDetail(kind) {
+  const detail = state.detailEntry;
+  if (!detail) return;
+
+  const text = kind === "example" ? detail.example : detail.word;
+  if (!normaliseWord(text)) return;
+
+  if (!getSelectedVoice()) {
+    wordDetailStatus.textContent = "未检测到可用英式语音。";
+    return;
+  }
+
+  state.speechRunId += 1;
+  state.isSpeaking = false;
+  stopCurrentAudio();
+  window.speechSynthesis?.cancel();
+  wordDetailStatus.textContent = kind === "example" ? "正在朗读例句" : "正在朗读单词";
+
+  const spoken = await speak(text);
+  wordDetailStatus.textContent = spoken ? "朗读完成。" : "朗读失败，请检查语音设置。";
 }
 
 function normaliseWord(value) {
@@ -2472,6 +2580,7 @@ function renderAnswerReview(current, response, isCorrect, mode) {
   const favoriteTitle = isFavorited ? "移出收藏本" : "收藏到错题本";
   const reviewActions = `
     <div class="correct-item-actions review-word-actions" aria-label="${word} 操作">
+      <button class="correct-detail-button" type="button" data-open-word-detail data-detail-source="current" data-detail-mode="${mode}" data-detail-key="${correctKey}" title="查看详细" aria-label="查看 ${word} 的详细信息">详情</button>
       <button class="correct-icon-button favorite-toggle-button ${
         isFavorited ? "is-favorite" : ""
       }" type="button" data-toggle-review-favorite="${correctKey}" title="${favoriteTitle}" aria-label="${favoriteTitle}：${word}" aria-pressed="${String(
@@ -2753,6 +2862,7 @@ function renderCorrectAnswers() {
           <div class="correct-item-top">
             <strong>${word}</strong>
             <div class="correct-item-actions" aria-label="${word} 操作">
+              <button class="correct-detail-button" type="button" data-open-word-detail data-detail-source="correct" data-detail-mode="${state.mode}" data-detail-key="${key}" title="查看详细" aria-label="查看 ${word} 的详细信息">详情</button>
               <button class="correct-icon-button" type="button" data-favorite-correct="${key}" title="收藏到错题本" aria-label="收藏 ${word} 到错题本">☆</button>
               <button class="correct-icon-button correct-remove-button" type="button" data-remove-correct="${key}" title="移除答对记录" aria-label="移除 ${word} 的答对记录">×</button>
             </div>
@@ -2805,6 +2915,12 @@ bookTabs.forEach((button) => {
   });
 });
 bookList.addEventListener("click", (event) => {
+  const detailButton = event.target.closest("[data-open-word-detail]");
+  if (detailButton) {
+    openWordDetail(detailButton.dataset.detailMode, detailButton.dataset.detailKey, detailButton.dataset.detailSource);
+    return;
+  }
+
   const button = event.target.closest("[data-remove-book]");
   if (!button) return;
   removeFavoriteBookItem(state.bookMode, button.dataset.removeBook);
@@ -2823,6 +2939,12 @@ scoreBox.addEventListener("click", renderCorrectAnswers);
 autoSpeak.addEventListener("change", updateActionButtons);
 wordInput.addEventListener("input", saveCurrentModeInput);
 answerInput.addEventListener("input", updateActionButtons);
+wordDetailClose.addEventListener("click", closeWordDetail);
+wordDetailDialog.addEventListener("click", (event) => {
+  if (event.target === wordDetailDialog) closeWordDetail();
+});
+wordDetailSpeakWord.addEventListener("click", () => speakWordDetail("word"));
+wordDetailSpeakExample.addEventListener("click", () => speakWordDetail("example"));
 answerForm.addEventListener("submit", (event) => {
   event.preventDefault();
   checkAnswer();
@@ -2848,6 +2970,12 @@ reviewPanel.addEventListener("submit", (event) => {
   }
 });
 reviewPanel.addEventListener("click", (event) => {
+  const detailButton = event.target.closest("[data-open-word-detail]");
+  if (detailButton) {
+    openWordDetail(detailButton.dataset.detailMode, detailButton.dataset.detailKey, detailButton.dataset.detailSource);
+    return;
+  }
+
   const favoriteReviewButton = event.target.closest("[data-toggle-review-favorite]");
   if (favoriteReviewButton) {
     const key = favoriteReviewButton.dataset.toggleReviewFavorite;
@@ -2910,6 +3038,14 @@ reviewPanel.addEventListener("click", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if (!wordDetailDialog.hidden) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeWordDetail();
+    }
+    return;
+  }
+
   if ((state.mode === "listening" || state.mode === "reading") && /^[1-9]$/.test(event.key)) {
     const button = choices.querySelectorAll("button")[Number(event.key) - 1];
     if (button && !button.disabled) button.click();
