@@ -93,7 +93,6 @@ button {
   font-size: 0.76rem;
   font-weight: 750;
   letter-spacing: 0;
-  text-transform: uppercase;
 }
 
 h1,
@@ -861,7 +860,6 @@ button:disabled {
   color: var(--accent);
   font-size: 0.78rem;
   font-weight: 800;
-  text-transform: uppercase;
 }
 
 .definition-list dd {
@@ -886,7 +884,6 @@ button:disabled {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 800;
-  text-transform: uppercase;
 }
 
 .meaning-editor input {
@@ -1107,7 +1104,6 @@ button:disabled {
   color: var(--accent);
   font-size: 0.8rem;
   font-weight: 850;
-  text-transform: uppercase;
 }
 
 .word-detail-list dd {
