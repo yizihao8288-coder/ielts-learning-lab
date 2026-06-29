@@ -102,19 +102,46 @@ function Get-InstalledVoiceList {
 }
 
 function ConvertTo-SsmlText {
-  param([string] $Text)
+  param(
+    [string] $Text,
+    [string] $Style = "ielts",
+    [string] $Kind = "sentence",
+    [double] $Intonation = 0.75
+  )
 
   $Escaped = [System.Security.SecurityElement]::Escape($Text)
-  $Escaped = $Escaped -replace "([,;:])", '$1<break time="170ms"/>'
-  $Escaped = $Escaped -replace "([.!?])", '$1<break time="300ms"/>'
-  return "<speak version='1.0' xml:lang='en-GB'><prosody rate='medium' pitch='-2%'>$Escaped</prosody></speak>"
+  $CommaPause = if ($Style -eq "clear") { 155 } elseif ($Style -eq "original") { 90 } else { 115 }
+  $SentencePause = if ($Style -eq "clear") { 285 } elseif ($Style -eq "original") { 175 } else { 220 }
+
+  if ($Kind -ne "word") {
+    $Escaped = $Escaped -replace "([,])", ('$1<break time="' + $CommaPause + 'ms"/>')
+    $Escaped = $Escaped -replace "([;:])", ('$1<break time="' + ($CommaPause + 45) + 'ms"/>')
+    $Escaped = $Escaped -replace "([.!?])", ('$1<break time="' + $SentencePause + 'ms"/>')
+  }
+
+  if ($Style -eq "ielts" -and $Kind -ne "word") {
+    $Escaped = $Escaped -replace "\b(however|therefore|although|because|firstly|secondly|finally|in contrast|for example)\b", '<emphasis level="moderate">$1</emphasis>'
+  }
+
+  $PitchValue = 0
+  if ($Style -eq "clear") { $PitchValue = -1 }
+  if ($Style -eq "ielts" -and $Text.TrimEnd().EndsWith("?")) {
+    $PitchValue = [Math]::Round(4 * [Math]::Max(0.25, [Math]::Min(1, $Intonation)))
+  } elseif ($Style -eq "ielts" -and $Kind -ne "word") {
+    $PitchValue = -1
+  }
+  $PitchText = if ($PitchValue -gt 0) { "+$PitchValue%" } elseif ($PitchValue -lt 0) { "$PitchValue%" } else { "+0%" }
+  return "<speak version='1.0' xml:lang='en-GB'><prosody rate='medium' pitch='$PitchText'>$Escaped</prosody></speak>"
 }
 
 function New-TtsAudio {
   param(
     [string] $Text,
     [string] $VoiceName,
-    [double] $Rate
+    [double] $Rate,
+    [string] $Style = "ielts",
+    [string] $Kind = "sentence",
+    [double] $Intonation = 0.75
   )
 
   $Synth = [System.Speech.Synthesis.SpeechSynthesizer]::new()
@@ -133,11 +160,11 @@ function New-TtsAudio {
       }
     }
 
-    $MappedRate = [Math]::Round(($Rate - 0.85) * 20)
+    $MappedRate = [Math]::Round(($Rate - 0.95) * 20)
     $Synth.Rate = [Math]::Max(-10, [Math]::Min(10, [int] $MappedRate))
     $Synth.SetOutputToWaveStream($Stream)
     try {
-      $Synth.SpeakSsml((ConvertTo-SsmlText $Text))
+      $Synth.SpeakSsml((ConvertTo-SsmlText $Text $Style $Kind $Intonation))
     } catch {
       $Synth.Speak($Text)
     }
@@ -300,6 +327,9 @@ try {
         $Text = if ($Query.ContainsKey("text")) { $Query["text"] } else { "" }
         $VoiceName = if ($Query.ContainsKey("voice")) { $Query["voice"] } else { "" }
         $Rate = if ($Query.ContainsKey("rate")) { [double] $Query["rate"] } else { 0.85 }
+        $Style = if ($Query.ContainsKey("style")) { $Query["style"] } else { "ielts" }
+        $Kind = if ($Query.ContainsKey("kind")) { $Query["kind"] } else { "sentence" }
+        $Intonation = if ($Query.ContainsKey("intonation")) { [double] $Query["intonation"] } else { 0.75 }
 
         if ([string]::IsNullOrWhiteSpace($Text)) {
           $Body = [Text.Encoding]::UTF8.GetBytes("Missing text")
@@ -307,7 +337,7 @@ try {
           continue
         }
 
-        $Body = New-TtsAudio $Text $VoiceName $Rate
+        $Body = New-TtsAudio $Text $VoiceName $Rate $Style $Kind $Intonation
         Send-Response $Stream 200 "OK" "audio/wav" $Body
         continue
       }

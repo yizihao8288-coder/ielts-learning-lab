@@ -684,19 +684,679 @@ const readingWordNotes = {
   });
 });
 
+const writingPatterns = [
+  {
+    id: "women-sports-reason",
+    topic: "women's sports",
+    role: "中心句",
+    zhPrompt: "女性运动员需要更多媒体报道。",
+    targetSentence: "One major reason is that female athletes need more media coverage.",
+    safeChunks: ["female athletes", "media coverage", "one major reason"],
+  },
+  {
+    id: "women-sports-cause",
+    topic: "women's sports",
+    role: "原因句",
+    zhPrompt: "曝光能吸引赞助商，并改善训练条件。",
+    targetSentence: "This is because exposure can attract sponsors and improve training conditions.",
+    safeChunks: ["exposure", "attract sponsors", "training conditions"],
+  },
+  {
+    id: "women-sports-explain",
+    topic: "women's sports",
+    role: "解释句",
+    zhPrompt: "这意味着女子体育能在年轻观众中更可见。",
+    targetSentence: "In practice, this means women's sports can become more visible to young audiences.",
+    safeChunks: ["women's sports", "young audiences", "more visible"],
+  },
+  {
+    id: "women-sports-example",
+    topic: "women's sports",
+    role: "例子句",
+    zhPrompt: "固定播放时间能让观众熟悉女性运动员。",
+    targetSentence: "For example, regular airtime can help viewers become familiar with female athletes.",
+    safeChunks: ["regular airtime", "viewers", "female athletes"],
+  },
+  {
+    id: "women-sports-result",
+    topic: "women's sports",
+    role: "结果句",
+    zhPrompt: "结果是，女子体育能获得更高收视率和更多公众支持。",
+    targetSentence: "As a result, women's sports can gain higher ratings and more public support.",
+    safeChunks: ["higher ratings", "public support", "as a result"],
+  },
+  {
+    id: "media-reason",
+    topic: "media coverage",
+    role: "中心句",
+    zhPrompt: "媒体报道会塑造公众兴趣。",
+    targetSentence: "One major reason is that media coverage shapes public interest.",
+    safeChunks: ["media coverage", "public interest", "shapes"],
+  },
+  {
+    id: "media-cause",
+    topic: "media coverage",
+    role: "原因句",
+    zhPrompt: "人们更可能关注他们经常看到的体育项目。",
+    targetSentence: "This is because people are more likely to follow sports they see regularly.",
+    safeChunks: ["more likely to", "follow sports", "regularly"],
+  },
+  {
+    id: "media-explain",
+    topic: "media coverage",
+    role: "解释句",
+    zhPrompt: "这意味着广播公司能影响观众偏好。",
+    targetSentence: "In practice, this means broadcasters can influence viewers' preferences.",
+    safeChunks: ["broadcasters", "viewers' preferences", "influence"],
+  },
+  {
+    id: "media-example",
+    topic: "media coverage",
+    role: "例子句",
+    zhPrompt: "黄金时段节目能提高收视率。",
+    targetSentence: "For example, prime-time programs can increase audience ratings.",
+    safeChunks: ["prime-time programs", "audience ratings", "increase"],
+  },
+  {
+    id: "media-result",
+    topic: "media coverage",
+    role: "结果句",
+    zhPrompt: "结果是，团队可以获得更多广告收入。",
+    targetSentence: "As a result, teams can earn more advertising revenue.",
+    safeChunks: ["advertising revenue", "earn more", "as a result"],
+  },
+  {
+    id: "equality-reason",
+    topic: "gender equality",
+    role: "中心句",
+    zhPrompt: "平等机会能改善社会公平。",
+    targetSentence: "One major reason is that equal opportunities can improve social fairness.",
+    safeChunks: ["equal opportunities", "social fairness", "improve"],
+  },
+  {
+    id: "equality-cause",
+    topic: "gender equality",
+    role: "原因句",
+    zhPrompt: "女性和男性应该有同样成功的机会。",
+    targetSentence: "This is because women and men should have the same chance to succeed.",
+    safeChunks: ["women and men", "same chance", "succeed"],
+  },
+  {
+    id: "equality-explain",
+    topic: "gender equality",
+    role: "解释句",
+    zhPrompt: "这意味着学校应该鼓励女孩参加运动。",
+    targetSentence: "In practice, this means schools should encourage girls to take part in sport.",
+    safeChunks: ["encourage girls", "take part in sport", "schools"],
+  },
+  {
+    id: "equality-example",
+    topic: "gender equality",
+    role: "例子句",
+    zhPrompt: "公平的媒体关注能挑战旧的性别刻板印象。",
+    targetSentence: "For example, fair media attention can challenge old gender stereotypes.",
+    safeChunks: ["fair media attention", "gender stereotypes", "challenge"],
+  },
+  {
+    id: "equality-result",
+    topic: "gender equality",
+    role: "结果句",
+    zhPrompt: "结果是，社会可能变得更包容、更平衡。",
+    targetSentence: "As a result, society may become more inclusive and balanced.",
+    safeChunks: ["society", "inclusive", "balanced"],
+  },
+  {
+    id: "education-reason",
+    topic: "education and technology",
+    role: "中心句",
+    zhPrompt: "科技能让教育更容易获得。",
+    targetSentence: "One major reason is that technology can make education more accessible.",
+    safeChunks: ["technology", "education", "more accessible"],
+  },
+  {
+    id: "education-cause",
+    topic: "education and technology",
+    role: "原因句",
+    zhPrompt: "在线课程让学生按自己的节奏学习。",
+    targetSentence: "This is because online lessons allow students to study at their own pace.",
+    safeChunks: ["online lessons", "at their own pace", "students"],
+  },
+  {
+    id: "education-explain",
+    topic: "education and technology",
+    role: "解释句",
+    zhPrompt: "这意味着老师能支持有不同需求的学生。",
+    targetSentence: "In practice, this means teachers can support students with different needs.",
+    safeChunks: ["teachers", "different needs", "support students"],
+  },
+  {
+    id: "health-example",
+    topic: "health and habits",
+    role: "例子句",
+    zhPrompt: "健康应用能提醒人们定期运动。",
+    targetSentence: "For example, health apps can remind people to exercise regularly.",
+    safeChunks: ["health apps", "exercise regularly", "remind people"],
+  },
+  {
+    id: "health-result",
+    topic: "health and habits",
+    role: "结果句",
+    zhPrompt: "结果是，人们可能逐渐养成更健康的习惯。",
+    targetSentence: "As a result, people may develop healthier habits over time.",
+    safeChunks: ["healthier habits", "over time", "develop"],
+  },
+  {
+    id: "advertising-revenue-reason",
+    topic: "advertising revenue",
+    role: "中心句",
+    zhPrompt: "广告收入能帮助球队改善训练条件。",
+    targetSentence: "One major reason is that advertising revenue can help teams improve training conditions.",
+    safeChunks: ["advertising revenue", "improve training conditions", "teams"],
+  },
+  {
+    id: "public-interest-cause",
+    topic: "public interest",
+    role: "原因句",
+    zhPrompt: "持续报道能让公众兴趣逐渐增长。",
+    targetSentence: "This is because regular coverage can help public interest grow over time.",
+    safeChunks: ["regular coverage", "public interest", "grow over time"],
+  },
+  {
+    id: "public-interest-result",
+    topic: "public interest",
+    role: "结果句",
+    zhPrompt: "结果是，更多人可能参与体育并支持本地球队。",
+    targetSentence: "As a result, more people may take part in sport and support local teams.",
+    safeChunks: ["take part in sport", "support local teams", "as a result"],
+  },
+  {
+    id: "technology-result",
+    topic: "education and technology",
+    role: "结果句",
+    zhPrompt: "结果是，即使学生在家学习也能获得支持。",
+    targetSentence: "As a result, students can receive support even when they study at home.",
+    safeChunks: ["receive support", "study at home", "as a result"],
+  },
+];
+
+const writingPatternPacks = [
+  {
+    id: "women-sports",
+    topic: "Women's sports",
+    bodyChain: [
+      {
+        id: "women-sports-reason",
+        role: "中心句",
+        zhPrompt: "女性运动员需要更多媒体报道。",
+        sentenceFrame: "One major reason is that ____ need more ____.",
+        targetSentence: "One major reason is that female athletes need more media coverage.",
+        slots: ["female athletes", "media coverage"],
+        safeChunks: ["female athletes", "media coverage"],
+      },
+      {
+        id: "women-sports-cause",
+        role: "原因句",
+        zhPrompt: "曝光能吸引赞助商，并改善训练条件。",
+        sentenceFrame: "This is because ____ can attract ____ and improve ____.",
+        targetSentence: "This is because exposure can attract sponsors and improve training conditions.",
+        slots: ["exposure", "sponsors", "training conditions"],
+        safeChunks: ["exposure", "attract sponsors", "training conditions"],
+      },
+      {
+        id: "women-sports-explain",
+        role: "解释句",
+        zhPrompt: "这意味着女子体育能在年轻观众中更可见。",
+        sentenceFrame: "In practice, this means ____ can become more visible to ____.",
+        targetSentence: "In practice, this means women's sports can become more visible to young audiences.",
+        slots: ["women's sports", "young audiences"],
+        safeChunks: ["women's sports", "young audiences", "more visible"],
+      },
+      {
+        id: "women-sports-example",
+        role: "例子句",
+        zhPrompt: "固定播放时间能让观众熟悉女性运动员。",
+        sentenceFrame: "For example, ____ can help ____ become familiar with ____.",
+        targetSentence: "For example, regular airtime can help viewers become familiar with female athletes.",
+        slots: ["regular airtime", "viewers", "female athletes"],
+        safeChunks: ["regular airtime", "viewers", "female athletes"],
+      },
+      {
+        id: "women-sports-result",
+        role: "结果句",
+        zhPrompt: "结果是，女子体育能获得更高收视率和更多公众支持。",
+        sentenceFrame: "As a result, women's sports can gain ____ and more ____.",
+        targetSentence: "As a result, women's sports can gain higher ratings and more public support.",
+        slots: ["higher ratings", "public support"],
+        safeChunks: ["higher ratings", "public support"],
+      },
+    ],
+  },
+  {
+    id: "media-coverage",
+    topic: "Media coverage",
+    bodyChain: [
+      {
+        id: "media-reason",
+        role: "中心句",
+        zhPrompt: "媒体报道会塑造公众兴趣。",
+        sentenceFrame: "One major reason is that ____ shapes ____.",
+        targetSentence: "One major reason is that media coverage shapes public interest.",
+        slots: ["media coverage", "public interest"],
+        safeChunks: ["media coverage", "public interest"],
+      },
+      {
+        id: "media-cause",
+        role: "原因句",
+        zhPrompt: "人们更可能关注他们经常看到的体育项目。",
+        sentenceFrame: "This is because people are more likely to ____ they ____.",
+        targetSentence: "This is because people are more likely to follow sports they see regularly.",
+        slots: ["follow sports", "see regularly"],
+        safeChunks: ["follow sports", "see regularly"],
+      },
+      {
+        id: "media-explain",
+        role: "解释句",
+        zhPrompt: "这意味着广播公司能影响观众偏好。",
+        sentenceFrame: "In practice, this means ____ can influence ____.",
+        targetSentence: "In practice, this means broadcasters can influence viewers' preferences.",
+        slots: ["broadcasters", "viewers' preferences"],
+        safeChunks: ["broadcasters", "viewers' preferences"],
+      },
+      {
+        id: "media-example",
+        role: "例子句",
+        zhPrompt: "黄金时段节目能提高收视率。",
+        sentenceFrame: "For example, ____ can increase ____.",
+        targetSentence: "For example, prime-time programs can increase audience ratings.",
+        slots: ["prime-time programs", "audience ratings"],
+        safeChunks: ["prime-time programs", "audience ratings"],
+      },
+      {
+        id: "media-result",
+        role: "结果句",
+        zhPrompt: "结果是，团队可以获得更多广告收入。",
+        sentenceFrame: "As a result, teams can earn more ____.",
+        targetSentence: "As a result, teams can earn more advertising revenue.",
+        slots: ["advertising revenue"],
+        safeChunks: ["advertising revenue"],
+      },
+    ],
+  },
+  {
+    id: "education-technology",
+    topic: "Education and technology",
+    bodyChain: [
+      {
+        id: "education-reason",
+        role: "中心句",
+        zhPrompt: "科技能让教育更容易获得。",
+        sentenceFrame: "One major reason is that ____ can make ____ more ____.",
+        targetSentence: "One major reason is that technology can make education more accessible.",
+        slots: ["technology", "education", "accessible"],
+        safeChunks: ["technology", "education", "more accessible"],
+      },
+      {
+        id: "education-cause",
+        role: "原因句",
+        zhPrompt: "在线课程让学生按自己的节奏学习。",
+        sentenceFrame: "This is because ____ allow students to study ____.",
+        targetSentence: "This is because online lessons allow students to study at their own pace.",
+        slots: ["online lessons", "at their own pace"],
+        safeChunks: ["online lessons", "at their own pace"],
+      },
+      {
+        id: "education-explain",
+        role: "解释句",
+        zhPrompt: "这意味着老师能支持有不同需求的学生。",
+        sentenceFrame: "In practice, this means ____ can support students with ____.",
+        targetSentence: "In practice, this means teachers can support students with different needs.",
+        slots: ["teachers", "different needs"],
+        safeChunks: ["teachers", "different needs"],
+      },
+      {
+        id: "education-example",
+        role: "例子句",
+        zhPrompt: "数字平台能给学生即时反馈。",
+        sentenceFrame: "For example, ____ can give students ____.",
+        targetSentence: "For example, digital platforms can give students immediate feedback.",
+        slots: ["digital platforms", "immediate feedback"],
+        safeChunks: ["digital platforms", "immediate feedback"],
+      },
+      {
+        id: "education-result",
+        role: "结果句",
+        zhPrompt: "结果是，即使学生在家学习也能获得支持。",
+        sentenceFrame: "As a result, students can ____ even when they ____.",
+        targetSentence: "As a result, students can receive support even when they study at home.",
+        slots: ["receive support", "study at home"],
+        safeChunks: ["receive support", "study at home"],
+      },
+    ],
+  },
+  {
+    id: "exam-error-sprint",
+    topic: "考前错点总包",
+    bodyChain: [
+      {
+        id: "exam-discuss-essay",
+        role: "拼写反射",
+        zhPrompt: "这篇文章将讨论两种观点。重点练 discuss / essay。",
+        sentenceFrame: "This ____ will ____ both views before giving my opinion.",
+        targetSentence: "This essay will discuss both views before giving my opinion.",
+        slots: ["essay", "discuss"],
+        safeChunks: ["essay", "discuss"],
+      },
+      {
+        id: "exam-social-perspective",
+        role: "固定搭配",
+        zhPrompt: "从社会角度看，公共体育设施很有价值。",
+        sentenceFrame: "____, public sports facilities are valuable.",
+        targetSentence: "From a social perspective, public sports facilities are valuable.",
+        slots: ["From a social perspective"],
+        safeChunks: ["From a social perspective"],
+      },
+      {
+        id: "exam-harmful-to",
+        role: "固定搭配",
+        zhPrompt: "过度使用手机对青少年有害。",
+        sentenceFrame: "It is ____ teenagers to spend too much time on mobile phones.",
+        targetSentence: "It is harmful to teenagers to spend too much time on mobile phones.",
+        slots: ["harmful to"],
+        safeChunks: ["harmful to"],
+      },
+      {
+        id: "exam-professional-stadium",
+        role: "拼写反射",
+        zhPrompt: "专业体育场能吸引更多观众。",
+        sentenceFrame: "A ____ can attract more spectators.",
+        targetSentence: "A professional stadium can attract more spectators.",
+        slots: ["professional stadium"],
+        safeChunks: ["professional", "stadium"],
+      },
+      {
+        id: "exam-performance",
+        role: "词性选择",
+        zhPrompt: "运动员的表现会影响公众兴趣。这里用名词 performance。",
+        sentenceFrame: "Athletes' ____ can influence public interest.",
+        targetSentence: "Athletes' performance can influence public interest.",
+        slots: ["performance"],
+        safeChunks: ["performance"],
+      },
+      {
+        id: "exam-admittedly",
+        role: "让步句",
+        zhPrompt: "诚然，一些体育项目获得的公众关注较少。",
+        sentenceFrame: "____, some sports receive less public attention.",
+        targetSentence: "Admittedly, some sports receive less public attention.",
+        slots: ["Admittedly"],
+        safeChunks: ["Admittedly"],
+      },
+      {
+        id: "exam-positive-negative",
+        role: "拼写反射",
+        zhPrompt: "这个趋势有积极和消极影响。",
+        sentenceFrame: "This trend has both ____ and ____ effects.",
+        targetSentence: "This trend has both positive and negative effects.",
+        slots: ["positive", "negative"],
+        safeChunks: ["positive", "negative"],
+      },
+      {
+        id: "exam-occupation-compulsory",
+        role: "拼写反射",
+        zhPrompt: "学校不应该把具体职业培训设为所有学生的必修内容。",
+        sentenceFrame: "Schools should not make training for a specific ____ ____ for all students.",
+        targetSentence: "Schools should not make training for a specific occupation compulsory for all students.",
+        slots: ["occupation", "compulsory"],
+        safeChunks: ["occupation", "compulsory"],
+      },
+      {
+        id: "exam-government-funding",
+        role: "固定搭配",
+        zhPrompt: "政府资助来自公共资源。",
+        sentenceFrame: "____ comes from ____.",
+        targetSentence: "Government funding comes from public resources.",
+        slots: ["Government funding", "public resources"],
+        safeChunks: ["government funding", "public resources"],
+      },
+      {
+        id: "exam-revenue",
+        role: "写作表达",
+        zhPrompt: "如果广播减少，俱乐部可能失去重要收入来源。",
+        sentenceFrame: "If broadcasts decline, clubs may ____.",
+        targetSentence: "If broadcasts decline, clubs may lose an important source of revenue.",
+        slots: ["lose an important source of revenue"],
+        safeChunks: ["lose an important source of revenue"],
+      },
+      {
+        id: "exam-nowadays",
+        role: "拼写反射",
+        zhPrompt: "如今，许多学生依赖线上学习。",
+        sentenceFrame: "____, many students rely on online learning.",
+        targetSentence: "Nowadays, many students rely on online learning.",
+        slots: ["Nowadays"],
+        safeChunks: ["Nowadays"],
+      },
+      {
+        id: "exam-wide-range",
+        role: "固定搭配",
+        zhPrompt: "学校应该提供广泛的课程。",
+        sentenceFrame: "Schools should offer ____ subjects.",
+        targetSentence: "Schools should offer a wide range of subjects.",
+        slots: ["a wide range of"],
+        safeChunks: ["a wide range of"],
+      },
+      {
+        id: "exam-self-driving-position",
+        role: "写作表达",
+        zhPrompt: "自动驾驶汽车可能改变人们申请新职位所需的技能。",
+        sentenceFrame: "____ may change the skills people need to ____.",
+        targetSentence: "Self-driving cars may change the skills people need to apply for a new position.",
+        slots: ["Self-driving cars", "apply for a new position"],
+        safeChunks: ["self-driving cars", "apply for a new position"],
+      },
+      {
+        id: "exam-environment-enterprise",
+        role: "拼写反射",
+        zhPrompt: "每个企业都应该帮助保护环境。",
+        sentenceFrame: "Every ____ should help protect the ____.",
+        targetSentence: "Every enterprise should help protect the environment.",
+        slots: ["enterprise", "environment"],
+        safeChunks: ["enterprise", "environment"],
+      },
+      {
+        id: "exam-motivate-people",
+        role: "固定搭配",
+        zhPrompt: "体育转播能激励人们参加锻炼。",
+        sentenceFrame: "Sports broadcasts can ____ to take part in exercise.",
+        targetSentence: "Sports broadcasts can motivate people to take part in exercise.",
+        slots: ["motivate people"],
+        safeChunks: ["motivate people", "broadcasts"],
+      },
+      {
+        id: "exam-quality-of-life",
+        role: "地道表达",
+        zhPrompt: "公共设施能提高生活质量。不要写 daily quality of life。",
+        sentenceFrame: "Public facilities can ____.",
+        targetSentence: "Public facilities can improve quality of life.",
+        slots: ["improve quality of life"],
+        safeChunks: ["improve quality of life"],
+      },
+      {
+        id: "exam-cultural-diversity",
+        role: "固定搭配",
+        zhPrompt: "移民可以增加文化多样性。",
+        sentenceFrame: "Immigration can increase ____.",
+        targetSentence: "Immigration can increase cultural diversity.",
+        slots: ["cultural diversity"],
+        safeChunks: ["cultural diversity"],
+      },
+      {
+        id: "exam-access-to",
+        role: "固定搭配",
+        zhPrompt: "学生应该有机会获得数字资源。",
+        sentenceFrame: "Students should ____ digital resources.",
+        targetSentence: "Students should have access to digital resources.",
+        slots: ["have access to"],
+        safeChunks: ["have access to"],
+      },
+      {
+        id: "exam-electric-power",
+        role: "地道表达",
+        zhPrompt: "清洁能源展示了电力的潜力。",
+        sentenceFrame: "Clean energy shows ____.",
+        targetSentence: "Clean energy shows the potential of electric power.",
+        slots: ["the potential of electric power"],
+        safeChunks: ["the potential of electric power"],
+      },
+      {
+        id: "exam-to-some-extent-receive",
+        role: "固定搭配",
+        zhPrompt: "在某种程度上，学生应该获得更多支持。",
+        sentenceFrame: "____, students should ____ more support.",
+        targetSentence: "To some extent, students should receive more support.",
+        slots: ["To some extent", "receive"],
+        safeChunks: ["To some extent", "receive"],
+      },
+      {
+        id: "exam-modern-diets",
+        role: "固定搭配",
+        zhPrompt: "现代饮食会影响人们的健康。",
+        sentenceFrame: "____ can affect people's health.",
+        targetSentence: "Modern diets can affect people's health.",
+        slots: ["Modern diets"],
+        safeChunks: ["modern diets"],
+      },
+      {
+        id: "exam-carbon-emissions",
+        role: "地道表达",
+        zhPrompt: "私家车会产生大量碳排放。不要写 increase large amounts of carbon emissions。",
+        sentenceFrame: "Private cars can ____.",
+        targetSentence: "Private cars can produce large amounts of carbon emissions.",
+        slots: ["produce large amounts of carbon emissions"],
+        safeChunks: ["produce large amounts of carbon emissions"],
+      },
+      {
+        id: "exam-improve-skills",
+        role: "固定搭配",
+        zhPrompt: "志愿工作能提升技能。",
+        sentenceFrame: "Voluntary work can help young people ____.",
+        targetSentence: "Voluntary work can help young people improve skills.",
+        slots: ["improve skills"],
+        safeChunks: ["improve skills"],
+      },
+      {
+        id: "exam-vital-role",
+        role: "固定搭配",
+        zhPrompt: "教育在个人发展中发挥重要作用。",
+        sentenceFrame: "Education can ____ in personal development.",
+        targetSentence: "Education can play a vital role in personal development.",
+        slots: ["play a vital role"],
+        safeChunks: ["play a vital role"],
+      },
+      {
+        id: "exam-sufficient-phenomenon",
+        role: "拼写反射",
+        zhPrompt: "在线学习已经成为一种全球现象，但一些学校缺乏足够资源。",
+        sentenceFrame: "Online learning has become a global ____, but some schools lack ____ resources.",
+        targetSentence: "Online learning has become a global phenomenon, but some schools lack sufficient resources.",
+        slots: ["phenomenon", "sufficient"],
+        safeChunks: ["phenomenon", "sufficient"],
+      },
+      {
+        id: "exam-daily",
+        role: "拼写反射",
+        zhPrompt: "锻炼应该成为学生日常生活的一部分。",
+        sentenceFrame: "Exercise should become part of students' ____ routine.",
+        targetSentence: "Exercise should become part of students' daily routine.",
+        slots: ["daily"],
+        safeChunks: ["daily"],
+      },
+    ],
+  },
+];
+
 const BOOK_STORAGE_KEY = "ieltsTrainerFavoriteBookV1";
 const USER_NOTES_STORAGE_KEY = "ieltsTrainerUserNotesV1";
 const MODE_INPUT_STORAGE_KEY = "ieltsTrainerModeInputsV1";
 const CORRECT_STORAGE_KEY = "ieltsTrainerCorrectBookV1";
 const TRAINING_SNAPSHOT_STORAGE_KEY = "ieltsTrainerSnapshotV1";
+const WRITING_MISTAKE_STORAGE_KEY = "ieltsTrainerWritingMistakesV1";
+const WRITING_FAVORITE_STORAGE_KEY = "ieltsTrainerWritingFavoriteBookV1";
+const WRITING_STATS_STORAGE_KEY = "ieltsTrainerWritingStatsV1";
+const SHORTCUT_STORAGE_KEY = "ieltsTrainerShortcutsV1";
+const SIDEBAR_STORAGE_KEY = "ieltsTrainerSidebarCollapsedV1";
+const LISTENING_MISTAKE_STORAGE_KEY = "ieltsListeningMistakeLibraryV1";
+const SPEECH_SETTINGS_STORAGE_KEY = "ieltsTrainerSpeechSettingsV1";
+const TESSERACT_SCRIPT_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js";
+const listeningMistakeErrorLabels = {
+  word: "单词没反应",
+  passage: "长段听不懂",
+  paraphrase: "同义替换没反应",
+  distractor: "干扰项被骗",
+  spelling: "单复数/拼写错误",
+};
+const listeningMistakeStatusLabels = {
+  unmastered: "未掌握",
+  reviewing: "复习中",
+  mastered: "已掌握",
+};
+const listeningMistakeMethodLabels = {
+  relisten: "重听原题",
+  dictation: "精听听写",
+  transcript: "对照 transcript",
+  shadowing: "影子跟读",
+};
 const bookModes = ["listening", "dictation", "reading"];
+const defaultShortcutSettings = {
+  advance: "Enter",
+  replay: "KeyR",
+  favorite: "KeyE",
+  reveal: "Escape",
+  retry: "KeyF",
+};
+const shortcutLabels = {
+  Enter: "Enter",
+  Space: "Space",
+  Escape: "Esc",
+  KeyR: "R",
+  KeyE: "E",
+  KeyF: "F",
+  KeyJ: "J",
+  KeyK: "K",
+  ArrowRight: "→",
+};
+const appShell = document.querySelector(".app-shell");
+const sidebarToggle = document.querySelector("#sidebarToggle");
+const sidebarSearchButton = document.querySelector("#sidebarSearchButton");
+const favoritesDrawer = document.querySelector("#favoritesDrawer");
+const writingModeNavButton = document.querySelector("#writingModeNavButton");
+const listeningMistakeNavButton = document.querySelector("#listeningMistakeNavButton");
+const listeningMistakeNavCount = document.querySelector("#listeningMistakeNavCount");
+const settingsNavButton = document.querySelector("#settingsNavButton");
+const quizPanel = document.querySelector(".quiz-panel");
+const listeningMistakePanel = document.querySelector(".listening-mistake-panel");
+const writingPanel = document.querySelector(".writing-panel");
+const settingsPanel = document.querySelector(".settings-panel");
+const settingsPracticeMount = document.querySelector("#settingsPracticeMount");
+const settingsVoiceMount = document.querySelector("#settingsVoiceMount");
+const settingsShortcutMount = document.querySelector("#settingsShortcutMount");
+const toolDrawer = document.querySelector(".tool-drawer");
 const modeRadios = [...document.querySelectorAll('input[name="quizMode"]')];
 const wordInput = document.querySelector("#wordInput");
 const optionCount = document.querySelector("#optionCount");
 const rateControl = document.querySelector("#rateControl");
 const voiceSelect = document.querySelector("#voiceSelect");
+const speechStyle = document.querySelector("#speechStyle");
+const intonationControl = document.querySelector("#intonationControl");
+const speechPreviewButton = document.querySelector("#speechPreviewButton");
 const autoSpeak = document.querySelector("#autoSpeak");
 const skipFavoriteWords = document.querySelector("#skipFavoriteWords");
+const advanceShortcut = document.querySelector("#advanceShortcut");
+const replayShortcut = document.querySelector("#replayShortcut");
+const favoriteShortcut = document.querySelector("#favoriteShortcut");
+const revealShortcut = document.querySelector("#revealShortcut");
+const retryShortcut = document.querySelector("#retryShortcut");
+const shortcutStatus = document.querySelector("#shortcutStatus");
 const startButton = document.querySelector("#startButton");
 const saveTrainingButton = document.querySelector("#saveTrainingButton");
 const cleanKnownButton = document.querySelector("#cleanKnownButton");
@@ -712,6 +1372,7 @@ const choices = document.querySelector("#choices");
 const answerForm = document.querySelector("#answerForm");
 const answerInput = document.querySelector("#answerInput");
 const checkButton = document.querySelector("#checkButton");
+const revealAnswerButton = document.querySelector("#revealAnswerButton");
 const listenButton = document.querySelector("#listenButton");
 const nextButton = document.querySelector("#nextButton");
 const reviewPanel = document.querySelector("#reviewPanel");
@@ -720,7 +1381,33 @@ const quizTitle = document.querySelector("#quiz-title");
 const bookTabs = [...document.querySelectorAll("[data-book-tab]")];
 const bookCounts = [...document.querySelectorAll("[data-book-count]")];
 const bookList = document.querySelector("#bookList");
+const bookSearchInput = document.querySelector("#bookSearchInput");
 const bookReviewButton = document.querySelector("#bookReviewButton");
+const bookListReviewButton = document.querySelector("#bookListReviewButton");
+const favoriteReviewScreen = document.querySelector("#favoriteReviewScreen");
+const favoriteReviewViewButtons = [...document.querySelectorAll("[data-favorite-review-view]")];
+const favoriteReviewMode = document.querySelector("#favoriteReviewMode");
+const favoriteReviewTitle = document.querySelector("#favoriteReviewTitle");
+const favoriteReviewProgress = document.querySelector("#favoriteReviewProgress");
+const favoriteReviewProgressBar = document.querySelector("#favoriteReviewProgressBar");
+const favoriteReviewMain = document.querySelector("#favoriteReviewMain");
+const favoriteListReviewMain = document.querySelector("#favoriteListReviewMain");
+const favoriteReviewFooter = document.querySelector("#favoriteReviewFooter");
+const favoriteReviewWord = document.querySelector("#favoriteReviewWord");
+const favoriteReviewMeaning = document.querySelector("#favoriteReviewMeaning");
+const favoriteReviewExample = document.querySelector("#favoriteReviewExample");
+const favoriteReviewResponse = document.querySelector("#favoriteReviewResponse");
+const favoriteReviewStatus = document.querySelector("#favoriteReviewStatus");
+const favoriteReviewSpeak = document.querySelector("#favoriteReviewSpeak");
+const favoriteReviewRemove = document.querySelector("#favoriteReviewRemove");
+const favoriteReviewPrevious = document.querySelector("#favoriteReviewPrevious");
+const favoriteReviewNext = document.querySelector("#favoriteReviewNext");
+const favoriteReviewClose = document.querySelector("#favoriteReviewClose");
+const favoriteListReviewSearch = document.querySelector("#favoriteListReviewSearch");
+const favoriteListReviewSort = document.querySelector("#favoriteListReviewSort");
+const favoriteListReviewCount = document.querySelector("#favoriteListReviewCount");
+const favoriteListReviewRows = document.querySelector("#favoriteListReviewRows");
+const favoriteListReviewStatus = document.querySelector("#favoriteListReviewStatus");
 const exportDataButton = document.querySelector("#exportDataButton");
 const importDataButton = document.querySelector("#importDataButton");
 const wordDetailDialog = document.querySelector("#wordDetailDialog");
@@ -734,14 +1421,69 @@ const wordDetailResponse = document.querySelector("#wordDetailResponse");
 const wordDetailSpeakWord = document.querySelector("#wordDetailSpeakWord");
 const wordDetailSpeakExample = document.querySelector("#wordDetailSpeakExample");
 const wordDetailStatus = document.querySelector("#wordDetailStatus");
+const writingStartButton = document.querySelector("#writingStartButton");
+const writingAllButton = document.querySelector("#writingAllButton");
+const writingReviewButton = document.querySelector("#writingReviewButton");
+const writingPackSelect = document.querySelector("#writingPackSelect");
+const writingPhaseButtons = [...document.querySelectorAll("[data-writing-phase]")];
+const writingAccuracy = document.querySelector("#writingAccuracy");
+const writingSpeed = document.querySelector("#writingSpeed");
+const writingErrorCount = document.querySelector("#writingErrorCount");
+const writingTopic = document.querySelector("#writingTopic");
+const writingRole = document.querySelector("#writingRole");
+const writingPrompt = document.querySelector("#writingPrompt");
+const writingFrame = document.querySelector("#writingFrame");
+const writingChunks = document.querySelector("#writingChunks");
+const writingInputLabel = document.querySelector('label[for="writingInput"]');
+const writingInput = document.querySelector("#writingInput");
+const writingSpeakButton = document.querySelector("#writingSpeakButton");
+const writingFavoriteButton = document.querySelector("#writingFavoriteButton");
+const writingCheckButton = document.querySelector("#writingCheckButton");
+const writingNextButton = document.querySelector("#writingNextButton");
+const writingResult = document.querySelector("#writingResult");
+const writingBookTabs = [...document.querySelectorAll("[data-writing-book-tab]")];
+const writingMistakeCount = document.querySelector("#writingMistakeCount");
+const writingFavoriteCount = document.querySelector("#writingFavoriteCount");
+const writingMistakeList = document.querySelector("#writingMistakeList");
+const addListeningMistakeButton = document.querySelector("#addListeningMistakeButton");
+const listeningMistakeTotal = document.querySelector("#listeningMistakeTotal");
+const listeningMistakeReviewing = document.querySelector("#listeningMistakeReviewing");
+const listeningMistakeMastered = document.querySelector("#listeningMistakeMastered");
+const listeningMistakeReviews = document.querySelector("#listeningMistakeReviews");
+const listeningMistakeSearch = document.querySelector("#listeningMistakeSearch");
+const listeningMistakeErrorFilter = document.querySelector("#listeningMistakeErrorFilter");
+const listeningMistakeStatusFilter = document.querySelector("#listeningMistakeStatusFilter");
+const listeningMistakeMethodFilter = document.querySelector("#listeningMistakeMethodFilter");
+const listeningMistakeList = document.querySelector("#listeningMistakeList");
+const listeningMistakeDetail = document.querySelector("#listeningMistakeDetail");
+const listeningMistakeDialog = document.querySelector("#listeningMistakeDialog");
+const listeningMistakeForm = document.querySelector("#listeningMistakeForm");
+const listeningMistakeDialogTitle = document.querySelector("#listeningMistakeDialogTitle");
+const listeningMistakeDialogClose = document.querySelector("#listeningMistakeDialogClose");
+const listeningMistakeCancel = document.querySelector("#listeningMistakeCancel");
+const listeningMistakeId = document.querySelector("#listeningMistakeId");
+const listeningMistakeTitle = document.querySelector("#listeningMistakeTitle");
+const listeningMistakeErrorType = document.querySelector("#listeningMistakeErrorType");
+const listeningMistakeStatus = document.querySelector("#listeningMistakeStatus");
+const listeningMistakeMethod = document.querySelector("#listeningMistakeMethod");
+const listeningQuestionImage = document.querySelector("#listeningQuestionImage");
+const listeningQuestionText = document.querySelector("#listeningQuestionText");
+const listeningQuestionOcrStatus = document.querySelector("#listeningQuestionOcrStatus");
+const listeningTranscriptImage = document.querySelector("#listeningTranscriptImage");
+const listeningTranscriptText = document.querySelector("#listeningTranscriptText");
+const listeningTranscriptOcrStatus = document.querySelector("#listeningTranscriptOcrStatus");
+const listeningMistakeNote = document.querySelector("#listeningMistakeNote");
+const listeningMistakeFormStatus = document.querySelector("#listeningMistakeFormStatus");
 
 const state = {
   mode: "listening",
   bookMode: "listening",
+  bookSearch: "",
   favoriteBook: loadFavoriteBook(),
   correctBook: loadCorrectBook(),
   userNotes: loadUserNotes(),
   modeInputs: loadModeInputs(),
+  shortcutSettings: loadShortcutSettings(),
   deck: [],
   currentIndex: 0,
   score: 0,
@@ -758,7 +1500,42 @@ const state = {
   definitionServiceAvailable: true,
   isReviewingWrong: false,
   detailEntry: null,
+  activeSurface: "quiz",
+  writingMistakeBook: loadWritingMistakeBook(),
+  writingFavoriteBook: loadWritingFavoriteBook(),
+  writingBookMode: "mistakes",
+  writingLastResultSpeech: { input: "", target: "" },
+  writingStats: loadWritingStats(),
+  writingDeck: [],
+  writingIndex: 0,
+  writingCurrent: null,
+  writingPackId: writingPatternPacks[0]?.id || "",
+  writingPhase: "slot",
+  writingChainIndex: 0,
+  writingAllMode: false,
+  writingReviewing: false,
+  writingStartedAt: 0,
+  writingChecked: false,
+  favoriteReviewItems: [],
+  favoriteReviewIndex: 0,
+  favoriteReviewMode: "listening",
+  favoriteReviewView: "cards",
+  favoriteReviewSort: "newest",
+  favoriteReviewQuery: "",
+  sidebarCollapsed: false,
+  listeningMistakes: loadListeningMistakes(),
+  listeningMistakeSelectedId: "",
+  listeningMistakeQuery: "",
+  listeningMistakeErrorFilter: "all",
+  listeningMistakeStatusFilter: "all",
+  listeningMistakeMethodFilter: "all",
 };
+
+let listeningOcrScriptPromise = null;
+let listeningOcrWorkerPromise = null;
+let listeningOcrQueue = Promise.resolve();
+let listeningOcrStatusTarget = null;
+let listeningOcrIdleTimer = 0;
 
 function getSelectedMode() {
   return modeRadios.find((radio) => radio.checked)?.value || "listening";
@@ -768,6 +1545,521 @@ function getModeLabel(mode = state.mode) {
   if (mode === "dictation") return "填空模式";
   if (mode === "reading") return "阅读模式";
   return "听力模式";
+}
+
+function loadSidebarCollapsed() {
+  try {
+    return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function setSidebarCollapsed(collapsed, persist = true) {
+  state.sidebarCollapsed = Boolean(collapsed);
+  appShell.classList.toggle("sidebar-collapsed", state.sidebarCollapsed);
+  sidebarToggle.setAttribute("aria-expanded", String(!state.sidebarCollapsed));
+  sidebarToggle.setAttribute("aria-label", state.sidebarCollapsed ? "展开侧边栏" : "收起侧边栏");
+  sidebarToggle.title = state.sidebarCollapsed ? "展开侧边栏" : "收起侧边栏";
+
+  if (!persist) return;
+  try {
+    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(state.sidebarCollapsed));
+  } catch {
+    // The layout still works when browser storage is unavailable.
+  }
+}
+
+function mountSettingsControls() {
+  const setupGrid = document.querySelector(".setup-grid");
+  const practiceControls = [
+    optionCount.closest(".control"),
+    autoSpeak.closest(".switch"),
+    skipFavoriteWords.closest(".switch"),
+  ].filter(Boolean);
+  const voiceControls = [
+    rateControl.closest(".control"),
+    voiceSelect.closest(".control"),
+    speechStyle.closest(".control"),
+    intonationControl.closest(".control"),
+    speechPreviewButton.closest(".control"),
+  ].filter(Boolean);
+
+  practiceControls.forEach((control) => settingsPracticeMount.append(control));
+  voiceStatus.classList.add("settings-voice-status");
+  settingsVoiceMount.append(voiceStatus);
+  voiceControls.forEach((control) => settingsVoiceMount.append(control));
+  settingsShortcutMount.append(toolDrawer);
+  setupGrid?.remove();
+}
+
+function setPrimarySurface(surface, shouldScroll = false) {
+  const requestedSurface = ["quiz", "writing", "settings", "listeningMistakes"].includes(surface)
+    ? surface
+    : "quiz";
+  const activeSurface = requestedSurface === "listeningMistakes" && state.mode !== "listening"
+    ? "quiz"
+    : requestedSurface;
+  const writingActive = activeSurface === "writing";
+  const settingsActive = activeSurface === "settings";
+  const listeningMistakesActive = activeSurface === "listeningMistakes";
+  state.activeSurface = activeSurface;
+  appShell.classList.toggle("writing-nav-active", writingActive);
+  appShell.classList.toggle("settings-nav-active", settingsActive);
+  appShell.classList.toggle("listening-mistake-nav-active", listeningMistakesActive);
+  writingModeNavButton.classList.toggle("active", writingActive);
+  writingModeNavButton.setAttribute("aria-current", writingActive ? "page" : "false");
+  listeningMistakeNavButton.classList.toggle("active", listeningMistakesActive);
+  listeningMistakeNavButton.setAttribute("aria-current", listeningMistakesActive ? "page" : "false");
+  listeningMistakeNavButton.hidden = getSelectedMode() !== "listening" || writingActive || settingsActive;
+  settingsNavButton.classList.toggle("active", settingsActive);
+  settingsNavButton.setAttribute("aria-current", settingsActive ? "page" : "false");
+  quizPanel.hidden = activeSurface !== "quiz";
+  listeningMistakePanel.hidden = !listeningMistakesActive;
+  writingPanel.hidden = !writingActive;
+  settingsPanel.hidden = !settingsActive;
+
+  if (!shouldScroll) return;
+  window.scrollTo({ top: 0, behavior: "auto" });
+}
+
+function normaliseListeningMistake(record = {}) {
+  const errorType = listeningMistakeErrorLabels[record.errorType] ? record.errorType : "word";
+  const status = listeningMistakeStatusLabels[record.status] ? record.status : "unmastered";
+  const reviewMethod = listeningMistakeMethodLabels[record.reviewMethod] ? record.reviewMethod : "relisten";
+  return {
+    id: String(record.id || ""),
+    title: String(record.title || "").trim(),
+    errorType,
+    note: String(record.note || "").trim(),
+    status,
+    reviewMethod,
+    questionText: String(record.questionText || "").trim(),
+    transcriptText: String(record.transcriptText || "").trim(),
+    createdAt: Number(record.createdAt) || Date.now(),
+    updatedAt: Number(record.updatedAt) || Number(record.createdAt) || Date.now(),
+    lastReviewedAt: Number(record.lastReviewedAt) || 0,
+    reviewCount: Math.max(0, Number(record.reviewCount) || 0),
+  };
+}
+
+function loadListeningMistakes() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(LISTENING_MISTAKE_STORAGE_KEY) || "[]");
+    if (!Array.isArray(saved)) return [];
+    return saved
+      .map(normaliseListeningMistake)
+      .filter((item) => item.id && item.title)
+      .sort((a, b) => b.createdAt - a.createdAt);
+  } catch {
+    return [];
+  }
+}
+
+function saveListeningMistakes() {
+  try {
+    window.localStorage.setItem(LISTENING_MISTAKE_STORAGE_KEY, JSON.stringify(state.listeningMistakes));
+    return true;
+  } catch {
+    listeningMistakeFormStatus.textContent = "保存失败：浏览器本地存储不可用。";
+    return false;
+  }
+}
+
+function mergeListeningMistakes(primary = [], secondary = []) {
+  const merged = new Map();
+  [...secondary, ...primary].forEach((record) => {
+    const item = normaliseListeningMistake(record);
+    if (!item.id || !item.title) return;
+    const existing = merged.get(item.id);
+    if (!existing || item.updatedAt >= existing.updatedAt) merged.set(item.id, item);
+  });
+  return [...merged.values()].sort((a, b) => b.createdAt - a.createdAt);
+}
+
+function createListeningMistakeId() {
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+  return `listening-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function formatListeningMistakeDate(timestamp) {
+  if (!timestamp) return "尚未复习";
+  return new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(timestamp));
+}
+
+function renderListeningMistakeText(text, fallback = "未填写") {
+  if (!text) return `<span class="listening-mistake-placeholder">${escapeHtml(fallback)}</span>`;
+  return escapeHtml(text).replace(/\n/g, "<br>");
+}
+
+function getFilteredListeningMistakes() {
+  const query = normaliseKey(state.listeningMistakeQuery || "");
+  return state.listeningMistakes.filter((item) => {
+    const matchesQuery = !query || [item.title, item.note]
+      .map((value) => normaliseKey(value || ""))
+      .some((value) => value.includes(query));
+    const matchesError = state.listeningMistakeErrorFilter === "all"
+      || item.errorType === state.listeningMistakeErrorFilter;
+    const matchesStatus = state.listeningMistakeStatusFilter === "all"
+      || item.status === state.listeningMistakeStatusFilter;
+    const matchesMethod = state.listeningMistakeMethodFilter === "all"
+      || item.reviewMethod === state.listeningMistakeMethodFilter;
+    return matchesQuery && matchesError && matchesStatus && matchesMethod;
+  });
+}
+
+function updateListeningMistakeNavVisibility() {
+  const listeningModeActive = getSelectedMode() === "listening";
+  listeningMistakeNavButton.hidden = !listeningModeActive;
+  if (!listeningModeActive && state.activeSurface === "listeningMistakes") {
+    setPrimarySurface("quiz");
+  }
+}
+
+function renderListeningMistakeSummary() {
+  const total = state.listeningMistakes.length;
+  const reviewing = state.listeningMistakes.filter((item) => item.status === "reviewing").length;
+  const mastered = state.listeningMistakes.filter((item) => item.status === "mastered").length;
+  const reviews = state.listeningMistakes.reduce((sum, item) => sum + item.reviewCount, 0);
+  listeningMistakeTotal.textContent = String(total);
+  listeningMistakeReviewing.textContent = String(reviewing);
+  listeningMistakeMastered.textContent = String(mastered);
+  listeningMistakeReviews.textContent = String(reviews);
+  listeningMistakeNavCount.textContent = String(total);
+}
+
+function renderListeningMistakeList() {
+  const items = getFilteredListeningMistakes();
+  if (!items.length) {
+    listeningMistakeList.innerHTML = `
+      <div class="listening-mistake-list-empty">
+        <strong>${state.listeningMistakes.length ? "没有符合筛选条件的错题" : "还没有听力错题"}</strong>
+        <span>${state.listeningMistakes.length ? "调整筛选条件后再试。" : "上传截图，OCR 后只保存文字。"}</span>
+      </div>
+    `;
+    return;
+  }
+
+  listeningMistakeList.innerHTML = items
+    .map((item) => `
+      <button
+        class="listening-mistake-list-item${item.id === state.listeningMistakeSelectedId ? " active" : ""}"
+        type="button"
+        data-listening-mistake-open="${encodeURIComponent(item.id)}"
+      >
+        <span class="listening-mistake-list-index">${String(state.listeningMistakes.indexOf(item) + 1).padStart(2, "0")}</span>
+        <span class="listening-mistake-list-copy">
+          <strong>${escapeHtml(item.title)}</strong>
+          <small>${escapeHtml(item.note || "暂无备注")}</small>
+          <span>
+            <em>${escapeHtml(listeningMistakeErrorLabels[item.errorType])}</em>
+            <em class="status-${item.status}">${escapeHtml(listeningMistakeStatusLabels[item.status])}</em>
+          </span>
+        </span>
+        <time datetime="${new Date(item.createdAt).toISOString()}">${formatListeningMistakeDate(item.createdAt)}</time>
+      </button>
+    `)
+    .join("");
+}
+
+function renderListeningMistakeDetail() {
+  const item = state.listeningMistakes.find((entry) => entry.id === state.listeningMistakeSelectedId);
+  if (!item) {
+    listeningMistakeDetail.innerHTML = `
+      <div class="listening-mistake-empty">
+        <span aria-hidden="true">01</span>
+        <h3>选择一条错题</h3>
+        <p>查看识别文字、错因和复习记录。</p>
+      </div>
+    `;
+    return;
+  }
+
+  listeningMistakeDetail.innerHTML = `
+    <header class="listening-mistake-detail-header">
+      <div>
+        <p class="eyebrow">${escapeHtml(listeningMistakeErrorLabels[item.errorType])}</p>
+        <h3>${escapeHtml(item.title)}</h3>
+      </div>
+      <div class="listening-mistake-detail-actions">
+        <button class="secondary-button" type="button" data-listening-mistake-edit="${encodeURIComponent(item.id)}">编辑</button>
+        <button class="listening-mistake-delete" type="button" data-listening-mistake-delete="${encodeURIComponent(item.id)}">删除</button>
+      </div>
+    </header>
+
+    <div class="listening-mistake-detail-meta">
+      <label>
+        <span>掌握状态</span>
+        <select data-listening-mistake-status="${encodeURIComponent(item.id)}">
+          ${Object.entries(listeningMistakeStatusLabels).map(([value, label]) =>
+            `<option value="${value}"${item.status === value ? " selected" : ""}>${label}</option>`).join("")}
+        </select>
+      </label>
+      <div><span>复习方式</span><strong>${escapeHtml(listeningMistakeMethodLabels[item.reviewMethod])}</strong></div>
+      <div><span>建立日期</span><strong>${formatListeningMistakeDate(item.createdAt)}</strong></div>
+      <div><span>最近复习</span><strong>${formatListeningMistakeDate(item.lastReviewedAt)}</strong></div>
+      <div><span>复习次数</span><strong>${item.reviewCount} 次</strong></div>
+    </div>
+
+    <section class="listening-mistake-detail-section">
+      <h4>题目文字</h4>
+      <p>${renderListeningMistakeText(item.questionText, "没有题目文字")}</p>
+    </section>
+
+    <section class="listening-mistake-detail-section">
+      <div class="listening-mistake-detail-section-title">
+        <h4>Transcript</h4>
+        <button class="secondary-button" type="button" data-listening-mistake-speak="${encodeURIComponent(item.id)}"${item.transcriptText ? "" : " disabled"}>
+          <span class="button-icon" aria-hidden="true">♪</span>
+          朗读复习
+        </button>
+      </div>
+      <p>${renderListeningMistakeText(item.transcriptText, "没有 transcript 文本")}</p>
+    </section>
+
+    <section class="listening-mistake-detail-section listening-mistake-note-section">
+      <h4>简短备注</h4>
+      <p>${renderListeningMistakeText(item.note, "没有备注")}</p>
+    </section>
+
+    <footer class="listening-mistake-review-footer">
+      <div>
+        <strong>完成一次复习</strong>
+        <span>自动更新日期，并将复习次数加 1。</span>
+      </div>
+      <button class="primary-button" type="button" data-listening-mistake-review="${encodeURIComponent(item.id)}">
+        <span class="button-icon" aria-hidden="true">✓</span>
+        完成一次复习
+      </button>
+    </footer>
+  `;
+}
+
+function renderListeningMistakeLibrary() {
+  renderListeningMistakeSummary();
+  renderListeningMistakeList();
+  renderListeningMistakeDetail();
+}
+
+function openListeningMistakeForm(item = null) {
+  listeningMistakeForm.reset();
+  listeningMistakeId.value = item?.id || "";
+  listeningMistakeTitle.value = item?.title || "";
+  listeningMistakeErrorType.value = item?.errorType || "word";
+  listeningMistakeStatus.value = item?.status || "unmastered";
+  listeningMistakeMethod.value = item?.reviewMethod || "relisten";
+  listeningQuestionText.value = item?.questionText || "";
+  listeningTranscriptText.value = item?.transcriptText || "";
+  listeningMistakeNote.value = item?.note || "";
+  listeningQuestionImage.value = "";
+  listeningTranscriptImage.value = "";
+  listeningQuestionOcrStatus.textContent = "";
+  listeningTranscriptOcrStatus.textContent = "";
+  listeningMistakeFormStatus.textContent = "";
+  listeningMistakeDialogTitle.textContent = item ? "编辑听力错题" : "新建听力错题";
+  listeningMistakeDialog.hidden = false;
+  document.body.classList.add("listening-mistake-dialog-open");
+  listeningMistakeTitle.focus();
+}
+
+function closeListeningMistakeForm() {
+  if (listeningMistakeDialog.hidden) return;
+  listeningMistakeDialog.hidden = true;
+  document.body.classList.remove("listening-mistake-dialog-open");
+  addListeningMistakeButton.focus();
+}
+
+function submitListeningMistakeForm(event) {
+  event.preventDefault();
+  const title = listeningMistakeTitle.value.trim();
+  if (!title) {
+    listeningMistakeFormStatus.textContent = "请填写来源标题。";
+    listeningMistakeTitle.focus();
+    return;
+  }
+
+  const existing = state.listeningMistakes.find((item) => item.id === listeningMistakeId.value);
+  const now = Date.now();
+  const record = normaliseListeningMistake({
+    id: existing?.id || createListeningMistakeId(),
+    title,
+    errorType: listeningMistakeErrorType.value,
+    status: listeningMistakeStatus.value,
+    reviewMethod: listeningMistakeMethod.value,
+    questionText: listeningQuestionText.value,
+    transcriptText: listeningTranscriptText.value,
+    note: listeningMistakeNote.value,
+    createdAt: existing?.createdAt || now,
+    updatedAt: now,
+    lastReviewedAt: existing?.lastReviewedAt || 0,
+    reviewCount: existing?.reviewCount || 0,
+  });
+
+  if (existing) {
+    state.listeningMistakes = state.listeningMistakes.map((item) => item.id === record.id ? record : item);
+  } else {
+    state.listeningMistakes.unshift(record);
+  }
+  state.listeningMistakeSelectedId = record.id;
+  if (!saveListeningMistakes()) return;
+  void saveTraining(false);
+  closeListeningMistakeForm();
+  renderListeningMistakeLibrary();
+}
+
+function updateListeningMistakeStatus(id, status) {
+  if (!listeningMistakeStatusLabels[status]) return;
+  const item = state.listeningMistakes.find((entry) => entry.id === id);
+  if (!item) return;
+  item.status = status;
+  item.updatedAt = Date.now();
+  saveListeningMistakes();
+  void saveTraining(false);
+  renderListeningMistakeLibrary();
+}
+
+function completeListeningMistakeReview(id) {
+  const item = state.listeningMistakes.find((entry) => entry.id === id);
+  if (!item) return;
+  item.lastReviewedAt = Date.now();
+  item.reviewCount += 1;
+  item.updatedAt = Date.now();
+  saveListeningMistakes();
+  void saveTraining(false);
+  renderListeningMistakeLibrary();
+}
+
+function deleteListeningMistake(id) {
+  const item = state.listeningMistakes.find((entry) => entry.id === id);
+  if (!item || !window.confirm(`确定删除“${item.title}”吗？此操作无法撤销。`)) return;
+  state.listeningMistakes = state.listeningMistakes.filter((entry) => entry.id !== id);
+  state.listeningMistakeSelectedId = state.listeningMistakes[0]?.id || "";
+  saveListeningMistakes();
+  void saveTraining(false);
+  renderListeningMistakeLibrary();
+}
+
+function loadListeningOcrScript() {
+  if (window.Tesseract?.createWorker) return Promise.resolve(window.Tesseract);
+  if (listeningOcrScriptPromise) return listeningOcrScriptPromise;
+
+  listeningOcrScriptPromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = TESSERACT_SCRIPT_URL;
+    script.async = true;
+    script.onload = () => window.Tesseract?.createWorker
+      ? resolve(window.Tesseract)
+      : reject(new Error("OCR 组件加载不完整"));
+    script.onerror = () => reject(new Error("OCR 组件下载失败"));
+    document.head.append(script);
+  }).catch((error) => {
+    listeningOcrScriptPromise = null;
+    throw error;
+  });
+
+  return listeningOcrScriptPromise;
+}
+
+function updateListeningOcrProgress(message) {
+  if (!listeningOcrStatusTarget || !message) return;
+  const stageLabels = {
+    "loading tesseract core": "加载识别核心",
+    "initializing tesseract": "初始化识别器",
+    "loading language traineddata": "加载英文模型",
+    "initializing api": "准备识别",
+    "recognizing text": "识别文字",
+  };
+  const label = stageLabels[message.status] || "处理截图";
+  const progress = Number.isFinite(message.progress) ? ` ${Math.round(message.progress * 100)}%` : "";
+  listeningOcrStatusTarget.textContent = `${label}${progress}`;
+}
+
+async function getListeningOcrWorker() {
+  window.clearTimeout(listeningOcrIdleTimer);
+  if (listeningOcrWorkerPromise) return listeningOcrWorkerPromise;
+  listeningOcrWorkerPromise = loadListeningOcrScript()
+    .then((Tesseract) => Tesseract.createWorker("eng", 1, {
+      cacheMethod: "none",
+      langPath: "https://tessdata.projectnaptha.com/4.0.0_fast",
+      logger: updateListeningOcrProgress,
+    }))
+    .catch((error) => {
+      listeningOcrWorkerPromise = null;
+      throw error;
+    });
+  return listeningOcrWorkerPromise;
+}
+
+function scheduleListeningOcrWorkerRelease() {
+  window.clearTimeout(listeningOcrIdleTimer);
+  listeningOcrIdleTimer = window.setTimeout(async () => {
+    const workerPromise = listeningOcrWorkerPromise;
+    listeningOcrWorkerPromise = null;
+    if (!workerPromise) return;
+    try {
+      const worker = await workerPromise;
+      await worker.terminate();
+    } catch {}
+  }, 45_000);
+}
+
+function cleanListeningOcrText(text) {
+  return String(text || "")
+    .replace(/\r/g, "")
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function recogniseListeningScreenshot(file, target, status, input) {
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    status.textContent = "请选择 PNG、JPG、WebP 或 BMP 图片。";
+    input.value = "";
+    return;
+  }
+  if (file.size > 15 * 1024 * 1024) {
+    status.textContent = "图片超过 15MB，请先裁剪后再识别。";
+    input.value = "";
+    return;
+  }
+
+  const run = async () => {
+    listeningOcrStatusTarget = status;
+    status.textContent = "准备本地 OCR…";
+    input.disabled = true;
+    try {
+      const worker = await getListeningOcrWorker();
+      const result = await worker.recognize(file);
+      const text = cleanListeningOcrText(result?.data?.text);
+      if (!text) throw new Error("没有识别到文字");
+      target.value = text;
+      status.textContent = "识别完成。请检查文字；原图不会保存。";
+    } catch (error) {
+      status.textContent = `${error?.message || "OCR 失败"}。你仍可手动填写文字。`;
+    } finally {
+      input.disabled = false;
+      input.value = "";
+      listeningOcrStatusTarget = null;
+      scheduleListeningOcrWorkerRelease();
+    }
+  };
+
+  const task = listeningOcrQueue.then(run, run);
+  listeningOcrQueue = task.catch(() => {});
+}
+
+function speakListeningMistakeTranscript(id) {
+  const item = state.listeningMistakes.find((entry) => entry.id === id);
+  if (!item?.transcriptText) return;
+  stopRoundSpeech();
+  void speak(item.transcriptText, { kind: "passage" });
 }
 
 function createEmptyBook() {
@@ -918,6 +2210,44 @@ function saveModeInputs() {
   return true;
 }
 
+function normaliseShortcutSettings(settings) {
+  const validCodes = Object.keys(shortcutLabels);
+  const next = { ...defaultShortcutSettings };
+  Object.entries(settings || {}).forEach(([action, code]) => {
+    if (action in next && validCodes.includes(code)) next[action] = code;
+  });
+
+  if (next.advance === next.replay) next.replay = defaultShortcutSettings.replay;
+  if (next.favorite === next.advance) next.favorite = defaultShortcutSettings.favorite;
+  if (next.favorite === next.replay) next.favorite = defaultShortcutSettings.favorite;
+  if (next.reveal === next.advance) next.reveal = defaultShortcutSettings.reveal;
+  if (next.reveal === next.replay) next.reveal = defaultShortcutSettings.reveal;
+  if (next.reveal === next.favorite) next.reveal = defaultShortcutSettings.reveal;
+  if (next.retry === next.advance) next.retry = defaultShortcutSettings.retry;
+  if (next.retry === next.replay) next.retry = defaultShortcutSettings.retry;
+  if (next.retry === next.favorite) next.retry = defaultShortcutSettings.retry;
+  if (next.retry === next.reveal) next.retry = defaultShortcutSettings.retry;
+  return next;
+}
+
+function loadShortcutSettings() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(SHORTCUT_STORAGE_KEY) || "{}");
+    return normaliseShortcutSettings(saved);
+  } catch {
+    return { ...defaultShortcutSettings };
+  }
+}
+
+function saveShortcutSettings() {
+  try {
+    window.localStorage.setItem(SHORTCUT_STORAGE_KEY, JSON.stringify(state.shortcutSettings));
+  } catch {
+    return false;
+  }
+  return true;
+}
+
 function loadSavedSessions() {
   try {
     const saved = JSON.parse(window.localStorage.getItem(TRAINING_SNAPSHOT_STORAGE_KEY) || "{}");
@@ -929,6 +2259,74 @@ function loadSavedSessions() {
   } catch {
     return createEmptyBook();
   }
+}
+
+function createDefaultWritingStats() {
+  return {
+    dayKey: "",
+    packsCompletedToday: 0,
+    slotAttempts: 0,
+    slotCorrect: 0,
+    dangerErrors: 0,
+    attempts: 0,
+    correct: 0,
+    totalSeconds: 0,
+    totalWords: 0,
+    grammarErrors: 0,
+    spellingErrors: 0,
+    phraseErrors: 0,
+    repeatedErrors: {},
+    lastPracticedAt: 0,
+  };
+}
+
+function loadWritingMistakeBook() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(WRITING_MISTAKE_STORAGE_KEY) || "{}");
+    return saved && typeof saved === "object" ? saved : {};
+  } catch {
+    return {};
+  }
+}
+
+function loadWritingFavoriteBook() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(WRITING_FAVORITE_STORAGE_KEY) || "{}");
+    return saved && typeof saved === "object" ? saved : {};
+  } catch {
+    return {};
+  }
+}
+
+function loadWritingStats() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(WRITING_STATS_STORAGE_KEY) || "{}");
+    return {
+      ...createDefaultWritingStats(),
+      ...(saved && typeof saved === "object" ? saved : {}),
+      repeatedErrors: saved?.repeatedErrors && typeof saved.repeatedErrors === "object" ? saved.repeatedErrors : {},
+    };
+  } catch {
+    return createDefaultWritingStats();
+  }
+}
+
+function saveWritingMistakeBook() {
+  try {
+    window.localStorage.setItem(WRITING_MISTAKE_STORAGE_KEY, JSON.stringify(state.writingMistakeBook));
+  } catch {}
+}
+
+function saveWritingFavoriteBook() {
+  try {
+    window.localStorage.setItem(WRITING_FAVORITE_STORAGE_KEY, JSON.stringify(state.writingFavoriteBook));
+  } catch {}
+}
+
+function saveWritingStats() {
+  try {
+    window.localStorage.setItem(WRITING_STATS_STORAGE_KEY, JSON.stringify(state.writingStats));
+  } catch {}
 }
 
 function captureCurrentSession() {
@@ -959,7 +2357,14 @@ function buildTrainingSnapshot() {
     favoriteBook: state.favoriteBook,
     correctBook: state.correctBook,
     userNotes: state.userNotes,
+    shortcutSettings: state.shortcutSettings,
     sessions: state.savedSessions,
+    writingMistakeBook: state.writingMistakeBook,
+    writingFavoriteBook: state.writingFavoriteBook,
+    writingStats: state.writingStats,
+    writingPackId: state.writingPackId,
+    writingPhase: state.writingPhase,
+    listeningMistakes: state.listeningMistakes,
   };
 }
 
@@ -973,7 +2378,39 @@ function applyTrainingSnapshot(snapshot) {
     snapshot.userNotes && typeof snapshot.userNotes === "object"
       ? { ...snapshot.userNotes, ...state.userNotes }
       : state.userNotes;
+  state.shortcutSettings = normaliseShortcutSettings({
+    ...state.shortcutSettings,
+    ...(snapshot.shortcutSettings || {}),
+  });
   state.savedSessions = { ...createEmptyBook(), ...(snapshot.sessions || {}) };
+  state.writingPackId =
+    typeof snapshot.writingPackId === "string" && writingPatternPacks.some((pack) => pack.id === snapshot.writingPackId)
+      ? snapshot.writingPackId
+      : state.writingPackId;
+  state.writingPhase =
+    typeof snapshot.writingPhase === "string" && writingPhaseLabels[snapshot.writingPhase]
+      ? snapshot.writingPhase
+      : state.writingPhase;
+  state.writingMistakeBook =
+    snapshot.writingMistakeBook && typeof snapshot.writingMistakeBook === "object"
+      ? { ...state.writingMistakeBook, ...snapshot.writingMistakeBook }
+      : state.writingMistakeBook;
+  state.writingFavoriteBook =
+    snapshot.writingFavoriteBook && typeof snapshot.writingFavoriteBook === "object"
+      ? { ...snapshot.writingFavoriteBook, ...state.writingFavoriteBook }
+      : state.writingFavoriteBook;
+  state.writingStats =
+    snapshot.writingStats && typeof snapshot.writingStats === "object"
+      ? {
+          ...state.writingStats,
+          ...snapshot.writingStats,
+          repeatedErrors: {
+            ...(state.writingStats?.repeatedErrors || {}),
+            ...(snapshot.writingStats.repeatedErrors || {}),
+          },
+        }
+      : state.writingStats;
+  state.listeningMistakes = mergeListeningMistakes(state.listeningMistakes, snapshot.listeningMistakes);
   state.bookMode = bookModes.includes(snapshot.bookMode) ? snapshot.bookMode : state.bookMode;
 
   const nextMode = bookModes.includes(snapshot.mode) ? snapshot.mode : getSelectedMode();
@@ -987,6 +2424,18 @@ function applyTrainingSnapshot(snapshot) {
   saveFavoriteBook();
   saveCorrectBook();
   saveUserNotes();
+  saveShortcutSettings();
+  saveWritingMistakeBook();
+  saveWritingFavoriteBook();
+  saveWritingStats();
+  saveListeningMistakes();
+  renderShortcutSettings();
+  populateWritingPackSelect();
+  setWritingPhase(state.writingPhase);
+  renderWritingStats();
+  renderWritingMistakeBook();
+  state.listeningMistakeSelectedId = state.listeningMistakes[0]?.id || "";
+  renderListeningMistakeLibrary();
   return true;
 }
 
@@ -1124,6 +2573,7 @@ async function restoreTraining() {
     saveStatus.textContent = "已恢复上次保存的训练。";
     restoreSavedSessionForMode(state.mode, false);
   }
+  updateListeningMistakeNavVisibility();
 }
 
 function restoreSavedSessionForMode(mode, announce = true) {
@@ -1148,7 +2598,7 @@ function restoreSavedSessionForMode(mode, announce = true) {
     const current = state.deck[state.currentIndex];
     const lastResult = [...state.results].reverse().find((result) => normaliseKey(result.word) === normaliseKey(current.word));
     if (lastResult) {
-      renderAnswerReview(current, lastResult.response, lastResult.correct, lastResult.mode);
+      renderAnswerReview(current, lastResult.response, lastResult.correct, lastResult.mode, lastResult.revealed);
       nextButton.disabled = false;
       nextButton.innerHTML = state.retryCurrent
         ? '<span class="button-icon" aria-hidden="true">↻</span>再写一次'
@@ -1179,6 +2629,7 @@ function switchModeInput(nextMode, resetSurface = true) {
   wordInput.value = state.modeInputs[nextMode] || "";
   saveModeInputs();
   updateSetupControls();
+  updateListeningMistakeNavVisibility();
   if (resetSurface) restoreSavedSessionForMode(nextMode);
 }
 
@@ -1313,6 +2764,7 @@ function removeCorrectBookItem(mode, key, shouldRenderCorrectAnswers = true) {
 }
 
 function renderFavoriteBook() {
+  const query = normaliseKey(state.bookSearch || "");
   bookTabs.forEach((button) => {
     const active = button.dataset.bookTab === state.bookMode;
     button.classList.toggle("active", active);
@@ -1327,13 +2779,28 @@ function renderFavoriteBook() {
   const entries = Object.values(state.favoriteBook[state.bookMode] || {}).sort(
     (a, b) => (b.missedAt || 0) - (a.missedAt || 0),
   );
+  const visibleEntries = query
+    ? entries.filter((item) =>
+        [item.word, item.response, item.meaningZh, item.meaningEn, item.example]
+          .map((value) => normaliseKey(String(value || "")))
+          .some((value) => value.includes(query)),
+      )
+    : entries;
 
   bookReviewButton.disabled = entries.length === 0;
   bookReviewButton.title = entries.length
-    ? `复习${getModeLabel(state.bookMode)}收藏本里的 ${entries.length} 个错词`
+    ? `逐词复习${getModeLabel(state.bookMode)}收藏本里的 ${entries.length} 个单词`
     : `${getModeLabel(state.bookMode)}暂无错词`;
   bookReviewButton.setAttribute("aria-label", bookReviewButton.title);
-  bookReviewButton.innerHTML = `<span class="button-icon" aria-hidden="true">↻</span>复习${
+  bookReviewButton.innerHTML = `<span class="button-icon" aria-hidden="true">↗</span>逐词${
+    entries.length ? ` ${entries.length}` : ""
+  }`;
+  bookListReviewButton.disabled = entries.length === 0;
+  bookListReviewButton.title = entries.length
+    ? `排序复习${getModeLabel(state.bookMode)}收藏本里的 ${entries.length} 个单词`
+    : `${getModeLabel(state.bookMode)}暂无错词`;
+  bookListReviewButton.setAttribute("aria-label", bookListReviewButton.title);
+  bookListReviewButton.innerHTML = `<span class="button-icon" aria-hidden="true">≡</span>排序${
     entries.length ? ` ${entries.length}` : ""
   }`;
 
@@ -1342,7 +2809,12 @@ function renderFavoriteBook() {
     return;
   }
 
-  bookList.innerHTML = entries
+  if (!visibleEntries.length) {
+    bookList.innerHTML = `<p class="book-empty">没有找到“${escapeHtml(state.bookSearch)}”相关的收藏词。</p>`;
+    return;
+  }
+
+  bookList.innerHTML = visibleEntries
     .map(
       (item) => {
         const key = escapeHtml(normaliseKey(item.word));
@@ -1462,7 +2934,7 @@ async function speakWordDetail(kind) {
   window.speechSynthesis?.cancel();
   wordDetailStatus.textContent = kind === "example" ? "正在朗读例句" : "正在朗读单词";
 
-  const spoken = await speak(text);
+  const spoken = await speak(text, { kind: kind === "example" ? "sentence" : "word" });
   wordDetailStatus.textContent = spoken ? "朗读完成。" : "朗读失败，请检查语音设置。";
 }
 
@@ -2015,19 +3487,59 @@ async function fetchGeneratedNote(word) {
   }
 }
 
+function loadSpeechSettings() {
+  const defaults = {
+    voiceValue: "",
+    rate: "0.95",
+    style: "ielts",
+    intonation: "0.75",
+  };
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(SPEECH_SETTINGS_STORAGE_KEY) || "{}");
+    return { ...defaults, ...(saved && typeof saved === "object" ? saved : {}) };
+  } catch {
+    return defaults;
+  }
+}
+
+function saveSpeechSettings() {
+  try {
+    window.localStorage.setItem(
+      SPEECH_SETTINGS_STORAGE_KEY,
+      JSON.stringify({
+        voiceValue: voiceSelect.value,
+        rate: rateControl.value,
+        style: speechStyle.value,
+        intonation: intonationControl.value,
+      }),
+    );
+  } catch {}
+}
+
+function applySpeechSettings() {
+  const settings = loadSpeechSettings();
+  rateControl.value = String(Math.max(0.65, Math.min(1.1, Number(settings.rate) || 0.95)));
+  speechStyle.value = ["ielts", "clear", "original"].includes(settings.style) ? settings.style : "ielts";
+  intonationControl.value = String(Math.max(0.25, Math.min(1, Number(settings.intonation) || 0.75)));
+  return settings;
+}
+
 function preferredVoiceScore(voice) {
   const name = `${voice.name} ${voice.lang} ${voice.source || ""}`.toLocaleLowerCase("en-GB");
   let score = 0;
   if (voice.lang.toLocaleLowerCase("en-GB").startsWith("en-gb")) score += 100;
-  if (name.includes("natural")) score += 42;
-  if (name.includes("neural")) score += 34;
-  if (name.includes("online")) score += 22;
-  if (name.includes("google uk")) score += 18;
-  if (name.includes("google")) score += 12;
-  if (name.includes("microsoft")) score += 10;
-  if (name.includes("browser")) score += 8;
-  if (name.includes("sonia") || name.includes("ryan") || name.includes("libby")) score += 5;
-  if (name.includes("hazel") || name.includes("zira")) score -= 6;
+  if (name.includes("natural")) score += 58;
+  if (name.includes("neural")) score += 48;
+  if (name.includes("online")) score += 30;
+  if (voice.localService === false) score += 24;
+  if (name.includes("google uk")) score += 28;
+  if (name.includes("google")) score += 16;
+  if (name.includes("microsoft")) score += 12;
+  if (name.includes("sonia") || name.includes("libby")) score += 18;
+  if (name.includes("ryan")) score += 16;
+  if (name.includes("george")) score += 8;
+  if (name.includes("hazel") || name.includes("zira") || name.includes("desktop")) score -= 18;
+  if (voice.source === "server") score -= 12;
   return score;
 }
 
@@ -2043,6 +3555,7 @@ async function loadVoices() {
     name: voice.name,
     lang: voice.lang,
     source: "browser",
+    localService: voice.localService,
     nativeVoice: voice,
     value: `browser:${voice.name}`,
   }));
@@ -2071,9 +3584,15 @@ async function loadVoices() {
   britishVoices.forEach((voice) => {
     const option = document.createElement("option");
     option.value = voice.value;
-    option.textContent = `${voice.name} (${voice.lang}, ${voiceSourceLabel(voice)})`;
+    const quality = preferredVoiceScore(voice) >= 145 ? "自然" : "基础";
+    option.textContent = `${voice.name} · ${quality}英式`;
     voiceSelect.append(option);
   });
+
+  const savedVoice = loadSpeechSettings().voiceValue;
+  if (savedVoice && [...voiceSelect.options].some((option) => option.value === savedVoice)) {
+    voiceSelect.value = savedVoice;
+  }
 
   updateVoiceStatus(getSelectedVoice());
 }
@@ -2111,6 +3630,7 @@ function getSelectedVoice() {
         name: voice.name,
         lang: voice.lang,
         source: "browser",
+        localService: voice.localService,
         value: voiceSelect.value,
         nativeVoice: voice,
       }
@@ -2125,47 +3645,144 @@ function updateVoiceStatus(voice) {
   if (!voice) {
     voiceStatus.textContent = "未识别英式语音";
     voiceStatus.title = "当前浏览器没有提供 en-GB 语音";
-    voiceStatus.className = "voice-pill warn";
+    voiceStatus.className = "voice-pill settings-voice-status warn";
     return;
   }
 
-  const natural = /natural|neural|online|google/i.test(voice.name);
-  voiceStatus.textContent = natural ? "自然英式语音" : "英式语音";
+  const natural = preferredVoiceScore(voice) >= 145;
+  const styleLabel = speechStyle.value === "clear" ? "清晰慢速" : speechStyle.value === "original" ? "原声音色" : "IELTS 语调";
+  voiceStatus.textContent = natural ? `自然英式 · ${styleLabel}` : `基础英式 · ${styleLabel}`;
   voiceStatus.title = `${voice.name} (${voice.lang}, ${voiceSourceLabel(voice)})`;
-  voiceStatus.className = "voice-pill ready";
+  voiceStatus.className = "voice-pill settings-voice-status ready";
 }
 
-function speak(text) {
+function clampSpeechValue(value, minimum, maximum) {
+  return Math.max(minimum, Math.min(maximum, value));
+}
+
+function detectSpeechKind(text, requestedKind = "auto") {
+  if (["word", "sentence", "passage"].includes(requestedKind)) return requestedKind;
+  const cleanText = String(text || "").trim();
+  const wordCount = cleanText.split(/\s+/).filter(Boolean).length;
+  const sentenceCount = (cleanText.match(/[.!?]+(?:\s|$)/g) || []).length;
+  if (wordCount <= 3 && !/[.!?]/.test(cleanText)) return "word";
+  if (sentenceCount > 1 || cleanText.length > 180 || /\n/.test(cleanText)) return "passage";
+  return "sentence";
+}
+
+function prepareSpeechText(text, kind) {
+  let prepared = String(text || "")
+    .replace(/\r/g, "")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\s*\n+\s*/g, (match) => (/\n{2,}/.test(match) ? ". " : " "))
+    .replace(/\.{2,}/g, ".")
+    .trim();
+  if (kind !== "word" && prepared && !/[.!?]["']?$/.test(prepared)) prepared += ".";
+  return prepared;
+}
+
+function getSpeechProfile(text, options = {}) {
+  const kind = detectSpeechKind(text, options.kind);
+  const style = ["ielts", "clear", "original"].includes(speechStyle.value) ? speechStyle.value : "ielts";
+  const baseRate = clampSpeechValue(Number(rateControl.value) || 0.95, 0.65, 1.1);
+  const intonation = clampSpeechValue(Number(intonationControl.value) || 0.75, 0.25, 1);
+  const kindRate = kind === "word" ? 0.9 : kind === "passage" ? 0.98 : 1;
+
+  if (style === "original") {
+    return { kind, style, rate: baseRate, pitch: 1, intonation: 0, pause: 90 };
+  }
+  if (style === "clear") {
+    return {
+      kind,
+      style,
+      rate: clampSpeechValue(baseRate * kindRate * 0.9, 0.6, 1.05),
+      pitch: 0.99,
+      intonation: intonation * 0.45,
+      pause: kind === "passage" ? 230 : 140,
+    };
+  }
+  return {
+    kind,
+    style,
+    rate: clampSpeechValue(baseRate * kindRate, 0.62, 1.12),
+    pitch: kind === "word" ? 1 : 1.01,
+    intonation,
+    pause: kind === "passage" ? 155 : 100,
+  };
+}
+
+function splitSpeechUnits(text, profile) {
+  if (profile.kind !== "passage") return [text];
+  const sentences = text.match(/[^.!?]+(?:[.!?]+["']?|$)/g)?.map((item) => item.trim()).filter(Boolean) || [];
+  return sentences.length ? sentences : [text];
+}
+
+function getSpeechUnitProsody(unit, index, total, profile) {
+  if (profile.style === "original") return { rate: profile.rate, pitch: profile.pitch };
+  const isQuestion = /\?["']?$/.test(unit);
+  const isExclamation = /!["']?$/.test(unit);
+  const isFinal = index === total - 1;
+  const lift = isQuestion ? 0.075 : isExclamation ? 0.035 : isFinal ? -0.025 : 0.012;
+  const pace = isQuestion ? 0.98 : isFinal ? 0.985 : index % 2 ? 1.008 : 1;
+  return {
+    rate: clampSpeechValue(profile.rate * pace, 0.6, 1.15),
+    pitch: clampSpeechValue(profile.pitch + lift * profile.intonation, 0.88, 1.12),
+  };
+}
+
+function speak(text, options = {}) {
   const voice = getSelectedVoice();
   if (!voice) return Promise.resolve(false);
+  const profile = getSpeechProfile(text, options);
+  const preparedText = prepareSpeechText(text, profile.kind);
+  if (!preparedText) return Promise.resolve(false);
 
   if (voice.source === "server") {
-    return speakWithServerVoice(text, voice);
+    return speakWithServerVoice(preparedText, voice, profile);
   }
 
-  return speakWithBrowserVoice(text, voice);
+  return speakWithBrowserVoice(preparedText, voice, profile);
 }
 
-function speakWithBrowserVoice(text, selectedVoice) {
+function speakBrowserUnit(text, selectedVoice, prosody) {
   return new Promise((resolve) => {
-    if (!("speechSynthesis" in window)) {
-      resolve(false);
-      return;
-    }
-
     const utterance = new SpeechSynthesisUtterance(text);
+    let settled = false;
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeoutId);
+      resolve(result);
+    };
+    const timeoutId = window.setTimeout(
+      () => finish(false),
+      clampSpeechValue(text.length * 160, 4000, 30000),
+    );
     utterance.lang = "en-GB";
-    utterance.rate = Number(rateControl.value);
-    utterance.pitch = 0.98;
+    utterance.rate = prosody.rate;
+    utterance.pitch = prosody.pitch;
     utterance.volume = 1;
     utterance.voice = selectedVoice.nativeVoice;
-    utterance.onend = () => resolve(true);
-    utterance.onerror = () => resolve(false);
+    utterance.onend = () => finish(true);
+    utterance.onerror = () => finish(false);
     window.speechSynthesis.speak(utterance);
   });
 }
 
-function speakWithServerVoice(text, selectedVoice) {
+async function speakWithBrowserVoice(text, selectedVoice, profile) {
+  if (!("speechSynthesis" in window)) return false;
+  window.speechSynthesis.cancel();
+  const units = splitSpeechUnits(text, profile);
+  for (let index = 0; index < units.length; index += 1) {
+    const prosody = getSpeechUnitProsody(units[index], index, units.length, profile);
+    const spoken = await speakBrowserUnit(units[index], selectedVoice, prosody);
+    if (!spoken) return false;
+    if (index < units.length - 1) await wait(profile.pause);
+  }
+  return true;
+}
+
+function speakWithServerVoice(text, selectedVoice, profile) {
   return new Promise(async (resolve) => {
     if (!selectedVoice) {
       resolve(false);
@@ -2178,7 +3795,10 @@ function speakWithServerVoice(text, selectedVoice) {
       const params = new URLSearchParams({
         text,
         voice: selectedVoice.name,
-        rate: rateControl.value,
+        rate: String(profile.rate),
+        style: profile.style,
+        kind: profile.kind,
+        intonation: String(profile.intonation),
         cache: String(Date.now()),
       });
       const response = await fetch(`/tts?${params.toString()}`);
@@ -2207,6 +3827,20 @@ function speakWithServerVoice(text, selectedVoice) {
       resolve(false);
     }
   });
+}
+
+async function previewSpeechStyle() {
+  if (!getSelectedVoice() || speechPreviewButton.disabled) return;
+  stopCurrentAudio();
+  window.speechSynthesis?.cancel();
+  speechPreviewButton.disabled = true;
+  speechPreviewButton.innerHTML = '<span class="button-icon" aria-hidden="true">♪</span> 正在试听';
+  await speak(
+    "Good morning. Today, we'll examine how public transport has changed in British cities. Why has this shift happened? Let's look at the evidence.",
+    { kind: "passage" },
+  );
+  speechPreviewButton.disabled = false;
+  speechPreviewButton.innerHTML = '<span class="button-icon" aria-hidden="true">♪</span> 试听 IELTS 语调';
 }
 
 function stopCurrentAudio() {
@@ -2239,9 +3873,16 @@ async function speakCurrentRound(forceReplay = false) {
   window.speechSynthesis?.cancel();
 
   const spoken = await speakRoundText(current, runId);
-  if (state.speechRunId !== runId || state.answered) return;
+  if (state.speechRunId !== runId) return;
 
   state.isSpeaking = false;
+  if (state.answered) {
+    const lastResult = getLastResultForCurrent();
+    renderListeningState(state.retryCurrent ? "再写一次，直到正确" : lastResult?.correct ? "正确" : "答案已显示");
+    updateActionButtons();
+    return;
+  }
+
   renderListeningState(
     spoken
       ? state.mode === "dictation"
@@ -2257,19 +3898,45 @@ async function speakCurrentRound(forceReplay = false) {
 
 async function speakRoundText(current, runId) {
   if (state.mode === "reading") {
-    return speak(current.word);
+    return speak(current.word, { kind: "word" });
   }
 
   if (state.mode === "listening") {
-    const wordSpoken = await speak(current.word);
-    if (state.speechRunId !== runId || state.answered) return wordSpoken;
+    const wordSpoken = await speak(current.word, { kind: "word" });
+    if (state.speechRunId !== runId) return wordSpoken;
     await wait(420);
-    if (state.speechRunId !== runId || state.answered) return wordSpoken;
-    const exampleSpoken = await speak(current.example);
+    if (state.speechRunId !== runId) return wordSpoken;
+    const exampleSpoken = await speak(current.example, { kind: "sentence" });
     return wordSpoken && exampleSpoken;
   }
 
-  return speak(current.example);
+  return speak(current.example, { kind: "sentence" });
+}
+
+async function speakCurrentWord() {
+  const current = state.deck[state.currentIndex];
+  if (!current || state.isSpeaking) return;
+
+  const runId = state.speechRunId + 1;
+  state.speechRunId = runId;
+  state.isSpeaking = true;
+  renderListeningState("正在朗读单词");
+  listenButton.disabled = true;
+
+  stopCurrentAudio();
+  window.speechSynthesis?.cancel();
+
+  await speak(current.word, { kind: "word" });
+  if (state.speechRunId !== runId) return;
+
+  state.isSpeaking = false;
+  if (state.answered) {
+    const lastResult = getLastResultForCurrent();
+    renderListeningState(state.retryCurrent ? "再写一次，直到正确" : lastResult?.correct ? "正确" : "答案已显示");
+  } else {
+    renderListeningState(state.mode === "dictation" ? "请写出空格中的单词" : "请选择你听到的单词");
+  }
+  updateActionButtons();
 }
 
 function wait(ms) {
@@ -2453,14 +4120,16 @@ function renderListeningState(message) {
 function setAnswerDisabled(disabled) {
   answerInput.disabled = disabled;
   checkButton.disabled = disabled || !normaliseWord(answerInput.value);
+  revealAnswerButton.disabled = disabled || state.mode !== "dictation";
 }
 
 function updateActionButtons() {
   const hasCurrent = Boolean(state.deck[state.currentIndex]);
   const hasAnswer = Boolean(normaliseWord(answerInput.value));
-  listenButton.disabled = !hasCurrent || state.isSpeaking || state.answered;
+  listenButton.disabled = !hasCurrent || state.isSpeaking;
   checkButton.disabled =
     state.mode !== "dictation" || !hasCurrent || state.isSpeaking || state.answered || !hasAnswer;
+  revealAnswerButton.disabled = state.mode !== "dictation" || !hasCurrent || state.isSpeaking || state.answered;
   nextButton.disabled = !state.answered;
 }
 
@@ -2533,11 +4202,47 @@ function checkAnswer() {
   setAnswerDisabled(true);
 }
 
-function completeAnswer({ current, isCorrect, response, mode }) {
+function revealAnswer() {
+  if (state.answered || state.mode !== "dictation") return;
+
+  const current = state.deck[state.currentIndex];
+  if (!current) return;
+
+  const typedAnswer = normaliseWord(answerInput.value);
+  answerInput.value = current.word;
+  blankSentence.innerHTML = renderRevealedSentence(current.example, current.word);
+  answerInput.classList.remove("correct");
+  answerInput.classList.add("incorrect");
+
+  completeAnswer({
+    current,
+    isCorrect: false,
+    response: typedAnswer || "显示答案",
+    mode: "dictation",
+    revealed: true,
+  });
+
+  setAnswerDisabled(true);
+}
+
+function retryCurrentWord() {
+  if (!state.answered || !state.deck[state.currentIndex]) return;
+
+  state.retryCurrent = false;
+  renderRound();
+  if (autoSpeak.checked) {
+    speakCurrentRound(true);
+  } else {
+    renderListeningState("点击朗读重新练这个单词");
+  }
+  saveTraining(false);
+}
+
+function completeAnswer({ current, isCorrect, response, mode, revealed = false }) {
   state.answered = true;
-  state.retryCurrent = mode === "dictation" && !isCorrect;
+  state.retryCurrent = mode === "dictation" && !isCorrect && !revealed;
   stopRoundSpeech();
-  renderListeningState(state.retryCurrent ? "再写一次，直到正确" : isCorrect ? "正确" : "答案已显示");
+  renderListeningState(revealed ? "已显示答案" : state.retryCurrent ? "再写一次，直到正确" : isCorrect ? "正确" : "答案已显示");
 
   if (isCorrect) {
     state.score += 1;
@@ -2550,12 +4255,13 @@ function completeAnswer({ current, isCorrect, response, mode }) {
     response,
     correct: isCorrect,
     mode,
+    revealed,
   });
 
   updateFavoriteBook(current, mode, isCorrect, response);
   updateCorrectBook(current, mode, isCorrect, response);
   updateScoreBox();
-  renderAnswerReview(current, response, isCorrect, mode);
+  renderAnswerReview(current, response, isCorrect, mode, revealed);
   updateProgress();
   updateActionButtons();
   saveTraining(false);
@@ -2571,15 +4277,21 @@ function completeAnswer({ current, isCorrect, response, mode }) {
   }
 }
 
-function renderAnswerReview(current, response, isCorrect, mode) {
+function renderAnswerReview(current, response, isCorrect, mode, revealed = false) {
   const note = getWordNote(current);
   const word = escapeHtml(current.word);
   const rawKey = normaliseKey(current.word);
   const correctKey = escapeHtml(rawKey);
   const isFavorited = Boolean(state.favoriteBook[mode]?.[rawKey]);
   const favoriteTitle = isFavorited ? "移出收藏本" : "收藏到错题本";
+  const retryShortcutLabel = shortcutLabels[state.shortcutSettings.retry] || "F";
+  const retryButton = revealed
+    ? `<button class="correct-detail-button retry-current-button" type="button" data-retry-current-word title="再练一次这个词（${retryShortcutLabel}）" aria-label="再练一次 ${word}">再练 ${retryShortcutLabel}</button>`
+    : "";
   const reviewActions = `
     <div class="correct-item-actions review-word-actions" aria-label="${word} 操作">
+      ${retryButton}
+      <button class="correct-detail-button" type="button" data-speak-review-word title="朗读单词" aria-label="朗读 ${word}">读单词</button>
       <button class="correct-detail-button" type="button" data-open-word-detail data-detail-source="current" data-detail-mode="${mode}" data-detail-key="${correctKey}" title="查看详细" aria-label="查看 ${word} 的详细信息">详情</button>
       <button class="correct-icon-button favorite-toggle-button ${
         isFavorited ? "is-favorite" : ""
@@ -2595,7 +4307,9 @@ function renderAnswerReview(current, response, isCorrect, mode) {
   `;
   const responseText =
     mode === "dictation"
-      ? `你填写的是 ${escapeHtml(response)}。`
+      ? revealed
+        ? `你选择显示答案，正确单词是 ${escapeHtml(current.word)}。`
+        : `你填写的是 ${escapeHtml(response)}。`
       : mode === "reading"
         ? isCorrect
           ? "你选中了正确释义。"
@@ -2812,14 +4526,241 @@ function favoriteBookItemToEntry(item) {
   };
 }
 
-function startFavoriteBookReview() {
-  const entries = Object.values(state.favoriteBook[state.bookMode] || {})
+function getFavoriteReviewItems(mode = state.bookMode) {
+  return Object.values(state.favoriteBook[mode] || {})
     .filter((item) => item.word)
     .sort((a, b) => (b.missedAt || 0) - (a.missedAt || 0))
-    .map(favoriteBookItemToEntry)
-    .filter(hasCompletePracticeData);
+    .map((item) => {
+      const note = getWordNote(item);
+      return {
+        ...item,
+        meaningZh: item.meaningZh || note.zh || "",
+        meaningEn: item.meaningEn || note.en || "",
+        example: item.example || note.example || "",
+      };
+    });
+}
 
-  startReviewDeck(entries, state.bookMode, `${getModeLabel(state.bookMode)}收藏本暂无可复习错词`);
+function startFavoriteBookReview(view = "cards") {
+  const entries = getFavoriteReviewItems();
+  if (!entries.length) return;
+
+  stopRoundSpeech();
+  state.favoriteReviewItems = entries;
+  state.favoriteReviewIndex = 0;
+  state.favoriteReviewMode = state.bookMode;
+  state.favoriteReviewQuery = "";
+  favoriteListReviewSearch.value = "";
+  favoriteListReviewSort.value = state.favoriteReviewSort;
+  favoriteReviewScreen.hidden = false;
+  document.body.classList.add("favorite-review-open");
+  setFavoriteReviewView(view);
+  favoriteReviewClose.focus();
+}
+
+function closeFavoriteBookReview() {
+  if (favoriteReviewScreen.hidden) return;
+  const returnFocus = state.favoriteReviewView === "list" ? bookListReviewButton : bookReviewButton;
+  favoriteReviewScreen.hidden = true;
+  document.body.classList.remove("favorite-review-open");
+  favoriteReviewStatus.textContent = "";
+  favoriteListReviewStatus.textContent = "";
+  state.favoriteReviewItems = [];
+  state.favoriteReviewIndex = 0;
+  stopRoundSpeech();
+  if (returnFocus.disabled) {
+    bookSearchInput.focus();
+  } else {
+    returnFocus.focus();
+  }
+}
+
+function setFavoriteReviewView(view) {
+  state.favoriteReviewView = view === "list" ? "list" : "cards";
+  const showingList = state.favoriteReviewView === "list";
+
+  favoriteReviewViewButtons.forEach((button) => {
+    const active = button.dataset.favoriteReviewView === state.favoriteReviewView;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", String(active));
+  });
+
+  favoriteReviewMain.hidden = showingList;
+  favoriteListReviewMain.hidden = !showingList;
+  favoriteReviewFooter.hidden = showingList;
+  favoriteReviewTitle.textContent = showingList ? "排序复习" : "逐词复习";
+  favoriteReviewMode.textContent = `${getModeLabel(state.favoriteReviewMode)} · 收藏本复习`;
+
+  if (showingList) {
+    renderFavoriteReviewList();
+  } else {
+    renderFavoriteReviewCard();
+  }
+}
+
+function renderFavoriteReviewCard() {
+  const item = state.favoriteReviewItems[state.favoriteReviewIndex];
+  if (!item) {
+    closeFavoriteBookReview();
+    return;
+  }
+
+  const current = state.favoriteReviewIndex + 1;
+  const total = state.favoriteReviewItems.length;
+  favoriteReviewMode.textContent = `${getModeLabel(state.favoriteReviewMode)} · 收藏本复习`;
+  favoriteReviewProgress.textContent = `${current} / ${total}`;
+  favoriteReviewProgressBar.style.width = `${(current / total) * 100}%`;
+  favoriteReviewWord.textContent = item.word;
+  favoriteReviewMeaning.textContent = item.meaningZh || "暂无中文释义";
+  favoriteReviewExample.innerHTML = item.example
+    ? renderRevealedSentence(item.example, item.word)
+    : "暂无例句";
+  favoriteReviewResponse.textContent = item.response ? `上次答案：${item.response}` : "";
+  favoriteReviewResponse.hidden = !item.response;
+  favoriteReviewStatus.textContent = "";
+  favoriteReviewSpeak.disabled = false;
+  favoriteReviewPrevious.disabled = state.favoriteReviewIndex === 0;
+  favoriteReviewNext.innerHTML =
+    state.favoriteReviewIndex === total - 1
+      ? `完成复习 <span class="button-icon" aria-hidden="true">✓</span>`
+      : `下一个 <span class="button-icon" aria-hidden="true">→</span>`;
+}
+
+function getSortedFavoriteReviewItems() {
+  const query = normaliseKey(state.favoriteReviewQuery || "");
+  const items = state.favoriteReviewItems.filter((item) => {
+    if (!query) return true;
+    return [item.word, item.meaningZh, item.meaningEn, item.example, item.response]
+      .map((value) => normaliseKey(String(value || "")))
+      .some((value) => value.includes(query));
+  });
+
+  return items.sort((a, b) => {
+    if (state.favoriteReviewSort === "oldest") return (a.missedAt || 0) - (b.missedAt || 0);
+    if (state.favoriteReviewSort === "az") return a.word.localeCompare(b.word, "en", { sensitivity: "base" });
+    if (state.favoriteReviewSort === "za") return b.word.localeCompare(a.word, "en", { sensitivity: "base" });
+    return (b.missedAt || 0) - (a.missedAt || 0);
+  });
+}
+
+function renderFavoriteReviewList() {
+  const items = getSortedFavoriteReviewItems();
+  favoriteReviewProgress.textContent = `${items.length} 个词`;
+  favoriteReviewProgressBar.style.width = items.length ? "100%" : "0%";
+  favoriteListReviewCount.textContent = `${items.length} 个单词`;
+  favoriteListReviewStatus.textContent = "";
+
+  if (!items.length) {
+    favoriteListReviewRows.innerHTML = `<p class="favorite-list-review-empty">没有找到与“${escapeHtml(
+      state.favoriteReviewQuery,
+    )}”相关的收藏词。</p>`;
+    return;
+  }
+
+  favoriteListReviewRows.innerHTML = items
+    .map(
+      (item, index) => `
+        <article class="favorite-list-review-row">
+          <span class="favorite-list-review-index">${String(index + 1).padStart(2, "0")}</span>
+          <div class="favorite-list-review-word">
+            <strong>${escapeHtml(item.word)}</strong>
+            <small>${formatBookDate(item.missedAt)}</small>
+          </div>
+          <p class="favorite-list-review-meaning">${escapeHtml(item.meaningZh || "暂无中文释义")}</p>
+          <p class="favorite-list-review-example">${
+            item.example ? renderRevealedSentence(item.example, item.word) : "暂无例句"
+          }</p>
+          <div class="favorite-list-review-actions">
+            <button
+              class="favorite-list-speak-button"
+              type="button"
+              data-favorite-list-speak="${encodeURIComponent(item.word)}"
+              aria-label="朗读 ${escapeHtml(item.word)}"
+              title="朗读单词"
+            >♪</button>
+            <button
+              class="favorite-list-remove-button"
+              type="button"
+              data-favorite-list-remove="${encodeURIComponent(item.word)}"
+              aria-label="从收藏本移除 ${escapeHtml(item.word)}"
+              title="从收藏本移除"
+            >×</button>
+          </div>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+async function speakFavoriteListWord(word, button) {
+  if (!word || button.disabled) return;
+  if (!getSelectedVoice()) {
+    favoriteListReviewStatus.textContent = "未检测到可用英式语音。";
+    return;
+  }
+
+  stopRoundSpeech();
+  button.disabled = true;
+  favoriteListReviewStatus.textContent = `正在朗读 ${word}`;
+  const spoken = await speak(word, { kind: "word" });
+  if (favoriteReviewScreen.hidden || state.favoriteReviewView !== "list") return;
+  button.disabled = false;
+  favoriteListReviewStatus.textContent = spoken ? `已朗读 ${word}` : "朗读失败，请检查语音设置。";
+}
+
+function removeFavoriteReviewWord(word) {
+  const key = normaliseKey(word);
+  if (!key || !state.favoriteBook[state.favoriteReviewMode]?.[key]) return;
+
+  stopRoundSpeech();
+  removeFavoriteBookItem(state.favoriteReviewMode, key);
+  state.favoriteReviewItems = state.favoriteReviewItems.filter((item) => normaliseKey(item.word) !== key);
+
+  if (!state.favoriteReviewItems.length) {
+    closeFavoriteBookReview();
+    return;
+  }
+
+  if (state.favoriteReviewIndex >= state.favoriteReviewItems.length) {
+    state.favoriteReviewIndex = state.favoriteReviewItems.length - 1;
+  }
+
+  if (state.favoriteReviewView === "list") {
+    renderFavoriteReviewList();
+  } else {
+    renderFavoriteReviewCard();
+  }
+}
+
+function moveFavoriteReview(step) {
+  const nextIndex = state.favoriteReviewIndex + step;
+  if (step > 0 && nextIndex >= state.favoriteReviewItems.length) {
+    closeFavoriteBookReview();
+    return;
+  }
+
+  if (nextIndex < 0 || nextIndex >= state.favoriteReviewItems.length) return;
+  stopRoundSpeech();
+  state.favoriteReviewIndex = nextIndex;
+  renderFavoriteReviewCard();
+}
+
+async function speakFavoriteReviewWord() {
+  const item = state.favoriteReviewItems[state.favoriteReviewIndex];
+  if (!item || favoriteReviewSpeak.disabled) return;
+  if (!getSelectedVoice()) {
+    favoriteReviewStatus.textContent = "未检测到可用英式语音。";
+    return;
+  }
+
+  const reviewIndex = state.favoriteReviewIndex;
+  stopRoundSpeech();
+  favoriteReviewStatus.textContent = "正在朗读单词";
+  favoriteReviewSpeak.disabled = true;
+  const spoken = await speak(item.word, { kind: "word" });
+  if (favoriteReviewScreen.hidden || reviewIndex !== state.favoriteReviewIndex) return;
+  favoriteReviewSpeak.disabled = false;
+  favoriteReviewStatus.textContent = spoken ? "朗读完成" : "朗读失败，请检查语音设置。";
 }
 
 function getFinalRoundResults() {
@@ -2893,6 +4834,1702 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+const writingKnownMisspellings = {
+  admitedly: "admittedly",
+  boradcast: "broadcast",
+  brodcast: "broadcast",
+  complusory: "compulsory",
+  culturual: "cultural",
+  daliy: "daily",
+  dicuss: "discuss",
+  disscuss: "discuss",
+  eassy: "essay",
+  enterprize: "enterprise",
+  recieve: "receive",
+  staduim: "stadium",
+  happend: "happen / happened",
+  happended: "happened",
+  negetive: "negative",
+  nowdays: "nowadays",
+  nowaday: "nowadays",
+  occupasion: "occupation",
+  ocupation: "occupation",
+  perfomance: "performance",
+  performence: "performance",
+  phenomemon: "phenomenon",
+  phenomenonon: "phenomenon",
+  potencial: "potential",
+  proffesional: "professional",
+  profesional: "professional",
+  footable: "football",
+  perfor: "perform",
+  sponsers: "sponsors",
+  athelete: "athlete",
+  atheletes: "athletes",
+  advertisment: "advertisement",
+  oppotunity: "opportunity",
+  oppotunities: "opportunities",
+  intrest: "interest",
+  goverment: "government",
+  enviroment: "environment",
+  benifit: "benefit",
+  benifits: "benefits",
+  seperate: "separate",
+  sufficent: "sufficient",
+  sufficiant: "sufficient",
+  developping: "developing",
+  tecnology: "technology",
+  knowlege: "knowledge",
+  competitve: "competitive",
+};
+
+const writingDangerRules = [
+  {
+    pattern: /\bwoman\s+have\b/i,
+    wrong: "woman have",
+    correction: "women have",
+    type: "高频语法",
+    safer: "women have equal opportunities",
+    note: "表达复数女性时用 women，后面接 have。",
+  },
+  {
+    pattern: /\bman\s+have\b/i,
+    wrong: "man have",
+    correction: "men have",
+    type: "高频语法",
+    safer: "men and women have equal rights",
+    note: "表达复数男性时用 men，后面接 have。",
+  },
+  {
+    pattern: /\bwomen\s+has\b/i,
+    wrong: "women has",
+    correction: "women have",
+    type: "主谓一致",
+    safer: "women have more opportunities",
+    note: "women 是复数主语，动词用 have。",
+  },
+  {
+    pattern: /\bmen\s+has\b/i,
+    wrong: "men has",
+    correction: "men have",
+    type: "主谓一致",
+    safer: "men have more opportunities",
+    note: "men 是复数主语，动词用 have。",
+  },
+  {
+    pattern: /\bwoman's sports\b/i,
+    wrong: "woman's sports",
+    correction: "women's sports",
+    type: "高频语法",
+    safer: "women's sports",
+    note: "表示女子体育时用复数所有格 women's sports。",
+  },
+  {
+    pattern: /\bman's sports\b/i,
+    wrong: "man's sports",
+    correction: "men's sports",
+    type: "高频语法",
+    safer: "men's sports",
+    note: "表示男子体育时用复数所有格 men's sports。",
+  },
+  {
+    pattern: /\bentertaining favors\b/i,
+    wrong: "entertaining favors",
+    correction: "viewers' preferences",
+    type: "危险表达",
+    safer: "viewers' preferences",
+    note: "这里要表达观众偏好，不要按中文现场造词。",
+  },
+  {
+    pattern: /\bbody\s+countfront\b/i,
+    wrong: "body countfront",
+    correction: "physical contact",
+    type: "危险表达",
+    safer: "physical contact",
+    note: "身体对抗更稳定的表达是 physical contact。",
+  },
+  {
+    pattern: /\bshow times\b/i,
+    wrong: "show times",
+    correction: "airtime",
+    type: "危险表达",
+    safer: "airtime",
+    note: "节目播放时间在写作里可直接用 airtime。",
+  },
+  {
+    pattern: /\bin social\b/i,
+    wrong: "in social",
+    correction: "in society",
+    type: "危险表达",
+    safer: "in society / at the social level",
+    note: "social 通常作形容词，不能直接说 in social。",
+  },
+  {
+    pattern: /\bfirm believe\b/i,
+    wrong: "firm believe",
+    correction: "firmly believe",
+    type: "词性错误",
+    safer: "firmly believe",
+    note: "修饰动词 believe 需要副词 firmly。",
+  },
+];
+
+function getWritingMistakes() {
+  return Object.values(state.writingMistakeBook || {}).sort(
+    (a, b) => (b.lastPracticedAt || 0) - (a.lastPracticedAt || 0),
+  );
+}
+
+function normaliseWritingText(value) {
+  return String(value || "")
+    .replace(/[’‘`]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/[.,!?;:()[\]{}]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLocaleLowerCase("en-GB");
+}
+
+function getWritingTokens(value) {
+  const normalised = normaliseWritingText(value);
+  return normalised ? normalised.split(" ").filter(Boolean) : [];
+}
+
+function countTokens(tokens) {
+  return tokens.reduce((map, token) => {
+    map[token] = (map[token] || 0) + 1;
+    return map;
+  }, {});
+}
+
+function getTokenDifference(sourceTokens, compareTokens) {
+  const compareCounts = countTokens(compareTokens);
+  return sourceTokens.filter((token) => {
+    const remaining = compareCounts[token] || 0;
+    if (remaining > 0) {
+      compareCounts[token] -= 1;
+      return false;
+    }
+    return true;
+  });
+}
+
+function hasSameTokenCounts(a, b) {
+  if (a.length !== b.length) return false;
+  const aCounts = countTokens(a);
+  const bCounts = countTokens(b);
+  return Object.keys(aCounts).every((token) => aCounts[token] === bCounts[token]);
+}
+
+function longestCommonSubsequenceLength(a, b) {
+  const rows = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+  for (let i = 1; i <= a.length; i += 1) {
+    for (let j = 1; j <= b.length; j += 1) {
+      rows[i][j] =
+        a[i - 1] === b[j - 1] ? rows[i - 1][j - 1] + 1 : Math.max(rows[i - 1][j], rows[i][j - 1]);
+    }
+  }
+  return rows[a.length][b.length];
+}
+
+function dedupeWritingErrors(errors) {
+  const seen = new Set();
+  return errors.filter((error) => {
+    const key = `${error.type}:${error.wrong}:${error.correction}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function findLikelySpellingErrors(inputTokens, targetTokens) {
+  const targetSet = new Set(targetTokens);
+  const extraTokens = getTokenDifference(inputTokens, targetTokens);
+
+  return extraTokens
+    .map((token) => {
+      const knownCorrection = writingKnownMisspellings[token];
+      if (knownCorrection) {
+        return {
+          type: "拼写错误",
+          wrong: token,
+          correction: knownCorrection,
+          safer: knownCorrection,
+          note: targetSet.has(knownCorrection)
+            ? "这个拼写在目标句中有明确对应词。"
+            : "这是写作中常见的拼写错误。",
+        };
+      }
+
+      const closest = targetTokens
+        .map((target) => ({
+          target,
+          distance: levenshteinDistance(token, target),
+        }))
+        .sort((a, b) => a.distance - b.distance)[0];
+
+      if (
+        closest &&
+        closest.distance > 0 &&
+        closest.distance <= 2 &&
+        token[0] === closest.target[0] &&
+        Math.max(token.length, closest.target.length) >= 5
+      ) {
+        return {
+          type: "拼写错误",
+          wrong: token,
+          correction: closest.target,
+          safer: closest.target,
+          note: "这个词和目标词很接近，优先按拼写错误处理。",
+        };
+      }
+
+      return null;
+    })
+    .filter(Boolean);
+}
+
+function detectWritingErrors(input, pattern) {
+  const target = pattern.targetSentence;
+  const inputNormalised = normaliseWritingText(input);
+  const targetNormalised = normaliseWritingText(target);
+  const inputTokens = getWritingTokens(input);
+  const targetTokens = getWritingTokens(target);
+  const errors = [];
+  const correct = Boolean(inputNormalised) && inputNormalised === targetNormalised;
+
+  writingDangerRules.forEach((rule) => {
+    if (rule.pattern.test(input)) errors.push({ ...rule });
+  });
+
+  const modalMatch = input.match(
+    /\b(can|could|may|might|must|should|will|would)\s+([a-z]+(?:s|ed))\b/i,
+  );
+  if (modalMatch) {
+    errors.push({
+      type: "动词形式",
+      wrong: modalMatch[0],
+      correction: `${modalMatch[1].toLowerCase()} + 动词原形`,
+      safer: "modal verb + base verb",
+      note: "情态动词后面不要接第三人称单数或过去式。",
+    });
+  }
+
+  errors.push(...findLikelySpellingErrors(inputTokens, targetTokens));
+
+  if (!correct) {
+    const missingTokens = [...new Set(getTokenDifference(targetTokens, inputTokens))];
+    const extraTokens = [...new Set(getTokenDifference(inputTokens, targetTokens))];
+
+    if (missingTokens.length) {
+      errors.push({
+        type: "漏词",
+        wrong: "未输入",
+        correction: missingTokens.slice(0, 8).join(", "),
+        safer: pattern.safeChunks?.[0] || target,
+        note: "目标句中的这些词没有完整出现。",
+      });
+    }
+
+    const spellingWrongSet = new Set(errors.filter((error) => error.type === "拼写错误").map((error) => error.wrong));
+    const unsafeExtraTokens = extraTokens.filter((token) => !spellingWrongSet.has(token));
+    if (unsafeExtraTokens.length) {
+      errors.push({
+        type: "多词",
+        wrong: unsafeExtraTokens.slice(0, 8).join(", "),
+        correction: "删掉或替换为目标句表达",
+        safer: pattern.safeChunks?.[0] || target,
+        note: "这些词不在稳定目标句里，可能是现场造句带来的不安全表达。",
+      });
+    }
+
+    if (!missingTokens.length && !extraTokens.length && hasSameTokenCounts(inputTokens, targetTokens)) {
+      errors.push({
+        type: "词序错误",
+        wrong: input,
+        correction: target,
+        safer: target,
+        note: "词都出现了，但顺序和稳定句不一致。",
+      });
+    }
+  }
+
+  if (!correct && !errors.length) {
+    errors.push({
+      type: "表达不稳定",
+      wrong: input || "空白",
+      correction: target,
+      safer: target,
+      note: "请先按目标句完整打出，不在第一版里自由改写。",
+    });
+  }
+
+  const lcs = longestCommonSubsequenceLength(inputTokens, targetTokens);
+  const accuracy = targetTokens.length ? Math.round((lcs / targetTokens.length) * 100) : 0;
+
+  return {
+    correct,
+    errors: correct ? [] : dedupeWritingErrors(errors),
+    accuracy: correct ? 100 : Math.max(0, Math.min(99, accuracy)),
+    inputTokens,
+    targetTokens,
+  };
+}
+
+function getWritingErrorBucket(error) {
+  if (error.type === "拼写错误") return "spellingErrors";
+  if (error.type === "危险表达" || error.type === "表达不稳定" || error.type === "多词") return "phraseErrors";
+  return "grammarErrors";
+}
+
+function updateWritingStats(result, elapsedSeconds) {
+  state.writingStats = {
+    ...createDefaultWritingStats(),
+    ...state.writingStats,
+    repeatedErrors: state.writingStats?.repeatedErrors || {},
+  };
+  state.writingStats.attempts += 1;
+  state.writingStats.correct += result.correct ? 1 : 0;
+  state.writingStats.totalSeconds += elapsedSeconds;
+  state.writingStats.totalWords += result.targetTokens.length;
+  state.writingStats.lastPracticedAt = Date.now();
+
+  result.errors.forEach((error) => {
+    const bucket = getWritingErrorBucket(error);
+    state.writingStats[bucket] += 1;
+    const key = `${error.type}: ${error.wrong} -> ${error.correction}`;
+    state.writingStats.repeatedErrors[key] = (state.writingStats.repeatedErrors[key] || 0) + 1;
+  });
+}
+
+function renderWritingStats() {
+  const stats = { ...createDefaultWritingStats(), ...(state.writingStats || {}) };
+  const accuracy = stats.attempts ? Math.round((stats.correct / stats.attempts) * 100) : 0;
+  const minutes = stats.totalSeconds / 60;
+  const speed = minutes > 0 ? Math.round(stats.totalWords / minutes) : 0;
+  writingAccuracy.textContent = `${accuracy}%`;
+  writingSpeed.textContent = String(speed);
+}
+
+function upsertWritingMistake(pattern, input, result) {
+  const existing = state.writingMistakeBook[pattern.id] || {};
+  state.writingMistakeBook[pattern.id] = {
+    id: pattern.id,
+    topic: pattern.topic,
+    role: pattern.role,
+    zhPrompt: pattern.zhPrompt,
+    targetSentence: pattern.targetSentence,
+    safeChunks: pattern.safeChunks || [],
+    lastInput: input,
+    errors: result.errors.map((error) => ({
+      type: error.type,
+      wrong: error.wrong,
+      correction: error.correction,
+      note: error.note,
+      safer: error.safer,
+    })),
+    repeatCount: (existing.repeatCount || 0) + 1,
+    attempts: (existing.attempts || 0) + 1,
+    streak: 0,
+    lastPracticedAt: Date.now(),
+  };
+}
+
+function recordWritingReviewCorrect(pattern) {
+  const mistake = state.writingMistakeBook[pattern.id];
+  if (!mistake) return false;
+  mistake.streak = (mistake.streak || 0) + 1;
+  mistake.attempts = (mistake.attempts || 0) + 1;
+  mistake.lastPracticedAt = Date.now();
+
+  if (mistake.streak >= 2) {
+    delete state.writingMistakeBook[pattern.id];
+    return true;
+  }
+  return false;
+}
+
+function renderWritingMistakeBook() {
+  const mistakes = getWritingMistakes();
+  writingMistakeCount.textContent = String(mistakes.length);
+  writingReviewButton.disabled = mistakes.length === 0;
+
+  if (!mistakes.length) {
+    writingMistakeList.innerHTML = `<p class="empty-state">暂无写作错句。普通训练答错后会自动收进这里。</p>`;
+    return;
+  }
+
+  writingMistakeList.innerHTML = mistakes
+    .map((item) => {
+      const errorSummary = (item.errors || [])
+        .slice(0, 3)
+        .map((error) => `${escapeHtml(error.type)}：${escapeHtml(error.wrong)} → ${escapeHtml(error.correction)}`)
+        .join("<br>");
+
+      return `
+        <article class="writing-mistake-item">
+          <div class="writing-mistake-meta">
+            <strong>${escapeHtml(item.role || "Body sentence")}</strong>
+            <span>${escapeHtml(item.topic || "")}</span>
+          </div>
+          <p>${escapeHtml(item.zhPrompt || "")}</p>
+          <p class="writing-target">${escapeHtml(item.targetSentence || "")}</p>
+          <p class="writing-last-input">上次输入：${escapeHtml(item.lastInput || "未记录")}</p>
+          <p class="writing-error-summary">${errorSummary || "需要再次完整打出目标句。"}</p>
+          <div class="writing-mistake-actions">
+            <span>重复 ${item.repeatCount || 1} · 连对 ${item.streak || 0}/2</span>
+            <button class="secondary-button" type="button" data-writing-review-one="${escapeHtml(item.id)}">练这一句</button>
+            <button class="remove-button" type="button" data-writing-remove-mistake="${escapeHtml(item.id)}">移除</button>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function setWritingEmpty(message) {
+  state.writingCurrent = null;
+  state.writingStartedAt = 0;
+  state.writingChecked = false;
+  writingTopic.textContent = "Topic";
+  writingRole.textContent = "Body sentence";
+  writingPrompt.textContent = message;
+  writingChunks.innerHTML = "";
+  writingInput.value = "";
+  writingInput.disabled = true;
+  writingCheckButton.disabled = true;
+  writingNextButton.disabled = true;
+  writingErrorCount.textContent = "0";
+  writingResult.className = "writing-result";
+  writingResult.innerHTML = "";
+}
+
+function renderWritingCard() {
+  const current = state.writingDeck[state.writingIndex];
+  if (!current) {
+    setWritingEmpty(state.writingReviewing ? "写作错句本为空，先做普通训练。" : "点击普通训练，开始练稳定句型。");
+    return;
+  }
+
+  state.writingCurrent = current;
+  state.writingStartedAt = performance.now();
+  state.writingChecked = false;
+  writingTopic.textContent = current.topic || "IELTS Writing";
+  writingRole.textContent = current.role || "Body sentence";
+  writingPrompt.textContent = current.zhPrompt || "";
+  writingChunks.innerHTML = (current.safeChunks || [])
+    .map((chunk) => `<span>${escapeHtml(chunk)}</span>`)
+    .join("");
+  writingInput.value = "";
+  writingInput.disabled = false;
+  writingCheckButton.disabled = false;
+  writingNextButton.disabled = false;
+  writingErrorCount.textContent = "0";
+  writingResult.className = "writing-result";
+  writingResult.innerHTML = "";
+  writingInput.focus();
+}
+
+function startWritingPractice(review = false, singleId = "") {
+  state.writingReviewing = review;
+  state.writingDeck = review
+    ? singleId
+      ? getWritingMistakes().filter((item) => item.id === singleId)
+      : getWritingMistakes()
+    : shuffle(writingPatterns);
+  state.writingIndex = 0;
+
+  if (!state.writingDeck.length) {
+    setWritingEmpty(review ? "写作错句本为空，先做普通训练。" : "没有可用写作句型。");
+    writingResult.innerHTML = review ? `<p class="empty-state">暂无需要复习的错句。</p>` : "";
+    return;
+  }
+
+  renderWritingCard();
+}
+
+function renderWritingResult(pattern, input, result, elapsedSeconds, removedFromMistakes) {
+  const speed = elapsedSeconds > 0 ? Math.round((result.targetTokens.length / elapsedSeconds) * 60) : 0;
+  writingErrorCount.textContent = String(result.errors.length);
+  writingResult.className = `writing-result ${result.correct ? "is-correct" : "is-wrong"}`;
+
+  if (result.correct) {
+    writingResult.innerHTML = `
+      <strong>正确</strong>
+      <p>用时 ${elapsedSeconds.toFixed(1)} 秒 · 本句速度 ${speed} 词/分钟</p>
+      <p>${removedFromMistakes ? "已连续答对 2 次，已从写作错句本移除。" : "这句没有进入写作错句本。"}</p>
+    `;
+    return;
+  }
+
+  const errorList = result.errors
+    .map(
+      (error) => `
+        <li>
+          <strong>${escapeHtml(error.type)}</strong>
+          <span>${escapeHtml(error.wrong)} → ${escapeHtml(error.correction)}</span>
+          <small>${escapeHtml(error.note || "按目标句重打一次。")}</small>
+          <em>下次替换词块：${escapeHtml(error.safer || pattern.safeChunks?.[0] || pattern.targetSentence)}</em>
+        </li>
+      `,
+    )
+    .join("");
+
+  writingResult.innerHTML = `
+    <strong>需要重写</strong>
+    <p>匹配度 ${result.accuracy}% · 用时 ${elapsedSeconds.toFixed(1)} 秒 · 本句速度 ${speed} 词/分钟</p>
+    <p class="writing-target">目标句：${escapeHtml(pattern.targetSentence)}</p>
+    <p class="writing-last-input">你的输入：${escapeHtml(input || "空白")}</p>
+    <ul class="writing-error-list">${errorList}</ul>
+  `;
+}
+
+function checkWritingAnswer() {
+  const pattern = state.writingCurrent;
+  if (!pattern || state.writingChecked) return;
+
+  const input = normaliseWord(writingInput.value || "");
+  const elapsedSeconds = Math.max(1, (performance.now() - state.writingStartedAt) / 1000);
+  const result = detectWritingErrors(input, pattern);
+  state.writingChecked = true;
+  writingCheckButton.disabled = true;
+
+  updateWritingStats(result, elapsedSeconds);
+  let removedFromMistakes = false;
+
+  if (result.correct) {
+    if (state.writingReviewing) {
+      removedFromMistakes = recordWritingReviewCorrect(pattern);
+      if (removedFromMistakes) {
+        state.writingDeck = state.writingDeck.filter((item) => item.id !== pattern.id);
+        if (state.writingIndex >= state.writingDeck.length) state.writingIndex = 0;
+      }
+    }
+  } else {
+    upsertWritingMistake(pattern, input, result);
+  }
+
+  renderWritingResult(pattern, input, result, elapsedSeconds, removedFromMistakes);
+  renderWritingStats();
+  renderWritingMistakeBook();
+  saveWritingStats();
+  saveWritingMistakeBook();
+  saveWritingFavoriteBook();
+  void saveTraining(false);
+}
+
+function nextWritingPrompt() {
+  if (state.writingReviewing && !state.writingDeck.length) {
+    startWritingPractice(true);
+    return;
+  }
+
+  if (!state.writingDeck.length) {
+    startWritingPractice(false);
+    return;
+  }
+
+  state.writingIndex = (state.writingIndex + 1) % state.writingDeck.length;
+  renderWritingCard();
+}
+
+function removeWritingMistake(id) {
+  if (!state.writingMistakeBook[id]) return;
+  delete state.writingMistakeBook[id];
+  if (state.writingCurrent?.id === id && state.writingReviewing) {
+    state.writingDeck = state.writingDeck.filter((item) => item.id !== id);
+    if (state.writingIndex >= state.writingDeck.length) state.writingIndex = 0;
+    renderWritingCard();
+  }
+  renderWritingMistakeBook();
+  saveWritingMistakeBook();
+  void saveTraining(false);
+}
+
+function removeWritingFavorite(id) {
+  if (!state.writingFavoriteBook[id]) return;
+  delete state.writingFavoriteBook[id];
+  renderWritingMistakeBook();
+  updateWritingFavoriteButton();
+  saveWritingFavoriteBook();
+  void saveTraining(false);
+}
+
+function startWritingSinglePractice(item) {
+  if (!item) return;
+  state.writingReviewing = true;
+  state.writingAllMode = false;
+  state.writingChecked = false;
+  state.writingDeck = [item];
+  state.writingIndex = 0;
+  renderWritingCard();
+}
+
+const writingPhaseLabels = {
+  copy: "跟打",
+  slot: "填槽",
+  chain: "连句",
+};
+
+const writingCriticalRules = [
+  {
+    pattern: /\bwoman\s+have\b/i,
+    type: "高频语法",
+    wrong: "woman have",
+    correction: "women have",
+    note: "复数女性用 women，后面接 have。",
+  },
+  {
+    pattern: /\bman\s+have\b/i,
+    type: "高频语法",
+    wrong: "man have",
+    correction: "men have",
+    note: "复数男性用 men，后面接 have。",
+  },
+  {
+    pattern: /\bwomen\s+has\b/i,
+    type: "主谓一致",
+    wrong: "women has",
+    correction: "women have",
+    note: "women 是复数主语，不能接 has。",
+  },
+  {
+    pattern: /\bmen\s+has\b/i,
+    type: "主谓一致",
+    wrong: "men has",
+    correction: "men have",
+    note: "men 是复数主语，不能接 has。",
+  },
+  {
+    pattern: /\bwoman's sports\b/i,
+    type: "高频语法",
+    wrong: "woman's sports",
+    correction: "women's sports",
+    note: "女子体育用 women's sports。",
+  },
+  {
+    pattern: /\bman's sports\b/i,
+    type: "高频语法",
+    wrong: "man's sports",
+    correction: "men's sports",
+    note: "男子体育用 men's sports。",
+  },
+  {
+    pattern: /\bshow times\b/i,
+    type: "危险表达",
+    wrong: "show times",
+    correction: "airtime",
+    note: "播放时间在这个语境中用 airtime 更稳。",
+  },
+  {
+    pattern: /\bentertaining favors\b/i,
+    type: "危险表达",
+    wrong: "entertaining favors",
+    correction: "viewers' preferences",
+    note: "观众偏好不要直译造词，用 viewers' preferences。",
+  },
+  {
+    pattern: /\bbody\s+countfront\b/i,
+    type: "危险表达",
+    wrong: "body countfront",
+    correction: "physical contact",
+    note: "身体对抗用 physical contact。",
+  },
+  {
+    pattern: /\bin social\b/i,
+    type: "危险表达",
+    wrong: "in social",
+    correction: "in society",
+    note: "social 是形容词，这里用 in society。",
+  },
+  {
+    pattern: /\bin a social perspective\b/i,
+    type: "固定搭配",
+    wrong: "in a social perspective",
+    correction: "from a social perspective",
+    note: "表示“从……角度看”用 from a ... perspective。",
+  },
+  {
+    pattern: /\bin some extent\b/i,
+    type: "固定搭配",
+    wrong: "in some extent",
+    correction: "to some extent",
+    note: "固定表达是 to some extent。",
+  },
+  {
+    pattern: /\bdaily quality of life\b/i,
+    type: "地道表达",
+    wrong: "daily quality of life",
+    correction: "quality of life / daily lives",
+    note: "quality of life 本身已经是生活质量，不要加 daily。",
+  },
+  {
+    pattern: /\bincrease large amounts of carbon emissions\b/i,
+    type: "地道表达",
+    wrong: "increase large amounts of carbon emissions",
+    correction: "produce large amounts of carbon emissions",
+    note: "大量排放通常用 produce large amounts of carbon emissions。",
+  },
+  {
+    pattern: /\bpotential electric power\b/i,
+    type: "地道表达",
+    wrong: "potential electric power",
+    correction: "the potential of electric power",
+    note: "表达“电力的潜力”用 the potential of electric power。",
+  },
+  {
+    pattern: /\bmodern\s*,\s*diets\b/i,
+    type: "标点错误",
+    wrong: "modern, diets",
+    correction: "modern diets",
+    note: "形容词和名词之间不要加逗号。",
+  },
+];
+
+function getWritingDayKey() {
+  return new Date().toLocaleDateString("en-CA");
+}
+
+function ensureWritingStatsToday() {
+  state.writingStats = {
+    ...createDefaultWritingStats(),
+    ...state.writingStats,
+    repeatedErrors: state.writingStats?.repeatedErrors || {},
+  };
+
+  const today = getWritingDayKey();
+  if (state.writingStats.dayKey !== today) {
+    state.writingStats.dayKey = today;
+    state.writingStats.packsCompletedToday = 0;
+    state.writingStats.slotAttempts = 0;
+    state.writingStats.slotCorrect = 0;
+    state.writingStats.dangerErrors = 0;
+  }
+}
+
+function populateWritingPackSelect() {
+  writingPackSelect.innerHTML = writingPatternPacks
+    .map((pack) => `<option value="${escapeHtml(pack.id)}">${escapeHtml(pack.topic)}</option>`)
+    .join("");
+  if (!writingPatternPacks.some((pack) => pack.id === state.writingPackId)) {
+    state.writingPackId = writingPatternPacks[0]?.id || "";
+  }
+  writingPackSelect.value = state.writingPackId;
+}
+
+function getSelectedWritingPack() {
+  return writingPatternPacks.find((pack) => pack.id === state.writingPackId) || writingPatternPacks[0];
+}
+
+function getAllWritingPackItems() {
+  return writingPatternPacks.flatMap((pack) =>
+    (pack.bodyChain || []).map((item) => ({
+      ...item,
+      packId: pack.id,
+      topic: pack.topic,
+    })),
+  );
+}
+
+function setWritingPhase(phase) {
+  state.writingPhase = writingPhaseLabels[phase] ? phase : "slot";
+  writingPhaseButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.writingPhase === state.writingPhase);
+  });
+  if (state.writingCurrent && !state.writingReviewing) renderWritingCard();
+}
+
+function getWritingPracticeItem() {
+  if (state.writingReviewing || state.writingAllMode) return state.writingDeck[state.writingIndex] || null;
+  const pack = getSelectedWritingPack();
+  return pack?.bodyChain?.[state.writingChainIndex] || null;
+}
+
+function getWritingMistakeKey(item) {
+  return item.favoriteKey || item.mistakeKey || `${item.packId || state.writingPackId || "pack"}:${item.id}`;
+}
+
+function getWritingMistakes() {
+  return Object.values(state.writingMistakeBook || {}).sort(
+    (a, b) => (b.lastPracticedAt || 0) - (a.lastPracticedAt || 0),
+  );
+}
+
+function getWritingFavorites() {
+  return Object.values(state.writingFavoriteBook || {}).sort((a, b) => (b.favoritedAt || 0) - (a.favoritedAt || 0));
+}
+
+function getWritingTargetChunks(item = state.writingCurrent) {
+  if (!item) return [];
+  const phase = item === state.writingCurrent && !state.writingReviewing ? state.writingPhase : item.phase || "slot";
+  if (phase === "copy" && item.targetSentence) return [item.targetSentence];
+  const chunks = item.slots?.length ? item.slots : item.safeChunks?.length ? item.safeChunks : [];
+  if (chunks.length) return chunks;
+  return [item.targetSentence || item.sentenceFrame || ""].filter(Boolean);
+}
+
+function getWritingTargetSpeechText(item = state.writingCurrent) {
+  return getWritingTargetChunks(item)
+    .map((chunk) => normaliseWord(chunk))
+    .filter(Boolean)
+    .join(". ");
+}
+
+function createWritingBookEntry(item, extras = {}) {
+  const pack = getSelectedWritingPack();
+  const key = getWritingMistakeKey(item);
+  return {
+    favoriteKey: key,
+    mistakeKey: item.mistakeKey || key,
+    id: item.id,
+    packId: item.packId || pack?.id || state.writingPackId,
+    topic: item.topic || pack?.topic || "",
+    role: item.role,
+    zhPrompt: item.zhPrompt,
+    sentenceFrame: item.sentenceFrame,
+    targetSentence: item.targetSentence,
+    slots: item.slots || [],
+    safeChunks: item.safeChunks || [],
+    phase: item.phase || (state.writingReviewing ? "slot" : state.writingPhase),
+    ...extras,
+  };
+}
+
+function findWritingBookItem(key) {
+  return state.writingMistakeBook[key] || state.writingFavoriteBook[key] || null;
+}
+
+function isWritingFavorite(item = state.writingCurrent) {
+  return Boolean(item && state.writingFavoriteBook[getWritingMistakeKey(item)]);
+}
+
+function updateWritingFavoriteButton() {
+  if (!writingFavoriteButton) return;
+
+  const hasCurrent = Boolean(state.writingCurrent);
+  writingFavoriteButton.disabled = !hasCurrent;
+  writingFavoriteButton.classList.toggle("is-favorite", hasCurrent && isWritingFavorite(state.writingCurrent));
+  writingFavoriteButton.setAttribute("aria-pressed", hasCurrent && isWritingFavorite(state.writingCurrent) ? "true" : "false");
+  writingFavoriteButton.textContent = hasCurrent && isWritingFavorite(state.writingCurrent) ? "★ 已收藏" : "☆ 收藏";
+}
+
+function toggleWritingFavorite(item = state.writingCurrent) {
+  if (!item) return;
+
+  const key = getWritingMistakeKey(item);
+  if (state.writingFavoriteBook[key]) {
+    delete state.writingFavoriteBook[key];
+  } else {
+    state.writingFavoriteBook[key] = createWritingBookEntry(item, {
+      favoritedAt: Date.now(),
+      lastInput: item.lastInput || writingInput?.value || "",
+    });
+  }
+
+  saveWritingFavoriteBook();
+  renderWritingMistakeBook();
+  updateWritingFavoriteButton();
+  void saveTraining(false);
+}
+
+async function speakWritingText(text, fallbackMessage = "未检测到可朗读的写作词块。") {
+  const speechText = normaliseWord(text || "");
+  if (!speechText) {
+    if (!state.writingChecked) writingResult.innerHTML = `<p class="empty-state">${escapeHtml(fallbackMessage)}</p>`;
+    return false;
+  }
+
+  if (!getSelectedVoice()) {
+    if (!state.writingChecked) writingResult.innerHTML = `<p class="empty-state">未检测到可用英式语音，请先检查发音设置。</p>`;
+    return false;
+  }
+
+  const runId = state.speechRunId + 1;
+  state.speechRunId = runId;
+  state.isSpeaking = false;
+  stopCurrentAudio();
+  window.speechSynthesis?.cancel();
+  return speak(speechText);
+}
+
+function speakCurrentWritingTarget() {
+  return speakWritingText(getWritingTargetSpeechText(state.writingCurrent), "当前没有可重听的写作词块。");
+}
+
+function renderWritingBookTabs() {
+  const mistakeCount = getWritingMistakes().length;
+  const favoriteCount = getWritingFavorites().length;
+  writingMistakeCount.textContent = String(mistakeCount);
+  if (writingFavoriteCount) writingFavoriteCount.textContent = String(favoriteCount);
+  writingReviewButton.disabled = mistakeCount === 0;
+  writingBookTabs.forEach((button) => {
+    button.classList.toggle("active", button.dataset.writingBookTab === state.writingBookMode);
+  });
+}
+
+function normaliseWritingText(value) {
+  return String(value || "")
+    .replace(/[\u2018\u2019`]/g, "'")
+    .replace(/[\u201c\u201d]/g, '"')
+    .replace(/[.,!?;:()[\]{}]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLocaleLowerCase("en-GB");
+}
+
+function getWritingTokens(value) {
+  const normalised = normaliseWritingText(value);
+  return normalised ? normalised.split(" ").filter(Boolean) : [];
+}
+
+function parseWritingSlotInput(input) {
+  return String(input || "")
+    .split(/\n|\/|;|；|\|/)
+    .map((part) => normaliseWord(part))
+    .filter(Boolean);
+}
+
+function detectCriticalWritingErrors(input) {
+  const errors = writingCriticalRules
+    .filter((rule) => rule.pattern.test(input))
+    .map((rule) => ({
+      type: rule.type,
+      wrong: rule.wrong,
+      correction: rule.correction,
+      note: rule.note,
+    }));
+
+  const modalMatch = input.match(/\b(can|could|may|might|must|should|will|would)\s+([a-z]+(?:s|ed))\b/i);
+  if (modalMatch) {
+    errors.push({
+      type: "动词形式",
+      wrong: modalMatch[0],
+      correction: `${modalMatch[1].toLowerCase()} + 动词原形`,
+      note: "情态动词后面接动词原形。",
+    });
+  }
+
+  return errors;
+}
+
+function detectSlotSpelling(inputPart, targetSlot) {
+  const inputTokens = getWritingTokens(inputPart);
+  const targetTokens = getWritingTokens(targetSlot);
+  const errors = [];
+
+  inputTokens.forEach((token) => {
+    const knownCorrection = writingKnownMisspellings[token];
+    if (knownCorrection) {
+      errors.push({
+        type: "拼写错误",
+        wrong: token,
+        correction: knownCorrection,
+        note: "这是写作中常见的拼写错误。",
+      });
+      return;
+    }
+
+    const closest = targetTokens
+      .map((target) => ({
+        target,
+        distance: levenshteinDistance(token, target),
+      }))
+      .sort((a, b) => a.distance - b.distance)[0];
+
+    if (closest && closest.distance > 0 && closest.distance <= 2 && token[0] === closest.target[0]) {
+      errors.push({
+        type: "拼写错误",
+        wrong: token,
+        correction: closest.target,
+        note: "这个词和目标词很接近，优先按拼写错误处理。",
+      });
+    }
+  });
+
+  return errors;
+}
+
+function slotAppearsInInput(input, slot) {
+  return normaliseWritingText(input).includes(normaliseWritingText(slot));
+}
+
+function detectWritingErrors(input, item) {
+  const phase = state.writingReviewing ? "slot" : state.writingPhase;
+  const slots = item.slots?.length ? item.slots : item.safeChunks || [];
+  const errors = detectCriticalWritingErrors(input);
+  let slotCorrectCount = 0;
+
+  if (phase === "copy") {
+    const correct = normaliseWritingText(input) === normaliseWritingText(item.targetSentence);
+    slotCorrectCount = correct ? slots.length : slots.filter((slot) => slotAppearsInInput(input, slot)).length;
+    if (!correct) {
+      errors.push({
+        type: "跟打不完整",
+        wrong: input || "空白",
+        correction: item.targetSentence,
+        note: "跟打阶段先完整抄打一遍目标句，练速度和拼写。",
+      });
+      errors.push(...detectSlotSpelling(input, item.targetSentence));
+    }
+    return {
+      correct: correct && errors.length === 0,
+      errors: dedupeWritingErrors(errors),
+      accuracy: slots.length ? Math.round((slotCorrectCount / slots.length) * 100) : 0,
+      slotCorrectCount,
+      slotTotal: slots.length || 1,
+      dangerCount: errors.filter((error) => error.type !== "拼写错误" && error.type !== "跟打不完整").length,
+      targetTokens: getWritingTokens(item.targetSentence),
+    };
+  }
+
+  const parts = parseWritingSlotInput(input);
+  slots.forEach((slot, index) => {
+    const part = parts[index] || "";
+    const matchesPart = normaliseWritingText(part) === normaliseWritingText(slot);
+    const appearsInFullInput = parts.length !== slots.length && slotAppearsInInput(input, slot);
+
+    if (matchesPart || appearsInFullInput) {
+      slotCorrectCount += 1;
+      return;
+    }
+
+    const spellingErrors = detectSlotSpelling(part || input, slot);
+    if (spellingErrors.length) {
+      errors.push(...spellingErrors);
+      return;
+    }
+
+    errors.push({
+      type: "词块错误",
+      wrong: part || "未输入",
+      correction: slot,
+      note: `第 ${index + 1} 个槽位要用稳定词块。`,
+    });
+  });
+
+  if (parts.length > slots.length) {
+    errors.push({
+      type: "多余词块",
+      wrong: parts.slice(slots.length).join(" / "),
+      correction: "只保留本句槽位需要的词块",
+      note: "临考训练先不要扩写，减少现场造句。",
+    });
+  }
+
+  const correct = slotCorrectCount === slots.length && errors.length === 0;
+  return {
+    correct,
+    errors: dedupeWritingErrors(errors),
+    accuracy: slots.length ? Math.round((slotCorrectCount / slots.length) * 100) : 0,
+    slotCorrectCount,
+    slotTotal: slots.length || 1,
+    dangerCount: errors.filter((error) => error.type !== "拼写错误" && error.type !== "词块错误").length,
+    targetTokens: slots.flatMap(getWritingTokens),
+  };
+}
+
+function getWritingErrorBucket(error) {
+  if (error.type === "拼写错误") return "spellingErrors";
+  if (error.type === "危险表达" || error.type === "多余词块") return "phraseErrors";
+  return "grammarErrors";
+}
+
+function updateWritingStats(result, elapsedSeconds) {
+  ensureWritingStatsToday();
+  state.writingStats.attempts += 1;
+  state.writingStats.correct += result.correct ? 1 : 0;
+  state.writingStats.totalSeconds += elapsedSeconds;
+  state.writingStats.totalWords += result.targetTokens.length;
+  state.writingStats.slotAttempts += result.slotTotal;
+  state.writingStats.slotCorrect += result.slotCorrectCount;
+  state.writingStats.dangerErrors += result.dangerCount;
+  state.writingStats.lastPracticedAt = Date.now();
+
+  result.errors.forEach((error) => {
+    const bucket = getWritingErrorBucket(error);
+    state.writingStats[bucket] += 1;
+    const key = `${error.type}: ${error.wrong} -> ${error.correction}`;
+    state.writingStats.repeatedErrors[key] = (state.writingStats.repeatedErrors[key] || 0) + 1;
+  });
+}
+
+function renderWritingStats() {
+  ensureWritingStatsToday();
+  const slotAccuracy = state.writingStats.slotAttempts
+    ? Math.round((state.writingStats.slotCorrect / state.writingStats.slotAttempts) * 100)
+    : 0;
+  writingAccuracy.textContent = String(state.writingStats.packsCompletedToday || 0);
+  writingSpeed.textContent = `${slotAccuracy}%`;
+  writingErrorCount.textContent = String(state.writingStats.dangerErrors || 0);
+}
+
+function upsertWritingMistake(item, input, result) {
+  const key = getWritingMistakeKey(item);
+  const existing = state.writingMistakeBook[key] || {};
+  const pack = getSelectedWritingPack();
+  state.writingMistakeBook[key] = {
+    mistakeKey: key,
+    id: item.id,
+    packId: item.packId || pack?.id || state.writingPackId,
+    topic: item.topic || pack?.topic || "",
+    role: item.role,
+    zhPrompt: item.zhPrompt,
+    sentenceFrame: item.sentenceFrame,
+    targetSentence: item.targetSentence,
+    slots: item.slots || [],
+    safeChunks: item.safeChunks || [],
+    phase: state.writingReviewing ? "slot" : state.writingPhase,
+    lastInput: input,
+    errors: result.errors.map((error) => ({
+      type: error.type,
+      wrong: error.wrong,
+      correction: error.correction,
+      note: error.note,
+    })),
+    repeatCount: (existing.repeatCount || 0) + 1,
+    attempts: (existing.attempts || 0) + 1,
+    streak: 0,
+    lastPracticedAt: Date.now(),
+  };
+}
+
+function recordWritingReviewCorrect(item) {
+  const key = getWritingMistakeKey(item);
+  const mistake = state.writingMistakeBook[key];
+  if (!mistake) return false;
+  mistake.streak = (mistake.streak || 0) + 1;
+  mistake.attempts = (mistake.attempts || 0) + 1;
+  mistake.lastPracticedAt = Date.now();
+
+  if (mistake.streak >= 2) {
+    delete state.writingMistakeBook[key];
+    return true;
+  }
+  return false;
+}
+
+function renderWritingMistakeBook() {
+  renderWritingBookTabs();
+  const showingFavorites = state.writingBookMode === "favorites";
+  const items = showingFavorites ? getWritingFavorites() : getWritingMistakes();
+
+  if (!items.length) {
+    writingMistakeList.innerHTML = showingFavorites
+      ? `<p class="empty-state">收藏本为空。点击当前写作题或错词块里的收藏按钮后会保存在这里。</p>`
+      : `<p class="empty-state">暂无错词块。填槽或连句答错后会自动收进这里。</p>`;
+    return;
+  }
+
+  writingMistakeList.innerHTML = items
+    .map((item) => {
+      const key = getWritingMistakeKey(item);
+      const isFavorite = Boolean(state.writingFavoriteBook[key]);
+      const errorSummary = (item.errors || [])
+        .slice(0, 3)
+        .map((error) => `${escapeHtml(error.type)}：${escapeHtml(error.wrong)} -> ${escapeHtml(error.correction)}`)
+        .join("<br>");
+      const statusText = showingFavorites
+        ? item.favoritedAt
+          ? `收藏于 ${new Date(item.favoritedAt).toLocaleDateString("zh-CN")}`
+          : "已收藏"
+        : `重复 ${item.repeatCount || 1} · 连对 ${item.streak || 0}/2`;
+
+      return `
+        <article class="writing-mistake-item">
+          <div class="writing-mistake-meta">
+            <strong>${escapeHtml(item.role || "Body sentence")}</strong>
+            <span>${escapeHtml(item.topic || "")}</span>
+          </div>
+          <p>${escapeHtml(item.zhPrompt || "")}</p>
+          <p class="writing-target">${escapeHtml(item.sentenceFrame || item.targetSentence || "")}</p>
+          <p class="writing-last-input">上次输入：${escapeHtml(item.lastInput || "未记录")}</p>
+          <p class="writing-error-summary">${errorSummary || "记住并打对目标词块。"}</p>
+          <div class="writing-mistake-actions">
+            <span>${escapeHtml(statusText)}</span>
+            <button class="secondary-button" type="button" data-writing-review-one="${escapeHtml(key)}">练这一句</button>
+            <button class="secondary-button" type="button" data-writing-speak-item="${escapeHtml(key)}">朗读</button>
+            <button
+              class="secondary-button writing-favorite-action ${isFavorite ? "is-favorite" : ""}"
+              type="button"
+              data-writing-toggle-favorite="${escapeHtml(key)}"
+            >${isFavorite ? "★ 已收藏" : "☆ 收藏"}</button>
+            ${
+              showingFavorites
+                ? `<button class="remove-button" type="button" data-writing-remove-favorite="${escapeHtml(key)}">移除</button>`
+                : `<button class="remove-button" type="button" data-writing-remove-mistake="${escapeHtml(key)}">移除</button>`
+            }
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function setWritingEmpty(message) {
+  state.writingCurrent = null;
+  state.writingStartedAt = 0;
+  state.writingChecked = false;
+  writingTopic.textContent = "Topic";
+  writingRole.textContent = writingPhaseLabels[state.writingPhase] || "填槽";
+  writingPrompt.textContent = message;
+  writingFrame.textContent = "";
+  writingChunks.innerHTML = "";
+  writingInput.value = "";
+  writingInput.disabled = true;
+  writingSpeakButton.disabled = true;
+  writingFavoriteButton.disabled = true;
+  writingCheckButton.disabled = true;
+  writingNextButton.disabled = true;
+  writingInputLabel.textContent = "输入本句要填的词块";
+  writingResult.className = "writing-result";
+  writingResult.innerHTML = "";
+  updateWritingFavoriteButton();
+}
+
+function getWritingEmptyMessage() {
+  if (state.writingReviewing) return "错词块本为空，先做填槽训练。";
+  if (state.writingAllMode) return "考前全练已完成。";
+  return "选择主题包后开始，先练 5 句 Body 段骨架。";
+}
+
+function renderWritingCard() {
+  const current = getWritingPracticeItem();
+  if (!current) {
+    setWritingEmpty(getWritingEmptyMessage());
+    return;
+  }
+
+  const pack = getSelectedWritingPack();
+  const phase = state.writingReviewing ? "slot" : state.writingPhase;
+  state.writingCurrent = {
+    ...current,
+    packId: current.packId || pack?.id || state.writingPackId,
+    topic: current.topic || pack?.topic || "",
+  };
+  state.writingStartedAt = performance.now();
+  state.writingChecked = false;
+
+  writingTopic.textContent = state.writingCurrent.topic || "IELTS Writing";
+  if (state.writingReviewing) {
+    writingRole.textContent = `错词块复习 · 第 ${state.writingIndex + 1}/${state.writingDeck.length} 句 · ${
+      state.writingCurrent.role || ""
+    }`;
+  } else if (state.writingAllMode) {
+    writingRole.textContent = `考前全练 · 第 ${state.writingIndex + 1}/${state.writingDeck.length} 句 · ${
+      state.writingCurrent.role || ""
+    }`;
+  } else {
+    writingRole.textContent = `${writingPhaseLabels[phase]} · 第 ${state.writingChainIndex + 1}/5 句 · ${
+      state.writingCurrent.role
+    }`;
+  }
+  writingPrompt.textContent = state.writingCurrent.zhPrompt || "";
+  writingFrame.textContent = phase === "copy" ? state.writingCurrent.targetSentence : state.writingCurrent.sentenceFrame;
+
+  if (phase === "chain") {
+    writingChunks.innerHTML = `<span>${state.writingCurrent.slots.length} 个槽位，按顺序输入</span>`;
+  } else {
+    writingChunks.innerHTML = (state.writingCurrent.safeChunks || state.writingCurrent.slots || [])
+      .map((chunk) => `<span>${escapeHtml(chunk)}</span>`)
+      .join("");
+  }
+
+  writingInput.value = "";
+  writingInput.disabled = false;
+  writingSpeakButton.disabled = false;
+  writingCheckButton.disabled = false;
+  writingNextButton.disabled = false;
+  writingCheckButton.textContent = phase === "copy" ? "检查跟打" : "检查词块";
+  writingInputLabel.textContent = phase === "copy" ? "完整跟打目标句" : "输入本句要填的词块";
+  writingInput.placeholder =
+    phase === "copy" ? "完整抄打一遍上方英文句。" : "每个词块一行，或用 / 分隔。";
+  writingResult.className = "writing-result";
+  writingResult.innerHTML = "";
+  updateWritingFavoriteButton();
+  writingInput.focus();
+}
+
+function startWritingPractice(review = false, singleId = "") {
+  state.writingReviewing = review;
+  state.writingAllMode = false;
+  state.writingChecked = false;
+
+  if (review) {
+    state.writingDeck = singleId
+      ? getWritingMistakes().filter((item) => (item.mistakeKey || item.id) === singleId)
+      : getWritingMistakes();
+    state.writingIndex = 0;
+    if (!state.writingDeck.length) {
+      setWritingEmpty("错词块本为空，先做填槽训练。");
+      writingResult.innerHTML = `<p class="empty-state">暂无需要复习的错词块。</p>`;
+      return;
+    }
+  } else {
+    state.writingPackId = writingPackSelect.value || writingPatternPacks[0]?.id || "";
+    state.writingChainIndex = 0;
+    state.writingDeck = [];
+    state.writingIndex = 0;
+  }
+
+  renderWritingCard();
+}
+
+function startWritingAllPractice() {
+  state.writingReviewing = false;
+  state.writingAllMode = true;
+  state.writingChecked = false;
+  state.writingDeck = getAllWritingPackItems();
+  state.writingIndex = 0;
+  state.writingChainIndex = 0;
+
+  if (!state.writingDeck.length) {
+    setWritingEmpty("没有可用写作句型。");
+    writingResult.innerHTML = `<p class="empty-state">暂无可练习的写作词块。</p>`;
+    return;
+  }
+
+  renderWritingCard();
+}
+
+function completeWritingAllPractice() {
+  ensureWritingStatsToday();
+  state.writingStats.packsCompletedToday += writingPatternPacks.length;
+  state.writingAllMode = false;
+  state.writingDeck = [];
+  state.writingIndex = 0;
+  saveWritingStats();
+  renderWritingStats();
+  setWritingEmpty("考前全练已完成。");
+  writingResult.innerHTML = `
+    <strong>本轮考前全练完成</strong>
+    <p>本轮已经覆盖全部 ${writingPatternPacks.length} 个写作包。答错的词块已进入右侧错词块本，接下来点“复习错词块”。</p>
+  `;
+  void saveTraining(false);
+}
+
+function renderWritingResult(item, input, result, elapsedSeconds, removedFromMistakes) {
+  const speed = elapsedSeconds > 0 ? Math.round((result.targetTokens.length / elapsedSeconds) * 60) : 0;
+  const targetSpeech = getWritingTargetSpeechText(item);
+  const audioButtons = `
+    <div class="writing-result-actions">
+      ${
+        normaliseWord(input)
+          ? `<button class="secondary-button" type="button" data-writing-speak-result="input">读我的输入</button>`
+          : ""
+      }
+      <button class="secondary-button" type="button" data-writing-speak-result="target">读正确词块</button>
+    </div>
+  `;
+  state.writingLastResultSpeech = {
+    input,
+    target: targetSpeech,
+  };
+  writingResult.className = `writing-result ${result.correct ? "is-correct" : "is-wrong"}`;
+
+  if (result.correct) {
+    const continueMessage = removedFromMistakes
+      ? "已连续答对 2 次，已从错词块本移除。"
+      : state.writingAllMode
+        ? state.writingIndex >= state.writingDeck.length - 1
+          ? "这是考前全练最后一句，点击下一句完成本轮。"
+          : "点击下一句继续考前全练。"
+        : "按下一句继续 5 句链。";
+    writingResult.innerHTML = `
+      <strong>正确</strong>
+      <p>本句词块 ${result.slotCorrectCount}/${result.slotTotal} · 用时 ${elapsedSeconds.toFixed(1)} 秒 · ${speed} 词/分钟</p>
+      <p class="writing-target">${escapeHtml(item.targetSentence)}</p>
+      <p>${continueMessage}</p>
+      ${audioButtons}
+    `;
+    return;
+  }
+
+  const errorList = result.errors
+    .map(
+      (error) => `
+        <li>
+          <strong>${escapeHtml(error.type)}</strong>
+          <span>${escapeHtml(error.wrong)} -> ${escapeHtml(error.correction)}</span>
+          <small>${escapeHtml(error.note || "按目标词块重打一次。")}</small>
+        </li>
+      `,
+    )
+    .join("");
+
+  writingResult.innerHTML = `
+    <strong>需要收敛</strong>
+    <p>本句词块 ${result.slotCorrectCount}/${result.slotTotal} · 用时 ${elapsedSeconds.toFixed(1)} 秒 · ${speed} 词/分钟</p>
+    <p class="writing-target">目标词块：${escapeHtml((item.slots || []).join(" / "))}</p>
+    <p class="writing-last-input">你的输入：${escapeHtml(input || "空白")}</p>
+    ${audioButtons}
+    <ul class="writing-error-list">${errorList}</ul>
+  `;
+}
+
+function checkWritingAnswer() {
+  const item = state.writingCurrent;
+  if (!item || state.writingChecked) return;
+
+  const input = normaliseWord(writingInput.value || "");
+  const elapsedSeconds = Math.max(1, (performance.now() - state.writingStartedAt) / 1000);
+  const result = detectWritingErrors(input, item);
+  state.writingChecked = true;
+  writingCheckButton.disabled = true;
+
+  updateWritingStats(result, elapsedSeconds);
+  let removedFromMistakes = false;
+
+  if (result.correct) {
+    if (state.writingReviewing) {
+      removedFromMistakes = recordWritingReviewCorrect(item);
+      if (removedFromMistakes) {
+        const key = getWritingMistakeKey(item);
+        state.writingDeck = state.writingDeck.filter((mistake) => (mistake.mistakeKey || mistake.id) !== key);
+        if (state.writingIndex >= state.writingDeck.length) state.writingIndex = 0;
+      }
+    }
+  } else {
+    upsertWritingMistake(item, input, result);
+  }
+
+  renderWritingResult(item, input, result, elapsedSeconds, removedFromMistakes);
+  renderWritingStats();
+  renderWritingMistakeBook();
+  saveWritingStats();
+  saveWritingMistakeBook();
+  saveWritingFavoriteBook();
+  void saveTraining(false);
+}
+
+function completeWritingPackIfNeeded() {
+  if (state.writingReviewing || state.writingAllMode || !state.writingChecked) return;
+  const pack = getSelectedWritingPack();
+  if (state.writingChainIndex === (pack?.bodyChain?.length || 1) - 1) {
+    ensureWritingStatsToday();
+    state.writingStats.packsCompletedToday += 1;
+    saveWritingStats();
+  }
+}
+
+function nextWritingPrompt() {
+  if (state.writingAllMode) {
+    if (!state.writingDeck.length) {
+      completeWritingAllPractice();
+      return;
+    }
+    if (state.writingIndex >= state.writingDeck.length - 1) {
+      completeWritingAllPractice();
+      return;
+    }
+    state.writingIndex += 1;
+    renderWritingCard();
+    void saveTraining(false);
+    return;
+  }
+
+  if (state.writingReviewing) {
+    if (!state.writingDeck.length) {
+      startWritingPractice(true);
+      return;
+    }
+    state.writingIndex = (state.writingIndex + 1) % state.writingDeck.length;
+    renderWritingCard();
+    return;
+  }
+
+  completeWritingPackIfNeeded();
+  const pack = getSelectedWritingPack();
+  const length = pack?.bodyChain?.length || 1;
+  state.writingChainIndex = (state.writingChainIndex + 1) % length;
+  renderWritingStats();
+  renderWritingCard();
+  void saveTraining(false);
+}
+
+function removeWritingMistake(id) {
+  if (!state.writingMistakeBook[id]) return;
+  delete state.writingMistakeBook[id];
+  if (state.writingCurrent && getWritingMistakeKey(state.writingCurrent) === id && state.writingReviewing) {
+    state.writingDeck = state.writingDeck.filter((item) => (item.mistakeKey || item.id) !== id);
+    if (state.writingIndex >= state.writingDeck.length) state.writingIndex = 0;
+    renderWritingCard();
+  }
+  renderWritingMistakeBook();
+  saveWritingMistakeBook();
+  void saveTraining(false);
+}
+
+function renderShortcutSettings() {
+  advanceShortcut.value = state.shortcutSettings.advance;
+  replayShortcut.value = state.shortcutSettings.replay;
+  favoriteShortcut.value = state.shortcutSettings.favorite;
+  revealShortcut.value = state.shortcutSettings.reveal;
+  retryShortcut.value = state.shortcutSettings.retry;
+  shortcutStatus.textContent = `${shortcutLabels[state.shortcutSettings.advance]} 检查/下一题 · ${
+    shortcutLabels[state.shortcutSettings.replay]
+  } 重听 · ${shortcutLabels[state.shortcutSettings.favorite]} 收藏 · ${
+    shortcutLabels[state.shortcutSettings.reveal]
+  } 显示答案 · ${shortcutLabels[state.shortcutSettings.retry]} 再练`;
+}
+
+function updateShortcutSetting(action, code) {
+  if (!(action in defaultShortcutSettings) || !(code in shortcutLabels)) return;
+  const previous = state.shortcutSettings[action];
+
+  Object.keys(state.shortcutSettings).forEach((key) => {
+    if (key !== action && state.shortcutSettings[key] === code) {
+      state.shortcutSettings[key] = previous;
+    }
+  });
+
+  state.shortcutSettings[action] = code;
+  state.shortcutSettings = normaliseShortcutSettings(state.shortcutSettings);
+  saveShortcutSettings();
+  renderShortcutSettings();
+  void saveTraining(false);
+}
+
+function isEditableShortcutTarget(target) {
+  return Boolean(target?.closest?.("input, textarea, select, [contenteditable='true']"));
+}
+
+function shouldIgnoreGlobalShortcut(event) {
+  if (event.ctrlKey || event.altKey || event.metaKey) return true;
+  if (!isEditableShortcutTarget(event.target)) return false;
+
+  const isAnsweredQuizInput = event.target === answerInput && answerInput.disabled && state.answered;
+  return !isAnsweredQuizInput;
+}
+
+function shortcutMatches(event, action) {
+  return event.code === state.shortcutSettings[action];
+}
+
+function getLastResultForCurrent() {
+  const current = state.deck[state.currentIndex];
+  if (!current) return null;
+  const key = normaliseKey(current.word);
+  return [...state.results].reverse().find((result) => normaliseKey(result.word) === key) || null;
+}
+
+function refreshCurrentReviewAfterFavoriteChange() {
+  const current = state.deck[state.currentIndex];
+  const lastResult = getLastResultForCurrent();
+  if (current && state.answered && lastResult) {
+    renderAnswerReview(current, lastResult.response, lastResult.correct, lastResult.mode, lastResult.revealed);
+  }
+}
+
+function toggleCurrentFavoriteShortcut() {
+  const current = state.deck[state.currentIndex];
+  if (!current || !bookModes.includes(state.mode)) return false;
+
+  const key = normaliseKey(current.word);
+  if (!key) return false;
+
+  if (state.favoriteBook[state.mode]?.[key]) {
+    removeFavoriteBookItem(state.mode, key);
+    refreshCurrentReviewAfterFavoriteChange();
+    saveStatus.textContent = `已将 ${current.word} 移出收藏本。`;
+    void saveTraining(false);
+    return true;
+  }
+
+  const lastResult = getLastResultForCurrent();
+  if (state.correctBook[state.mode]?.[key]) {
+    moveCorrectItemToFavoriteBook(state.mode, key, false);
+  } else {
+    addEntryToFavoriteBook(state.mode, current, lastResult?.response || "");
+  }
+
+  refreshCurrentReviewAfterFavoriteChange();
+  saveStatus.textContent = `已将 ${current.word} 加入收藏本。`;
+  void saveTraining(false);
+  return true;
+}
+
+function handleAdvanceShortcut() {
+  if (state.mode === "dictation" && !state.answered && !checkButton.disabled) {
+    checkAnswer();
+    return true;
+  }
+
+  if (state.answered && !nextButton.disabled) {
+    nextRound();
+    return true;
+  }
+
+  return false;
+}
+
+function handleRevealShortcut() {
+  if (state.mode === "dictation" && !state.answered && !revealAnswerButton.disabled) {
+    revealAnswer();
+    return true;
+  }
+
+  return false;
+}
+
+function handleRetryShortcut() {
+  const lastResult = getLastResultForCurrent();
+  if (state.mode === "dictation" && state.answered && lastResult?.revealed) {
+    retryCurrentWord();
+    return true;
+  }
+
+  return false;
+}
+
+function handleGlobalShortcut(event) {
+  if (shouldIgnoreGlobalShortcut(event)) return;
+  if (state.activeSurface === "settings" || state.activeSurface === "listeningMistakes") return;
+  const inWritingPanel = Boolean(event.target?.closest?.(".writing-panel")) || state.activeSurface === "writing";
+
+  if (shortcutMatches(event, "retry")) {
+    if (handleRetryShortcut()) event.preventDefault();
+    return;
+  }
+
+  if (shortcutMatches(event, "reveal")) {
+    if (handleRevealShortcut()) event.preventDefault();
+    return;
+  }
+
+  if (shortcutMatches(event, "replay")) {
+    if (inWritingPanel && state.writingCurrent) {
+      event.preventDefault();
+      void speakCurrentWritingTarget();
+      return;
+    }
+
+    if (!listenButton.disabled) {
+      event.preventDefault();
+      if (state.answered) {
+        void speakCurrentWord();
+      } else {
+        speakCurrentRound(true);
+      }
+    }
+    return;
+  }
+
+  if (shortcutMatches(event, "favorite")) {
+    if (inWritingPanel && state.writingCurrent) {
+      event.preventDefault();
+      toggleWritingFavorite(state.writingCurrent);
+      return;
+    }
+
+    if (toggleCurrentFavoriteShortcut()) event.preventDefault();
+    return;
+  }
+
+  if (shortcutMatches(event, "advance")) {
+    if (handleAdvanceShortcut()) event.preventDefault();
+  }
+}
+
 function loadSampleWords() {
   wordInput.value = sampleEntries.join("\n");
   saveCurrentModeInput();
@@ -2905,8 +6542,98 @@ function updateSetupControls() {
 
 modeRadios.forEach((radio) => {
   radio.addEventListener("change", () => {
-    if (radio.checked) switchModeInput(radio.value);
+    if (radio.checked) {
+      setPrimarySurface("quiz", true);
+      switchModeInput(radio.value);
+    }
   });
+});
+sidebarToggle.addEventListener("click", () => setSidebarCollapsed(!state.sidebarCollapsed));
+sidebarSearchButton.addEventListener("click", () => {
+  setSidebarCollapsed(false);
+  favoritesDrawer.open = true;
+  bookSearchInput.focus();
+});
+writingModeNavButton.addEventListener("click", () => setPrimarySurface("writing", true));
+listeningMistakeNavButton.addEventListener("click", () => {
+  setPrimarySurface("listeningMistakes", true);
+  renderListeningMistakeLibrary();
+});
+settingsNavButton.addEventListener("click", () => setPrimarySurface("settings", true));
+addListeningMistakeButton.addEventListener("click", () => openListeningMistakeForm());
+listeningMistakeSearch.addEventListener("input", () => {
+  state.listeningMistakeQuery = listeningMistakeSearch.value;
+  renderListeningMistakeList();
+});
+listeningMistakeErrorFilter.addEventListener("change", () => {
+  state.listeningMistakeErrorFilter = listeningMistakeErrorFilter.value;
+  renderListeningMistakeList();
+});
+listeningMistakeStatusFilter.addEventListener("change", () => {
+  state.listeningMistakeStatusFilter = listeningMistakeStatusFilter.value;
+  renderListeningMistakeList();
+});
+listeningMistakeMethodFilter.addEventListener("change", () => {
+  state.listeningMistakeMethodFilter = listeningMistakeMethodFilter.value;
+  renderListeningMistakeList();
+});
+listeningMistakeList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-listening-mistake-open]");
+  if (!button) return;
+  state.listeningMistakeSelectedId = decodeURIComponent(button.dataset.listeningMistakeOpen);
+  renderListeningMistakeList();
+  renderListeningMistakeDetail();
+});
+listeningMistakeDetail.addEventListener("click", (event) => {
+  const editButton = event.target.closest("[data-listening-mistake-edit]");
+  if (editButton) {
+    const id = decodeURIComponent(editButton.dataset.listeningMistakeEdit);
+    const item = state.listeningMistakes.find((entry) => entry.id === id);
+    if (item) openListeningMistakeForm(item);
+    return;
+  }
+
+  const deleteButton = event.target.closest("[data-listening-mistake-delete]");
+  if (deleteButton) {
+    deleteListeningMistake(decodeURIComponent(deleteButton.dataset.listeningMistakeDelete));
+    return;
+  }
+
+  const reviewButton = event.target.closest("[data-listening-mistake-review]");
+  if (reviewButton) {
+    completeListeningMistakeReview(decodeURIComponent(reviewButton.dataset.listeningMistakeReview));
+    return;
+  }
+
+  const speakButton = event.target.closest("[data-listening-mistake-speak]");
+  if (speakButton) speakListeningMistakeTranscript(decodeURIComponent(speakButton.dataset.listeningMistakeSpeak));
+});
+listeningMistakeDetail.addEventListener("change", (event) => {
+  const select = event.target.closest("[data-listening-mistake-status]");
+  if (!select) return;
+  updateListeningMistakeStatus(decodeURIComponent(select.dataset.listeningMistakeStatus), select.value);
+});
+listeningMistakeForm.addEventListener("submit", submitListeningMistakeForm);
+listeningMistakeDialogClose.addEventListener("click", closeListeningMistakeForm);
+listeningMistakeCancel.addEventListener("click", closeListeningMistakeForm);
+listeningMistakeDialog.addEventListener("click", (event) => {
+  if (event.target === listeningMistakeDialog) closeListeningMistakeForm();
+});
+listeningQuestionImage.addEventListener("change", () => {
+  recogniseListeningScreenshot(
+    listeningQuestionImage.files?.[0],
+    listeningQuestionText,
+    listeningQuestionOcrStatus,
+    listeningQuestionImage,
+  );
+});
+listeningTranscriptImage.addEventListener("change", () => {
+  recogniseListeningScreenshot(
+    listeningTranscriptImage.files?.[0],
+    listeningTranscriptText,
+    listeningTranscriptOcrStatus,
+    listeningTranscriptImage,
+  );
 });
 bookTabs.forEach((button) => {
   button.addEventListener("click", () => {
@@ -2925,28 +6652,196 @@ bookList.addEventListener("click", (event) => {
   if (!button) return;
   removeFavoriteBookItem(state.bookMode, button.dataset.removeBook);
 });
-bookReviewButton.addEventListener("click", startFavoriteBookReview);
+bookReviewButton.addEventListener("click", () => startFavoriteBookReview("cards"));
+bookListReviewButton.addEventListener("click", () => startFavoriteBookReview("list"));
+favoriteReviewClose.addEventListener("click", closeFavoriteBookReview);
+favoriteReviewViewButtons.forEach((button) => {
+  button.addEventListener("click", () => setFavoriteReviewView(button.dataset.favoriteReviewView));
+});
+favoriteReviewPrevious.addEventListener("click", () => moveFavoriteReview(-1));
+favoriteReviewNext.addEventListener("click", () => moveFavoriteReview(1));
+favoriteReviewSpeak.addEventListener("click", () => {
+  void speakFavoriteReviewWord();
+});
+favoriteReviewRemove.addEventListener("click", () => {
+  const item = state.favoriteReviewItems[state.favoriteReviewIndex];
+  if (item) removeFavoriteReviewWord(item.word);
+});
+favoriteListReviewSearch.addEventListener("input", () => {
+  state.favoriteReviewQuery = favoriteListReviewSearch.value;
+  renderFavoriteReviewList();
+});
+favoriteListReviewSort.addEventListener("change", () => {
+  state.favoriteReviewSort = favoriteListReviewSort.value;
+  renderFavoriteReviewList();
+});
+favoriteListReviewRows.addEventListener("click", (event) => {
+  const removeButton = event.target.closest("[data-favorite-list-remove]");
+  if (removeButton) {
+    removeFavoriteReviewWord(decodeURIComponent(removeButton.dataset.favoriteListRemove));
+    return;
+  }
+
+  const button = event.target.closest("[data-favorite-list-speak]");
+  if (!button) return;
+  void speakFavoriteListWord(decodeURIComponent(button.dataset.favoriteListSpeak), button);
+});
 exportDataButton.addEventListener("click", exportTrainingData);
 importDataButton.addEventListener("click", importTrainingData);
-voiceSelect.addEventListener("change", () => updateVoiceStatus(getSelectedVoice()));
+voiceSelect.addEventListener("change", () => {
+  saveSpeechSettings();
+  updateVoiceStatus(getSelectedVoice());
+});
+rateControl.addEventListener("input", saveSpeechSettings);
+speechStyle.addEventListener("change", () => {
+  saveSpeechSettings();
+  updateVoiceStatus(getSelectedVoice());
+});
+intonationControl.addEventListener("input", saveSpeechSettings);
+speechPreviewButton.addEventListener("click", () => {
+  void previewSpeechStyle();
+});
 startButton.addEventListener("click", startQuiz);
 saveTrainingButton.addEventListener("click", () => saveTraining(true));
 cleanKnownButton.addEventListener("click", cleanKnownWordsFromInput);
 sampleButton.addEventListener("click", loadSampleWords);
 listenButton.addEventListener("click", () => speakCurrentRound(true));
 nextButton.addEventListener("click", nextRound);
+revealAnswerButton.addEventListener("click", revealAnswer);
 scoreBox.addEventListener("click", renderCorrectAnswers);
 autoSpeak.addEventListener("change", updateActionButtons);
+advanceShortcut.addEventListener("change", () => updateShortcutSetting("advance", advanceShortcut.value));
+replayShortcut.addEventListener("change", () => updateShortcutSetting("replay", replayShortcut.value));
+favoriteShortcut.addEventListener("change", () => updateShortcutSetting("favorite", favoriteShortcut.value));
+revealShortcut.addEventListener("change", () => updateShortcutSetting("reveal", revealShortcut.value));
+retryShortcut.addEventListener("change", () => updateShortcutSetting("retry", retryShortcut.value));
 wordInput.addEventListener("input", saveCurrentModeInput);
 answerInput.addEventListener("input", updateActionButtons);
+answerInput.addEventListener("keydown", (event) => {
+  if (!shortcutMatches(event, "reveal")) return;
+  if (handleRevealShortcut()) event.preventDefault();
+});
+bookSearchInput.addEventListener("input", () => {
+  state.bookSearch = bookSearchInput.value;
+  renderFavoriteBook();
+});
+document.addEventListener(
+  "pointerdown",
+  (event) => {
+    if (event.target?.closest?.(".writing-panel")) {
+      setPrimarySurface("writing");
+    } else if (event.target?.closest?.(".listening-mistake-panel")) {
+      setPrimarySurface("listeningMistakes");
+    } else if (event.target?.closest?.(".settings-panel")) {
+      setPrimarySurface("settings");
+    } else if (event.target?.closest?.(".quiz-panel")) {
+      setPrimarySurface("quiz");
+    }
+  },
+  true,
+);
+document.addEventListener(
+  "focusin",
+  (event) => {
+    if (event.target?.closest?.(".writing-panel")) {
+      setPrimarySurface("writing");
+    } else if (event.target?.closest?.(".listening-mistake-panel")) {
+      setPrimarySurface("listeningMistakes");
+    } else if (event.target?.closest?.(".settings-panel")) {
+      setPrimarySurface("settings");
+    } else if (event.target?.closest?.(".quiz-panel")) {
+      setPrimarySurface("quiz");
+    }
+  },
+  true,
+);
 wordDetailClose.addEventListener("click", closeWordDetail);
 wordDetailDialog.addEventListener("click", (event) => {
   if (event.target === wordDetailDialog) closeWordDetail();
 });
 wordDetailSpeakWord.addEventListener("click", () => speakWordDetail("word"));
 wordDetailSpeakExample.addEventListener("click", () => speakWordDetail("example"));
+writingStartButton.addEventListener("click", () => startWritingPractice(false));
+writingAllButton.addEventListener("click", startWritingAllPractice);
+writingReviewButton.addEventListener("click", () => startWritingPractice(true));
+writingPackSelect.addEventListener("change", () => {
+  state.writingPackId = writingPackSelect.value;
+  if (!state.writingReviewing) {
+    state.writingChainIndex = 0;
+    renderWritingCard();
+  }
+  void saveTraining(false);
+});
+writingPhaseButtons.forEach((button) => {
+  button.addEventListener("click", () => setWritingPhase(button.dataset.writingPhase));
+});
+writingBookTabs.forEach((button) => {
+  button.addEventListener("click", () => {
+    state.writingBookMode = button.dataset.writingBookTab === "favorites" ? "favorites" : "mistakes";
+    renderWritingMistakeBook();
+  });
+});
+writingSpeakButton.addEventListener("click", () => {
+  void speakCurrentWritingTarget();
+});
+writingFavoriteButton.addEventListener("click", () => toggleWritingFavorite(state.writingCurrent));
+writingCheckButton.addEventListener("click", checkWritingAnswer);
+writingNextButton.addEventListener("click", nextWritingPrompt);
+writingResult.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-writing-speak-result]");
+  if (!button) return;
+
+  const kind = button.dataset.writingSpeakResult;
+  const text = kind === "input" ? state.writingLastResultSpeech.input : state.writingLastResultSpeech.target;
+  void speakWritingText(text, kind === "input" ? "你的输入为空，无法朗读。" : "当前没有可朗读的正确词块。");
+});
+writingInput.addEventListener("keydown", (event) => {
+  if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+    event.preventDefault();
+    checkWritingAnswer();
+    return;
+  }
+
+  if ((event.ctrlKey || event.metaKey) && (event.code === "KeyR" || shortcutMatches(event, "replay"))) {
+    event.preventDefault();
+    void speakCurrentWritingTarget();
+  }
+});
+writingMistakeList.addEventListener("click", (event) => {
+  const reviewButton = event.target.closest("[data-writing-review-one]");
+  if (reviewButton) {
+    startWritingSinglePractice(findWritingBookItem(reviewButton.dataset.writingReviewOne));
+    return;
+  }
+
+  const speakButton = event.target.closest("[data-writing-speak-item]");
+  if (speakButton) {
+    void speakWritingText(getWritingTargetSpeechText(findWritingBookItem(speakButton.dataset.writingSpeakItem)));
+    return;
+  }
+
+  const favoriteButton = event.target.closest("[data-writing-toggle-favorite]");
+  if (favoriteButton) {
+    toggleWritingFavorite(findWritingBookItem(favoriteButton.dataset.writingToggleFavorite));
+    return;
+  }
+
+  const removeFavoriteButton = event.target.closest("[data-writing-remove-favorite]");
+  if (removeFavoriteButton) {
+    removeWritingFavorite(removeFavoriteButton.dataset.writingRemoveFavorite);
+    return;
+  }
+
+  const removeButton = event.target.closest("[data-writing-remove-mistake]");
+  if (removeButton) removeWritingMistake(removeButton.dataset.writingRemoveMistake);
+});
 answerForm.addEventListener("submit", (event) => {
   event.preventDefault();
+  if (state.answered && !nextButton.disabled) {
+    nextRound();
+    return;
+  }
+
   checkAnswer();
 });
 reviewPanel.addEventListener("submit", (event) => {
@@ -2964,12 +6859,24 @@ reviewPanel.addEventListener("submit", (event) => {
   const current = state.deck[state.currentIndex];
   const lastResult = [...state.results].reverse().find((result) => normaliseKey(result.word) === normaliseKey(word));
   if (current && normaliseKey(current.word) === normaliseKey(word) && lastResult) {
-    renderAnswerReview(current, lastResult.response, lastResult.correct, lastResult.mode);
+    renderAnswerReview(current, lastResult.response, lastResult.correct, lastResult.mode, lastResult.revealed);
   } else {
     form.replaceWith("释义已保存。");
   }
 });
 reviewPanel.addEventListener("click", (event) => {
+  const retryCurrentWordButton = event.target.closest("[data-retry-current-word]");
+  if (retryCurrentWordButton) {
+    retryCurrentWord();
+    return;
+  }
+
+  const speakReviewWordButton = event.target.closest("[data-speak-review-word]");
+  if (speakReviewWordButton) {
+    void speakCurrentWord();
+    return;
+  }
+
   const detailButton = event.target.closest("[data-open-word-detail]");
   if (detailButton) {
     openWordDetail(detailButton.dataset.detailMode, detailButton.dataset.detailKey, detailButton.dataset.detailSource);
@@ -3038,6 +6945,42 @@ reviewPanel.addEventListener("click", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if (!listeningMistakeDialog.hidden) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeListeningMistakeForm();
+    }
+    return;
+  }
+
+  if (!favoriteReviewScreen.hidden) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeFavoriteBookReview();
+      return;
+    }
+
+    if (state.favoriteReviewView !== "cards") return;
+
+    if (event.code === "KeyR") {
+      event.preventDefault();
+      void speakFavoriteReviewWord();
+      return;
+    }
+
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      moveFavoriteReview(-1);
+      return;
+    }
+
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      moveFavoriteReview(1);
+    }
+    return;
+  }
+
   if (!wordDetailDialog.hidden) {
     if (event.key === "Escape") {
       event.preventDefault();
@@ -3046,25 +6989,44 @@ document.addEventListener("keydown", (event) => {
     return;
   }
 
+  handleGlobalShortcut(event);
+  if (event.defaultPrevented || isEditableShortcutTarget(event.target)) return;
+
   if ((state.mode === "listening" || state.mode === "reading") && /^[1-9]$/.test(event.key)) {
     const button = choices.querySelectorAll("button")[Number(event.key) - 1];
-    if (button && !button.disabled) button.click();
-  }
-
-  if (event.key === "Enter" && state.answered && !nextButton.disabled) {
-    event.preventDefault();
-    nextButton.click();
+    if (button && !button.disabled) {
+      event.preventDefault();
+      button.click();
+    }
   }
 });
 
+mountSettingsControls();
+applySpeechSettings();
 state.mode = getSelectedMode();
+state.listeningMistakeSelectedId = state.listeningMistakes[0]?.id || "";
+setSidebarCollapsed(loadSidebarCollapsed(), false);
+setPrimarySurface("quiz");
+updateListeningMistakeNavVisibility();
 wordInput.value = state.modeInputs[state.mode] || wordInput.value;
 saveCurrentModeInput();
 loadVoices();
 updateSetupControls();
 updateScoreBox();
 renderFavoriteBook();
+renderShortcutSettings();
+populateWritingPackSelect();
+setWritingPhase(state.writingPhase);
+renderWritingStats();
+renderWritingMistakeBook();
+renderListeningMistakeLibrary();
+setWritingEmpty("选择主题包后开始，先练 5 句 Body 段骨架。");
 restoreTraining();
+updateListeningMistakeNavVisibility();
+window.addEventListener("pagehide", () => {
+  window.clearTimeout(listeningOcrIdleTimer);
+  listeningOcrWorkerPromise?.then((worker) => worker.terminate()).catch(() => {});
+});
 if ("speechSynthesis" in window) {
   if (typeof window.speechSynthesis.addEventListener === "function") {
     window.speechSynthesis.addEventListener("voiceschanged", loadVoices);

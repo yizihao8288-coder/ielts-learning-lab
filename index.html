@@ -10,37 +10,68 @@
     <main class="app-shell">
       <section class="input-panel" aria-labelledby="setup-title">
         <div class="brand-row">
-          <div>
-            <p class="eyebrow">Ielts listening</p>
-            <h1 id="setup-title">英式单词练习</h1>
+          <div class="brand-copy">
+            <span class="brand-symbol" aria-hidden="true">I</span>
+            <h1 id="setup-title">IELTS</h1>
           </div>
           <div class="voice-pill" id="voiceStatus">检测语音中</div>
+          <div class="sidebar-header-actions">
+            <button class="sidebar-icon-button" id="sidebarSearchButton" type="button" aria-label="搜索收藏" title="搜索收藏">
+              <span class="sidebar-search-icon" aria-hidden="true"></span>
+            </button>
+            <button class="sidebar-icon-button sidebar-toggle" id="sidebarToggle" type="button" aria-label="收起侧边栏" aria-expanded="true">
+              <span class="sidebar-layout-icon" aria-hidden="true"></span>
+            </button>
+          </div>
         </div>
 
+        <div class="sidebar-body">
+        <p class="sidebar-nav-label">练习模式</p>
         <div class="mode-tabs" role="radiogroup" aria-label="练习模式">
-          <label class="mode-option">
+          <label class="mode-option" data-mode-short="听">
             <input type="radio" name="quizMode" value="listening" checked />
             <span>
               <strong>听力模式</strong>
               <small>听后选词，并查看释义</small>
             </span>
           </label>
-          <label class="mode-option">
+          <label class="mode-option" data-mode-short="写">
             <input type="radio" name="quizMode" value="dictation" />
             <span>
               <strong>填空模式</strong>
               <small>例句挖空，手写单词</small>
             </span>
           </label>
-          <label class="mode-option">
+          <label class="mode-option" data-mode-short="读">
             <input type="radio" name="quizMode" value="reading" />
             <span>
               <strong>阅读模式</strong>
               <small>看例句，选择释义</small>
             </span>
           </label>
+          <button class="writing-mode-nav" id="writingModeNavButton" type="button">
+            <span class="writing-mode-short" aria-hidden="true">作</span>
+            <span>
+              <strong>写作模式</strong>
+              <small>词块与句型训练</small>
+            </span>
+          </button>
         </div>
 
+        <button class="listening-mistake-nav" id="listeningMistakeNavButton" type="button">
+          <span class="listening-mistake-nav-icon" aria-hidden="true">错</span>
+          <span>
+            <strong>听力错题库</strong>
+            <small id="listeningMistakeNavCount">0</small>
+          </span>
+        </button>
+
+        <details class="sidebar-section practice-drawer">
+          <summary class="sidebar-section-summary">
+            <span class="sidebar-section-icon" aria-hidden="true">▤</span>
+            <span>词库与训练</span>
+          </summary>
+          <div class="sidebar-section-content">
         <label class="field-label" for="wordInput">单词列表</label>
         <textarea
           id="wordInput"
@@ -68,13 +99,35 @@ significant
 
           <label class="control">
             <span>语速</span>
-            <input id="rateControl" type="range" min="0.65" max="1.1" step="0.05" value="0.85" />
+            <input id="rateControl" type="range" min="0.65" max="1.1" step="0.05" value="0.95" />
           </label>
 
           <label class="control control-wide">
             <span>发音</span>
             <select id="voiceSelect"></select>
           </label>
+
+          <label class="control control-wide">
+            <span>朗读风格</span>
+            <select id="speechStyle">
+              <option value="ielts" selected>IELTS 自然语调</option>
+              <option value="clear">清晰慢速</option>
+              <option value="original">保留原声音色</option>
+            </select>
+          </label>
+
+          <label class="control">
+            <span>语调起伏</span>
+            <input id="intonationControl" type="range" min="0.25" max="1" step="0.05" value="0.75" />
+          </label>
+
+          <div class="control speech-preview-control">
+            <span>试听</span>
+            <button class="secondary-button" id="speechPreviewButton" type="button">
+              <span class="button-icon" aria-hidden="true">♪</span>
+              试听 IELTS 语调
+            </button>
+          </div>
 
           <label class="switch">
             <input id="autoSpeak" type="checkbox" checked />
@@ -93,7 +146,7 @@ significant
             开始练习
           </button>
           <button class="secondary-button" id="saveTrainingButton" type="button">
-            <span class="button-icon" aria-hidden="true">💾</span>
+            <span class="button-icon" aria-hidden="true">↓</span>
             保存训练
           </button>
           <button class="secondary-button" id="cleanKnownButton" type="button">
@@ -106,7 +159,99 @@ significant
           </button>
         </div>
         <p class="save-status" id="saveStatus" aria-live="polite"></p>
+          </div>
+        </details>
 
+        <details class="tool-drawer">
+          <summary class="tool-summary">
+            <span class="tool-summary-icon" aria-hidden="true">⌨</span>
+            <span>展开快捷键设置</span>
+          </summary>
+          <section class="shortcut-panel" aria-labelledby="shortcut-title">
+            <div class="shortcut-header">
+              <div>
+                <p class="eyebrow">Settings</p>
+                <h2 id="shortcut-title">快捷键设置</h2>
+              </div>
+              <p class="shortcut-status" id="shortcutStatus" aria-live="polite"></p>
+            </div>
+            <div class="shortcut-grid">
+              <label class="shortcut-control">
+                <span>检查 / 下一题</span>
+                <select id="advanceShortcut">
+                  <option value="Enter">Enter</option>
+                  <option value="Space">Space</option>
+                  <option value="KeyR">R</option>
+                  <option value="KeyE">E</option>
+                  <option value="KeyF">F</option>
+                  <option value="KeyJ">J</option>
+                  <option value="KeyK">K</option>
+                  <option value="ArrowRight">→</option>
+                </select>
+              </label>
+              <label class="shortcut-control">
+                <span>朗读 / 重听</span>
+                <select id="replayShortcut">
+                  <option value="KeyR">R</option>
+                  <option value="Space">Space</option>
+                  <option value="Enter">Enter</option>
+                  <option value="KeyE">E</option>
+                  <option value="KeyF">F</option>
+                  <option value="KeyJ">J</option>
+                  <option value="KeyK">K</option>
+                  <option value="ArrowRight">→</option>
+                </select>
+              </label>
+              <label class="shortcut-control">
+                <span>收藏 / 移除</span>
+                <select id="favoriteShortcut">
+                  <option value="KeyE">E</option>
+                  <option value="Enter">Enter</option>
+                  <option value="Space">Space</option>
+                  <option value="KeyR">R</option>
+                  <option value="KeyF">F</option>
+                  <option value="KeyJ">J</option>
+                  <option value="KeyK">K</option>
+                  <option value="ArrowRight">→</option>
+                </select>
+              </label>
+              <label class="shortcut-control">
+                <span>显示答案</span>
+                <select id="revealShortcut">
+                  <option value="Escape">Esc</option>
+                  <option value="KeyF">F</option>
+                  <option value="KeyJ">J</option>
+                  <option value="KeyK">K</option>
+                  <option value="Space">Space</option>
+                  <option value="KeyR">R</option>
+                  <option value="KeyE">E</option>
+                  <option value="Enter">Enter</option>
+                  <option value="ArrowRight">→</option>
+                </select>
+              </label>
+              <label class="shortcut-control">
+                <span>再练当前词</span>
+                <select id="retryShortcut">
+                  <option value="KeyF">F</option>
+                  <option value="KeyJ">J</option>
+                  <option value="KeyK">K</option>
+                  <option value="Space">Space</option>
+                  <option value="Escape">Esc</option>
+                  <option value="KeyR">R</option>
+                  <option value="KeyE">E</option>
+                  <option value="Enter">Enter</option>
+                  <option value="ArrowRight">→</option>
+                </select>
+              </label>
+            </div>
+          </section>
+        </details>
+
+        <details class="sidebar-section favorites-drawer" id="favoritesDrawer">
+          <summary class="sidebar-section-summary">
+            <span class="sidebar-section-icon" aria-hidden="true">☆</span>
+            <span>收藏本</span>
+          </summary>
         <section class="book-panel" aria-labelledby="book-title">
           <div class="book-header">
             <div>
@@ -124,8 +269,16 @@ significant
                 <span class="button-icon" aria-hidden="true">↻</span>
                 复习
               </button>
+              <button class="secondary-button book-review-button" id="bookListReviewButton" type="button" disabled>
+                <span class="button-icon" aria-hidden="true">≡</span>
+                排序复习
+              </button>
             </div>
           </div>
+          <label class="book-search" for="bookSearchInput">
+            <span>搜索收藏</span>
+            <input id="bookSearchInput" type="search" autocomplete="off" placeholder="输入单词、释义或例句" />
+          </label>
           <div class="book-tabs" role="tablist" aria-label="收藏本模式">
             <button class="book-tab active" type="button" data-book-tab="listening">
               听力 <span data-book-count="listening">0</span>
@@ -139,6 +292,14 @@ significant
           </div>
           <div class="book-list" id="bookList" aria-live="polite"></div>
         </section>
+        </details>
+        </div>
+        <nav class="sidebar-footer-nav" aria-label="其他页面">
+          <button class="sidebar-page-link" id="settingsNavButton" type="button">
+            <span aria-hidden="true">⚙</span>
+            <span>设置</span>
+          </button>
+        </nav>
       </section>
 
       <section class="quiz-panel" aria-labelledby="quiz-title">
@@ -184,11 +345,15 @@ significant
             <span class="button-icon" aria-hidden="true">✓</span>
             检查
           </button>
+          <button class="secondary-button" id="revealAnswerButton" type="button" disabled>
+            <span class="button-icon" aria-hidden="true">!</span>
+            显示答案
+          </button>
         </form>
 
         <div class="quiz-actions">
           <button class="secondary-button" id="listenButton" type="button" disabled>
-            <span class="button-icon" aria-hidden="true">🔊</span>
+            <span class="button-icon" aria-hidden="true">♪</span>
             朗读 / 重听
           </button>
           <button class="primary-button" id="nextButton" type="button" disabled>
@@ -199,7 +364,385 @@ significant
 
         <div class="review-panel" id="reviewPanel" aria-live="polite"></div>
       </section>
+
+      <section class="listening-mistake-panel" aria-labelledby="listening-mistake-title" hidden>
+        <header class="listening-mistake-header">
+          <div>
+            <p class="eyebrow">Listening review</p>
+            <h2 id="listening-mistake-title">IELTS 听力极简错题库</h2>
+            <p>截图只用于本地 OCR，保存后仅保留文字和复习记录。</p>
+          </div>
+          <button class="primary-button" id="addListeningMistakeButton" type="button">
+            <span class="button-icon" aria-hidden="true">+</span>
+            新建错题
+          </button>
+        </header>
+
+        <div class="listening-mistake-summary" aria-label="错题库统计">
+          <div><strong id="listeningMistakeTotal">0</strong><span>全部错题</span></div>
+          <div><strong id="listeningMistakeReviewing">0</strong><span>复习中</span></div>
+          <div><strong id="listeningMistakeMastered">0</strong><span>已掌握</span></div>
+          <div><strong id="listeningMistakeReviews">0</strong><span>累计复习</span></div>
+        </div>
+
+        <section class="listening-mistake-toolbar" aria-label="筛选错题">
+          <label class="listening-mistake-search">
+            <span class="sr-only">搜索标题和备注</span>
+            <input id="listeningMistakeSearch" type="search" autocomplete="off" placeholder="搜索来源标题或备注" />
+          </label>
+          <label>
+            <span>错因</span>
+            <select id="listeningMistakeErrorFilter">
+              <option value="all">全部错因</option>
+              <option value="word">单词没反应</option>
+              <option value="passage">长段听不懂</option>
+              <option value="paraphrase">同义替换没反应</option>
+              <option value="distractor">干扰项被骗</option>
+              <option value="spelling">单复数/拼写错误</option>
+            </select>
+          </label>
+          <label>
+            <span>状态</span>
+            <select id="listeningMistakeStatusFilter">
+              <option value="all">全部状态</option>
+              <option value="unmastered">未掌握</option>
+              <option value="reviewing">复习中</option>
+              <option value="mastered">已掌握</option>
+            </select>
+          </label>
+          <label>
+            <span>复习方式</span>
+            <select id="listeningMistakeMethodFilter">
+              <option value="all">全部方式</option>
+              <option value="relisten">重听原题</option>
+              <option value="dictation">精听听写</option>
+              <option value="transcript">对照 transcript</option>
+              <option value="shadowing">影子跟读</option>
+            </select>
+          </label>
+        </section>
+
+        <div class="listening-mistake-workspace">
+          <div class="listening-mistake-list" id="listeningMistakeList" aria-live="polite"></div>
+          <article class="listening-mistake-detail" id="listeningMistakeDetail" aria-live="polite">
+            <div class="listening-mistake-empty">
+              <span aria-hidden="true">01</span>
+              <h3>选择一条错题</h3>
+              <p>查看识别文字、错因和复习记录。</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="writing-panel" aria-labelledby="writing-title" hidden>
+        <div class="writing-header">
+          <div>
+            <p class="eyebrow">Writing practice</p>
+            <h2 id="writing-title">写作骨架训练</h2>
+          </div>
+          <div class="writing-actions">
+            <button class="secondary-button" id="writingStartButton" type="button">开始主题包</button>
+            <button class="primary-button" id="writingAllButton" type="button">考前全练</button>
+            <button class="secondary-button" id="writingReviewButton" type="button">复习错词块</button>
+          </div>
+        </div>
+
+        <div class="writing-config">
+          <label>
+            主题包
+            <select id="writingPackSelect" aria-label="选择写作主题包"></select>
+          </label>
+          <div class="writing-phase-tabs" aria-label="写作训练阶段">
+            <button type="button" data-writing-phase="copy">跟打</button>
+            <button type="button" data-writing-phase="slot" class="active">填槽</button>
+            <button type="button" data-writing-phase="chain">连句</button>
+          </div>
+        </div>
+
+        <div class="writing-stats" aria-label="写作训练统计">
+          <div>
+            <strong id="writingAccuracy">0%</strong>
+            <span>今日主题包</span>
+          </div>
+          <div>
+            <strong id="writingSpeed">0</strong>
+            <span>词块正确率</span>
+          </div>
+          <div>
+            <strong id="writingErrorCount">0</strong>
+            <span>高频错误</span>
+          </div>
+        </div>
+
+        <div class="writing-workspace">
+          <article class="writing-card">
+            <div class="writing-card-top">
+              <span id="writingTopic">Topic</span>
+              <span id="writingRole">Body sentence</span>
+            </div>
+            <p class="writing-prompt" id="writingPrompt">选择主题包后开始，先练 5 句 Body 段骨架。</p>
+            <p class="writing-frame" id="writingFrame"></p>
+            <div class="writing-chunks" id="writingChunks" aria-label="可用安全词块"></div>
+            <label class="field-label" for="writingInput">输入本句要填的词块</label>
+            <textarea id="writingInput" spellcheck="false" placeholder="每个词块一行，或用 / 分隔。"></textarea>
+            <div class="writing-buttons">
+              <button class="secondary-button" id="writingSpeakButton" type="button" disabled>
+                <span class="button-icon" aria-hidden="true">♪</span>
+                朗读 / 重听
+              </button>
+              <button class="secondary-button" id="writingFavoriteButton" type="button" disabled aria-pressed="false">☆ 收藏</button>
+              <button class="primary-button" id="writingCheckButton" type="button">检查词块</button>
+              <button class="secondary-button" id="writingNextButton" type="button">下一句</button>
+            </div>
+            <div class="writing-result" id="writingResult" aria-live="polite"></div>
+          </article>
+
+          <aside class="writing-mistake-panel" aria-labelledby="writing-mistake-title">
+            <div class="writing-mistake-header">
+              <h3 id="writing-mistake-title">写作记录</h3>
+            </div>
+            <div class="writing-book-tabs" role="tablist" aria-label="写作记录">
+              <button class="writing-book-tab active" type="button" data-writing-book-tab="mistakes">
+                错词块本 <span id="writingMistakeCount">0</span>
+              </button>
+              <button class="writing-book-tab" type="button" data-writing-book-tab="favorites">
+                收藏本 <span id="writingFavoriteCount">0</span>
+              </button>
+            </div>
+            <div class="writing-mistake-list" id="writingMistakeList" aria-live="polite"></div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="settings-panel" aria-labelledby="settings-title" hidden>
+        <header class="settings-page-header">
+          <p class="eyebrow">Preferences</p>
+          <h2 id="settings-title">设置</h2>
+          <p>集中管理练习、发音和快捷键。</p>
+        </header>
+
+        <div class="settings-page-content">
+          <section class="settings-group" aria-labelledby="practice-settings-title">
+            <h3 id="practice-settings-title">练习</h3>
+            <div class="settings-card settings-control-grid" id="settingsPracticeMount"></div>
+          </section>
+
+          <section class="settings-group" aria-labelledby="voice-settings-title">
+            <h3 id="voice-settings-title">发音</h3>
+            <div class="settings-card settings-control-grid" id="settingsVoiceMount"></div>
+          </section>
+
+          <section class="settings-group" aria-labelledby="shortcut-settings-page-title">
+            <h3 id="shortcut-settings-page-title">快捷键</h3>
+            <div id="settingsShortcutMount"></div>
+          </section>
+        </div>
+      </section>
     </main>
+
+    <div class="listening-mistake-dialog" id="listeningMistakeDialog" role="dialog" aria-modal="true" aria-labelledby="listeningMistakeDialogTitle" hidden>
+      <form class="listening-mistake-form" id="listeningMistakeForm">
+        <header>
+          <div>
+            <p class="eyebrow">Listening mistake</p>
+            <h2 id="listeningMistakeDialogTitle">新建听力错题</h2>
+          </div>
+          <button class="listening-mistake-dialog-close" id="listeningMistakeDialogClose" type="button" aria-label="关闭">×</button>
+        </header>
+
+        <input id="listeningMistakeId" type="hidden" />
+
+        <div class="listening-mistake-form-grid">
+          <label class="listening-mistake-field listening-mistake-field-wide">
+            <span>来源标题</span>
+            <input id="listeningMistakeTitle" type="text" maxlength="120" required placeholder="例如 Cambridge IELTS 18 Test 2 Section 3" />
+          </label>
+
+          <label class="listening-mistake-field">
+            <span>错因类型</span>
+            <select id="listeningMistakeErrorType" required>
+              <option value="word">单词没反应</option>
+              <option value="passage">长段听不懂</option>
+              <option value="paraphrase">同义替换没反应</option>
+              <option value="distractor">干扰项被骗</option>
+              <option value="spelling">单复数/拼写错误</option>
+            </select>
+          </label>
+
+          <label class="listening-mistake-field">
+            <span>掌握状态</span>
+            <select id="listeningMistakeStatus" required>
+              <option value="unmastered">未掌握</option>
+              <option value="reviewing">复习中</option>
+              <option value="mastered">已掌握</option>
+            </select>
+          </label>
+
+          <label class="listening-mistake-field listening-mistake-field-wide">
+            <span>复习方式</span>
+            <select id="listeningMistakeMethod" required>
+              <option value="relisten">重听原题</option>
+              <option value="dictation">精听听写</option>
+              <option value="transcript">对照 transcript</option>
+              <option value="shadowing">影子跟读</option>
+            </select>
+          </label>
+
+          <section class="listening-ocr-card listening-mistake-field-wide" aria-labelledby="questionOcrTitle">
+            <div class="listening-ocr-heading">
+              <div>
+                <strong id="questionOcrTitle">题目截图</strong>
+                <small>选择后自动识别，图片不会保存。</small>
+              </div>
+              <label class="listening-ocr-upload">
+                <input id="listeningQuestionImage" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" />
+                上传并识别
+              </label>
+            </div>
+            <p class="listening-ocr-status" id="listeningQuestionOcrStatus" aria-live="polite"></p>
+            <label class="listening-mistake-field">
+              <span>题目文字</span>
+              <textarea id="listeningQuestionText" rows="5" placeholder="OCR 结果会出现在这里，也可以手动修改。"></textarea>
+            </label>
+          </section>
+
+          <section class="listening-ocr-card listening-mistake-field-wide" aria-labelledby="transcriptOcrTitle">
+            <div class="listening-ocr-heading">
+              <div>
+                <strong id="transcriptOcrTitle">Transcript 截图</strong>
+                <small>识别为可编辑文本，并用于朗读复习。</small>
+              </div>
+              <label class="listening-ocr-upload">
+                <input id="listeningTranscriptImage" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" />
+                上传并识别
+              </label>
+            </div>
+            <p class="listening-ocr-status" id="listeningTranscriptOcrStatus" aria-live="polite"></p>
+            <label class="listening-mistake-field">
+              <span>Transcript 文本</span>
+              <textarea id="listeningTranscriptText" rows="7" placeholder="OCR 结果会出现在这里。保存后可直接朗读。"></textarea>
+            </label>
+          </section>
+
+          <label class="listening-mistake-field listening-mistake-field-wide">
+            <span>简短备注</span>
+            <textarea id="listeningMistakeNote" rows="3" maxlength="500" placeholder="只记录下次复习真正需要看到的信息。"></textarea>
+          </label>
+        </div>
+
+        <footer>
+          <p id="listeningMistakeFormStatus" aria-live="polite"></p>
+          <div>
+            <button class="secondary-button" id="listeningMistakeCancel" type="button">取消</button>
+            <button class="primary-button" id="listeningMistakeSave" type="submit">保存错题</button>
+          </div>
+        </footer>
+      </form>
+    </div>
+
+    <div
+      class="favorite-review-screen"
+      id="favoriteReviewScreen"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="favoriteReviewTitle"
+      hidden
+    >
+      <header class="favorite-review-header">
+        <div class="favorite-review-heading">
+          <p class="eyebrow" id="favoriteReviewMode">收藏本复习</p>
+          <h2 id="favoriteReviewTitle">逐词复习</h2>
+          <div class="favorite-review-view-switch" role="tablist" aria-label="收藏本复习方式">
+            <button class="active" type="button" data-favorite-review-view="cards">逐词复习</button>
+            <button type="button" data-favorite-review-view="list">排序复习</button>
+          </div>
+        </div>
+        <div class="favorite-review-progress-wrap" aria-live="polite">
+          <span id="favoriteReviewProgress">1 / 1</span>
+          <div class="favorite-review-progress" aria-hidden="true">
+            <span id="favoriteReviewProgressBar"></span>
+          </div>
+        </div>
+        <button class="favorite-review-close" id="favoriteReviewClose" type="button" aria-label="退出收藏本复习">
+          ×
+        </button>
+      </header>
+
+      <main class="favorite-review-main" id="favoriteReviewMain">
+        <article class="favorite-review-card">
+          <div class="favorite-review-word-row">
+            <div>
+              <span class="favorite-review-kicker">Word</span>
+              <h3 id="favoriteReviewWord"></h3>
+            </div>
+            <div class="favorite-review-word-actions">
+              <button class="favorite-review-speak" id="favoriteReviewSpeak" type="button">
+                <span class="button-icon" aria-hidden="true">♪</span>
+                朗读单词
+                <kbd>R</kbd>
+              </button>
+              <button class="favorite-review-remove" id="favoriteReviewRemove" type="button">
+                <span aria-hidden="true">×</span>
+                移除
+              </button>
+            </div>
+          </div>
+
+          <section class="favorite-review-detail" aria-labelledby="favoriteReviewMeaningLabel">
+            <p class="favorite-review-label" id="favoriteReviewMeaningLabel">中文释义</p>
+            <p class="favorite-review-meaning" id="favoriteReviewMeaning"></p>
+          </section>
+
+          <section class="favorite-review-detail" aria-labelledby="favoriteReviewExampleLabel">
+            <p class="favorite-review-label" id="favoriteReviewExampleLabel">Example sentence</p>
+            <p class="favorite-review-example" id="favoriteReviewExample"></p>
+          </section>
+
+          <p class="favorite-review-response" id="favoriteReviewResponse"></p>
+          <p class="favorite-review-status" id="favoriteReviewStatus" aria-live="polite"></p>
+        </article>
+      </main>
+
+      <main class="favorite-list-review-main" id="favoriteListReviewMain" hidden>
+        <section class="favorite-list-review-shell">
+          <header class="favorite-list-review-tools">
+            <label class="favorite-list-search" for="favoriteListReviewSearch">
+              <span>搜索</span>
+              <input id="favoriteListReviewSearch" type="search" autocomplete="off" placeholder="搜索单词、释义或例句" />
+            </label>
+            <label class="favorite-list-sort" for="favoriteListReviewSort">
+              <span>排序</span>
+              <select id="favoriteListReviewSort">
+                <option value="newest">收藏时间：最新优先</option>
+                <option value="oldest">收藏时间：最早优先</option>
+                <option value="az">单词：A → Z</option>
+                <option value="za">单词：Z → A</option>
+              </select>
+            </label>
+          </header>
+          <div class="favorite-list-review-summary">
+            <strong id="favoriteListReviewCount">0 个单词</strong>
+            <span>点击每行的朗读按钮可快速复听</span>
+          </div>
+          <div class="favorite-list-review-rows" id="favoriteListReviewRows"></div>
+          <p class="favorite-list-review-status" id="favoriteListReviewStatus" aria-live="polite"></p>
+        </section>
+      </main>
+
+      <footer class="favorite-review-footer" id="favoriteReviewFooter">
+        <p><kbd>←</kbd><kbd>→</kbd> 切换单词 · <kbd>Esc</kbd> 退出</p>
+        <div class="favorite-review-navigation">
+          <button class="secondary-button" id="favoriteReviewPrevious" type="button">
+            <span class="button-icon" aria-hidden="true">←</span>
+            上一个
+          </button>
+          <button class="primary-button" id="favoriteReviewNext" type="button">
+            下一个
+            <span class="button-icon" aria-hidden="true">→</span>
+          </button>
+        </div>
+      </footer>
+    </div>
 
     <div class="word-detail-backdrop" id="wordDetailDialog" role="dialog" aria-modal="true" aria-labelledby="wordDetailTitle" hidden>
       <article class="word-detail-card">
@@ -226,7 +769,7 @@ significant
         </dl>
         <div class="word-detail-actions">
           <button class="primary-button" id="wordDetailSpeakWord" type="button">
-            <span class="button-icon" aria-hidden="true">🔊</span>
+            <span class="button-icon" aria-hidden="true">♪</span>
             再读单词
           </button>
           <button class="secondary-button" id="wordDetailSpeakExample" type="button">
