@@ -26,8 +26,14 @@ function Send-Response {
 
   $Header = "HTTP/1.1 $StatusCode $StatusText`r`nContent-Type: $ContentType`r`nContent-Length: $($Body.Length)`r`nConnection: close`r`n`r`n"
   $HeaderBytes = [Text.Encoding]::ASCII.GetBytes($Header)
-  $Stream.Write($HeaderBytes, 0, $HeaderBytes.Length)
-  $Stream.Write($Body, 0, $Body.Length)
+  try {
+    $Stream.Write($HeaderBytes, 0, $HeaderBytes.Length)
+    $Stream.Write($Body, 0, $Body.Length)
+    $Stream.Flush()
+  } catch [System.IO.IOException] {
+    # Browsers may cancel speculative or stale requests. One cancelled request
+    # must not terminate the whole local server.
+  }
 }
 
 function ConvertTo-JsonBytes {
@@ -179,7 +185,7 @@ function Get-GeneratedDefinition {
   param([string] $Word)
 
   $ApiKey = $env:OPENAI_API_KEY
-  if ([string]::IsNullOrWhiteSpace($ApiKey)) {
+  if ([string]::IsNullOrWhiteSpace($ApiKey) -or -not $ApiKey.StartsWith("sk-")) {
     return $null
   }
 
@@ -220,6 +226,52 @@ function Get-GeneratedDefinition {
   return $Content | ConvertFrom-Json
 }
 
+function Get-GeneratedMnemonic {
+  param(
+    [string] $Word,
+    [string] $Zh,
+    [string] $Example
+  )
+
+  $ApiKey = $env:OPENAI_API_KEY
+  if ([string]::IsNullOrWhiteSpace($ApiKey) -or -not $ApiKey.StartsWith("sk-")) {
+    return $null
+  }
+
+  $Model = if ([string]::IsNullOrWhiteSpace($env:OPENAI_MODEL)) { "gpt-4o-mini" } else { $env:OPENAI_MODEL }
+  $BodyObject = @{
+    model = $Model
+    messages = @(
+      @{
+        role = "system"
+        content = "You create concise Chinese memory aids for IELTS vocabulary. Return only strict JSON with one key: mnemonic. Write 2 to 4 short Chinese sentences for a Chinese learner. Choose the most useful combination of accurate roots or affixes, sound association, vivid everyday imagery, semantic contrast, and the supplied example. Do not invent false etymology. If a sound association is only a memory hook, clearly call it a memory hook rather than a word origin. Keep the explanation concrete, natural, and easy to recall."
+      },
+      @{
+        role = "user"
+        content = "Word: $Word`nChinese meaning: $Zh`nExample: $Example"
+      }
+    )
+    temperature = 0.45
+    response_format = @{
+      type = "json_object"
+    }
+  }
+  $Body = $BodyObject | ConvertTo-Json -Depth 8
+  $Response = Invoke-RestMethod `
+    -Uri "https://api.openai.com/v1/chat/completions" `
+    -Method Post `
+    -Headers @{
+      Authorization = "Bearer $ApiKey"
+      "Content-Type" = "application/json"
+    } `
+    -Body $Body
+  $Content = $Response.choices[0].message.content
+  if ([string]::IsNullOrWhiteSpace($Content)) {
+    return $null
+  }
+  return $Content | ConvertFrom-Json
+}
+
 function Test-GeneratedDefinition {
   param(
     [object] $Definition,
@@ -250,6 +302,8 @@ try {
 
     try {
       $Stream = $Client.GetStream()
+      $Stream.ReadTimeout = 1000
+      $Stream.WriteTimeout = 5000
       $Reader = [System.IO.StreamReader]::new($Stream, [Text.Encoding]::ASCII, $false, 1024, $true)
       $RequestLine = $Reader.ReadLine()
 
@@ -380,6 +434,34 @@ try {
         continue
       }
 
+      if ($RequestPath -eq "mnemonic") {
+        $Query = Get-QueryMap $QueryString
+        $Word = if ($Query.ContainsKey("word")) { $Query["word"] } else { "" }
+        $Zh = if ($Query.ContainsKey("zh")) { $Query["zh"] } else { "" }
+        $Example = if ($Query.ContainsKey("example")) { $Query["example"] } else { "" }
+
+        if ([string]::IsNullOrWhiteSpace($Word)) {
+          $Body = ConvertTo-JsonBytes @{ error = "Missing word" }
+          Send-Response $Stream 400 "Bad Request" "application/json; charset=utf-8" $Body
+          continue
+        }
+
+        try {
+          $Memory = Get-GeneratedMnemonic $Word $Zh $Example
+          if ($null -eq $Memory -or [string]::IsNullOrWhiteSpace([string] $Memory.mnemonic)) {
+            $Body = ConvertTo-JsonBytes @{ error = "AI mnemonic service is unavailable" }
+            Send-Response $Stream 503 "Service Unavailable" "application/json; charset=utf-8" $Body
+            continue
+          }
+          $Body = ConvertTo-JsonBytes @{ mnemonic = [string] $Memory.mnemonic }
+          Send-Response $Stream 200 "OK" "application/json; charset=utf-8" $Body
+        } catch {
+          $Body = ConvertTo-JsonBytes @{ error = "Mnemonic generation failed" }
+          Send-Response $Stream 502 "Bad Gateway" "application/json; charset=utf-8" $Body
+        }
+        continue
+      }
+
       $CandidatePath = Join-Path $Root $RequestPath
       $FullPath = [System.IO.Path]::GetFullPath($CandidatePath)
       $FullRoot = [System.IO.Path]::GetFullPath($Root)
@@ -394,6 +476,11 @@ try {
       $ContentType = if ($MimeTypes.ContainsKey($Extension)) { $MimeTypes[$Extension] } else { "application/octet-stream" }
       $Body = [System.IO.File]::ReadAllBytes($FullPath)
       Send-Response $Stream 200 "OK" $ContentType $Body
+    } catch [System.IO.IOException] {
+      # Chrome opens speculative connections that may never send a request.
+      # Release those connections quickly so CSS and JavaScript can load.
+    } catch {
+      Write-Warning $_.Exception.Message
     } finally {
       $Client.Close()
     }
