@@ -4,6 +4,7 @@ $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Port = 8765
 $Address = [System.Net.IPAddress]::Parse("127.0.0.1")
 $StateFile = Join-Path $Root "trainer-state.json"
+$StateBackupDirectory = Join-Path $Root "data-backups"
 
 $MimeTypes = @{
   ".html" = "text/html; charset=utf-8"
@@ -39,6 +40,53 @@ function Send-Response {
 function ConvertTo-JsonBytes {
   param([object] $Value)
   return [Text.Encoding]::UTF8.GetBytes(($Value | ConvertTo-Json -Depth 5 -Compress))
+}
+
+function Backup-StateFile {
+  if (-not [System.IO.File]::Exists($StateFile)) {
+    return
+  }
+
+  [System.IO.Directory]::CreateDirectory($StateBackupDirectory) | Out-Null
+  $LatestBackup = Get-ChildItem -LiteralPath $StateBackupDirectory -Filter "trainer-state-auto-*.json" -File |
+    Sort-Object LastWriteTime -Descending |
+    Select-Object -First 1
+  if ($LatestBackup -and ((Get-Date) - $LatestBackup.LastWriteTime).TotalMinutes -lt 30) {
+    return
+  }
+
+  $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+  $BackupPath = Join-Path $StateBackupDirectory "trainer-state-auto-$Timestamp.json"
+  [System.IO.File]::Copy($StateFile, $BackupPath, $false)
+
+  $Backups = @(Get-ChildItem -LiteralPath $StateBackupDirectory -Filter "trainer-state-auto-*.json" -File |
+    Sort-Object LastWriteTime -Descending)
+  if ($Backups.Count -gt 48) {
+    $Backups | Select-Object -Skip 48 | Remove-Item -Force
+  }
+}
+
+function Write-StateFileAtomic {
+  param([byte[]] $Bytes)
+
+  $TemporaryPath = Join-Path $Root ".trainer-state-$PID.tmp"
+  try {
+    [System.IO.File]::WriteAllBytes($TemporaryPath, $Bytes)
+    if ([System.IO.File]::Exists($StateFile)) {
+      Backup-StateFile
+      try {
+        [System.IO.File]::Replace($TemporaryPath, $StateFile, $null)
+      } catch {
+        Move-Item -LiteralPath $TemporaryPath -Destination $StateFile -Force
+      }
+    } else {
+      Move-Item -LiteralPath $TemporaryPath -Destination $StateFile
+    }
+  } finally {
+    if ([System.IO.File]::Exists($TemporaryPath)) {
+      Remove-Item -LiteralPath $TemporaryPath -Force
+    }
+  }
 }
 
 function Get-QueryMap {
@@ -354,6 +402,18 @@ try {
         continue
       }
 
+      if ($RequestPath -eq "bootstrap-state.js") {
+        if ([System.IO.File]::Exists($StateFile)) {
+          $StateJson = [System.IO.File]::ReadAllText($StateFile, [Text.Encoding]::UTF8)
+          $Script = "window.__IELTS_SERVER_SNAPSHOT__ = $StateJson;"
+        } else {
+          $Script = "window.__IELTS_SERVER_SNAPSHOT__ = null;"
+        }
+        $Body = [Text.Encoding]::UTF8.GetBytes($Script)
+        Send-Response $Stream 200 "OK" "application/javascript; charset=utf-8" $Body
+        continue
+      }
+
       if ($RequestPath -eq "save-state") {
         $EncodedBody = Read-RequestBody $Reader $Headers
         if ([string]::IsNullOrWhiteSpace($EncodedBody)) {
@@ -365,8 +425,10 @@ try {
         try {
           $Bytes = [Convert]::FromBase64String($EncodedBody.Trim())
           $Json = [Text.Encoding]::UTF8.GetString($Bytes)
-          $null = $Json | ConvertFrom-Json
-          [System.IO.File]::WriteAllBytes($StateFile, $Bytes)
+          if ($Json -notmatch '^\s*\{' -or $Json -notmatch '"savedAt"\s*:\s*[1-9][0-9]*') {
+            throw "State snapshot is missing savedAt"
+          }
+          Write-StateFileAtomic $Bytes
           $Body = ConvertTo-JsonBytes @{ saved = $true; path = $StateFile }
           Send-Response $Stream 200 "OK" "application/json; charset=utf-8" $Body
         } catch {

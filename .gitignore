@@ -1,3 +1,14 @@
 .chrome-*-cache/
 .chrome-*-profile/
 trainer-state.json
+*.log
+.pycache/
+__pycache__/
+.tmp/
+tmp/
+data-backups/
+recovery/
+file-recovery-state.js
+design-demo*
+design-lab*
+design-qa.md

@@ -1276,10 +1276,17 @@ const writingPatternPacks = [
 ];
 
 const BOOK_STORAGE_KEY = "ieltsTrainerFavoriteBookV1";
+const FAVORITE_DELETED_STORAGE_KEY = "ieltsTrainerFavoriteDeletedV1";
 const USER_NOTES_STORAGE_KEY = "ieltsTrainerUserNotesV1";
 const MODE_INPUT_STORAGE_KEY = "ieltsTrainerModeInputsV1";
 const CORRECT_STORAGE_KEY = "ieltsTrainerCorrectBookV1";
 const TRAINING_SNAPSHOT_STORAGE_KEY = "ieltsTrainerSnapshotV1";
+const TRAINING_SNAPSHOT_BACKUP_KEYS = [
+  "ieltsTrainerSnapshotBackupV1A",
+  "ieltsTrainerSnapshotBackupV1B",
+];
+const FILE_RECOVERY_MARKER_KEY = "ieltsTrainerFileRecoveryAppliedV1";
+const ANSWER_HISTORY_STORAGE_KEY = "ieltsTrainerAnswerHistoryV1";
 const WRITING_MISTAKE_STORAGE_KEY = "ieltsTrainerWritingMistakesV1";
 const WRITING_FAVORITE_STORAGE_KEY = "ieltsTrainerWritingFavoriteBookV1";
 const WRITING_STATS_STORAGE_KEY = "ieltsTrainerWritingStatsV1";
@@ -1288,9 +1295,33 @@ const WRITING_SPLIT_STORAGE_KEY = "ieltsTrainerWritingSplitRatioV1";
 const SHORTCUT_STORAGE_KEY = "ieltsTrainerShortcutsV1";
 const SIDEBAR_STORAGE_KEY = "ieltsTrainerSidebarCollapsedV1";
 const LISTENING_MISTAKE_STORAGE_KEY = "ieltsListeningMistakeLibraryV1";
+const LISTENING_MISTAKE_DELETED_STORAGE_KEY = "ieltsListeningMistakeDeletedIdsV1";
+const LISTENING_MISTAKE_BACKUP_KEYS = [
+  "ieltsListeningMistakeLibraryBackupV1A",
+  "ieltsListeningMistakeLibraryBackupV1B",
+];
+const LISTENING_MISTAKE_DELETED_BACKUP_KEYS = [
+  "ieltsListeningMistakeDeletedIdsBackupV1A",
+  "ieltsListeningMistakeDeletedIdsBackupV1B",
+];
 const READING_MISTAKE_STORAGE_KEY = "ieltsReadingMistakeLibraryV1";
 const READING_MISTAKE_DELETED_STORAGE_KEY = "ieltsReadingMistakeDeletedIdsV1";
+const READING_MISTAKE_BACKUP_KEYS = [
+  "ieltsReadingMistakeLibraryBackupV1A",
+  "ieltsReadingMistakeLibraryBackupV1B",
+];
+const READING_MISTAKE_DELETED_BACKUP_KEYS = [
+  "ieltsReadingMistakeDeletedIdsBackupV1A",
+  "ieltsReadingMistakeDeletedIdsBackupV1B",
+];
+const MISTAKE_LIBRARY_VAULT_STORAGE_KEY = "ieltsMistakeLibraryVaultV1";
+const MISTAKE_LIBRARY_VAULT_BACKUP_KEYS = [
+  "ieltsMistakeLibraryVaultBackupV1A",
+  "ieltsMistakeLibraryVaultBackupV1B",
+];
 const SPEECH_SETTINGS_STORAGE_KEY = "ieltsTrainerSpeechSettingsV1";
+const INSIGHT_TIME_ZONE = "Asia/Shanghai";
+const ANSWER_HISTORY_LIMIT = 50_000;
 const TESSERACT_SCRIPT_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js";
 const LISTENING_OCR_MODEL_TIMEOUT_MS = 50_000;
 const LISTENING_OCR_WORKER_IDLE_MS = 15 * 60_000;
@@ -1334,6 +1365,12 @@ const readingMistakeErrorLabels = {
 };
 const readingMistakeQuestionTypeOrder = Object.keys(readingMistakeQuestionTypeLabels);
 const bookModes = ["listening", "dictation", "reading"];
+const insightErrorModeLabels = {
+  listening: "听力",
+  dictation: "填空",
+  reading: "阅读",
+  writing: "写作",
+};
 const defaultShortcutSettings = {
   advance: "Enter",
   replay: "KeyR",
@@ -1366,12 +1403,33 @@ const listeningMistakeNavButton = document.querySelector("#listeningMistakeNavBu
 const listeningMistakeNavCount = document.querySelector("#listeningMistakeNavCount");
 const readingMistakeNavButton = document.querySelector("#readingMistakeNavButton");
 const readingMistakeNavCount = document.querySelector("#readingMistakeNavCount");
+const insightsNavButton = document.querySelector("#insightsNavButton");
 const settingsNavButton = document.querySelector("#settingsNavButton");
 const quizPanel = document.querySelector(".quiz-panel");
 const listeningMistakePanel = document.querySelector(".listening-mistake-panel");
 const readingMistakePanel = document.querySelector(".reading-mistake-panel");
 const writingPanel = document.querySelector(".writing-panel");
+const insightsPanel = document.querySelector(".insights-panel");
 const settingsPanel = document.querySelector(".settings-panel");
+const activityHeatmap = document.querySelector("#activityHeatmap");
+const activityMonthLabels = document.querySelector("#activityMonthLabels");
+const activityYearSelect = document.querySelector("#activityYearSelect");
+const activityMonthSelect = document.querySelector("#activityMonthSelect");
+const activityPreviousYear = document.querySelector("#activityPreviousYear");
+const activityNextYear = document.querySelector("#activityNextYear");
+const activityTodayButton = document.querySelector("#activityTodayButton");
+const activityDayDetail = document.querySelector("#activityDayDetail");
+const activitySelectedDate = document.querySelector("#activitySelectedDate");
+const activitySelectedItems = document.querySelector("#activitySelectedItems");
+const activitySelectedAccuracy = document.querySelector("#activitySelectedAccuracy");
+const activitySelectedModes = document.querySelector("#activitySelectedModes");
+const activityStats = document.querySelector("#activityStats");
+const activityActiveDays = document.querySelector("#activityActiveDays");
+const activityCompletedItems = document.querySelector("#activityCompletedItems");
+const activityAccuracy = document.querySelector("#activityAccuracy");
+const recurringErrorsList = document.querySelector("#recurringErrorsList");
+const recurringErrorsRecommendation = document.querySelector("#recurringErrorsRecommendation");
+const recurringErrorModeButtons = [...document.querySelectorAll("[data-insight-error-mode]")];
 const settingsPracticeMount = document.querySelector("#settingsPracticeMount");
 const settingsVoiceMount = document.querySelector("#settingsVoiceMount");
 const settingsShortcutMount = document.querySelector("#settingsShortcutMount");
@@ -1423,6 +1481,8 @@ const bookListReviewButton = document.querySelector("#bookListReviewButton");
 const favoriteReviewScreen = document.querySelector("#favoriteReviewScreen");
 const favoriteReviewMode = document.querySelector("#favoriteReviewMode");
 const favoriteReviewTitle = document.querySelector("#favoriteReviewTitle");
+const favoriteReviewBookButtons = [...document.querySelectorAll("[data-favorite-review-book]")];
+const favoriteReviewBookCounts = [...document.querySelectorAll("[data-favorite-review-count]")];
 const favoriteReviewProgress = document.querySelector("#favoriteReviewProgress");
 const favoriteReviewProgressBar = document.querySelector("#favoriteReviewProgressBar");
 const favoriteListReviewMain = document.querySelector("#favoriteListReviewMain");
@@ -1443,7 +1503,10 @@ const wordDetailClose = document.querySelector("#wordDetailClose");
 const wordDetailMeta = document.querySelector("#wordDetailMeta");
 const wordDetailTitle = document.querySelector("#wordDetailTitle");
 const wordDetailZh = document.querySelector("#wordDetailZh");
-const wordDetailEn = document.querySelector("#wordDetailEn");
+const wordDetailConfusablesGroup = document.querySelector("#wordDetailConfusablesGroup");
+const wordDetailConfusables = document.querySelector("#wordDetailConfusables");
+const wordDetailWordFormsGroup = document.querySelector("#wordDetailWordFormsGroup");
+const wordDetailWordForms = document.querySelector("#wordDetailWordForms");
 const wordDetailExample = document.querySelector("#wordDetailExample");
 const wordDetailResponse = document.querySelector("#wordDetailResponse");
 const wordDetailSpeakWord = document.querySelector("#wordDetailSpeakWord");
@@ -1630,6 +1693,7 @@ const state = {
   mode: "listening",
   bookMode: "listening",
   bookSearch: "",
+  favoriteDeleted: loadFavoriteDeleted(),
   favoriteBook: loadFavoriteBook(),
   correctBook: loadCorrectBook(),
   userNotes: loadUserNotes(),
@@ -1648,11 +1712,16 @@ const state = {
   serverVoices: [],
   currentAudio: null,
   savedSessions: loadSavedSessions(),
+  answerHistory: loadAnswerHistory(),
   definitionServiceAvailable: true,
   isReviewingWrong: false,
   reviewSource: "",
   detailEntry: null,
   activeSurface: "quiz",
+  insightErrorMode: "listening",
+  insightActivityYear: 0,
+  insightActivityMonth: -1,
+  insightActivityDay: "",
   writingMistakeBook: loadWritingMistakeBook(),
   writingFavoriteBook: loadWritingFavoriteBook(),
   writingBookMode: "mistakes",
@@ -1676,20 +1745,23 @@ const state = {
   favoriteReviewRevealedWords: new Set(),
   favoriteReviewQuery: "",
   sidebarCollapsed: false,
+  listeningMistakeDeletedIds: loadListeningMistakeDeletedIds(),
   listeningMistakes: loadListeningMistakes(),
   listeningMistakeSelectedId: "",
   listeningMistakeQuery: "",
   listeningMistakeErrorFilter: "all",
   listeningMistakeStatusFilter: "all",
   listeningMistakeMethodFilter: "all",
+  readingMistakeDeletedIds: loadReadingMistakeDeletedIds(),
   readingMistakes: loadReadingMistakes(),
   readingMistakeSelectedId: "",
   readingMistakeQuery: "",
   readingMistakeQuestionFilter: "all",
   readingMistakeErrorFilter: "all",
   readingMistakeStatusFilter: "all",
-  readingMistakeDeletedIds: loadReadingMistakeDeletedIds(),
 };
+
+seedAnswerHistoryFromSessions();
 
 let listeningOcrScriptPromise = null;
 let listeningOcrWorkerPromise = null;
@@ -1797,18 +1869,20 @@ function mountSettingsControls() {
 }
 
 function setPrimarySurface(surface, shouldScroll = false) {
-  const requestedSurface = ["quiz", "writing", "settings", "listeningMistakes", "readingMistakes"].includes(surface)
+  const requestedSurface = ["quiz", "writing", "insights", "settings", "listeningMistakes", "readingMistakes"].includes(surface)
     ? surface
     : "quiz";
   let activeSurface = requestedSurface;
   if (requestedSurface === "listeningMistakes" && state.mode !== "listening") activeSurface = "quiz";
   if (requestedSurface === "readingMistakes" && state.mode !== "reading") activeSurface = "quiz";
   const writingActive = activeSurface === "writing";
+  const insightsActive = activeSurface === "insights";
   const settingsActive = activeSurface === "settings";
   const listeningMistakesActive = activeSurface === "listeningMistakes";
   const readingMistakesActive = activeSurface === "readingMistakes";
   state.activeSurface = activeSurface;
   appShell.classList.toggle("writing-nav-active", writingActive);
+  appShell.classList.toggle("insights-nav-active", insightsActive);
   appShell.classList.toggle("settings-nav-active", settingsActive);
   appShell.classList.toggle("listening-mistake-nav-active", listeningMistakesActive);
   appShell.classList.toggle("reading-mistake-nav-active", readingMistakesActive);
@@ -1820,17 +1894,484 @@ function setPrimarySurface(surface, shouldScroll = false) {
   readingMistakeNavButton.classList.toggle("active", readingMistakesActive);
   readingMistakeNavButton.setAttribute("aria-current", readingMistakesActive ? "page" : "false");
   readingMistakeNavButton.hidden = getSelectedMode() !== "reading" || writingActive || settingsActive;
+  insightsNavButton.classList.toggle("active", insightsActive);
+  insightsNavButton.setAttribute("aria-current", insightsActive ? "page" : "false");
   settingsNavButton.classList.toggle("active", settingsActive);
   settingsNavButton.setAttribute("aria-current", settingsActive ? "page" : "false");
   quizPanel.hidden = activeSurface !== "quiz";
   listeningMistakePanel.hidden = !listeningMistakesActive;
   readingMistakePanel.hidden = !readingMistakesActive;
   writingPanel.hidden = !writingActive;
+  insightsPanel.hidden = !insightsActive;
   settingsPanel.hidden = !settingsActive;
   updateSidebarRailActive();
+  if (insightsActive) renderLearningInsights();
 
   if (!shouldScroll) return;
   window.scrollTo({ top: 0, behavior: "auto" });
+}
+
+const insightDateFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: INSIGHT_TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+const insightFullDateFormatter = new Intl.DateTimeFormat("zh-CN", {
+  timeZone: "UTC",
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  weekday: "long",
+});
+const insightModeLabels = {
+  listening: "听力",
+  dictation: "填空",
+  reading: "阅读",
+  writing: "写作",
+  other: "其他",
+};
+let learningInsightsRenderFrame = 0;
+
+function getInsightDateParts(timestamp = Date.now()) {
+  const date = new Date(Number(timestamp));
+  if (!Number.isFinite(date.getTime())) return null;
+  const parts = Object.fromEntries(
+    insightDateFormatter
+      .formatToParts(date)
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, Number(part.value)]),
+  );
+  if (!parts.year || !parts.month || !parts.day) return null;
+  return { year: parts.year, month: parts.month, day: parts.day };
+}
+
+function getInsightDateKey(timestamp) {
+  const parts = getInsightDateParts(timestamp);
+  if (!parts) return "";
+  return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
+}
+
+function getInsightCalendarDate(timestamp = Date.now()) {
+  const parts = getInsightDateParts(timestamp);
+  if (!parts) return new Date(Number.NaN);
+  return new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
+}
+
+function getInsightCalendarKey(date) {
+  if (!(date instanceof Date) || !Number.isFinite(date.getTime())) return "";
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getInsightCalendarDateFromKey(key) {
+  const [year, month, day] = String(key || "").split("-").map(Number);
+  if (!year || !month || !day) return new Date(Number.NaN);
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function createInsightDayRecord() {
+  return {
+    count: 0,
+    answers: 0,
+    correct: 0,
+    knownWrong: 0,
+    legacyCorrect: 0,
+    modes: { listening: 0, dictation: 0, reading: 0, writing: 0, other: 0 },
+  };
+}
+
+function addInsightActivity(activity, timestamp, amount = 1, details = {}) {
+  const key = getInsightDateKey(timestamp);
+  const value = Math.max(0, Number(amount) || 0);
+  if (!key || !value) return;
+  const record = activity.get(key) || createInsightDayRecord();
+  const mode = insightModeLabels[details.mode] ? details.mode : "other";
+  record.count += value;
+  record.modes[mode] += value;
+  if (typeof details.answer === "boolean") {
+    record.answers += value;
+    if (details.answer) record.correct += value;
+  }
+  if (details.knownWrong) record.knownWrong += value;
+  if (details.legacyCorrect) record.legacyCorrect += value;
+  activity.set(key, record);
+}
+
+function collectLearningActivity() {
+  const activity = new Map();
+
+  bookModes.forEach((mode) => {
+    Object.values(state.favoriteBook?.[mode] || {}).forEach((item) => {
+      addInsightActivity(activity, item?.missedAt, 1, { mode, knownWrong: true });
+    });
+    Object.values(state.correctBook?.[mode] || {}).forEach((item) => {
+      addInsightActivity(activity, item?.correctAt, 1, { mode, legacyCorrect: true });
+    });
+  });
+
+  const answerHistory = normaliseAnswerHistory(state.answerHistory);
+  if (answerHistory.length) {
+    answerHistory.forEach((entry) => {
+      addInsightActivity(activity, entry.answeredAt, 1, {
+        mode: entry.mode,
+        answer: Boolean(entry.correct),
+      });
+    });
+  } else {
+    Object.values(state.savedSessions || {}).forEach((session) => {
+      if (!session || typeof session !== "object") return;
+      const results = Array.isArray(session.results) ? session.results : [];
+      if (!results.length) {
+        addInsightActivity(activity, session.savedAt, 1, { mode: session.mode });
+        return;
+      }
+      results.forEach((result) => {
+        addInsightActivity(activity, session.savedAt, 1, {
+          mode: session.mode,
+          answer: typeof result?.correct === "boolean" ? result.correct : undefined,
+        });
+      });
+    });
+  }
+
+  state.listeningMistakes.forEach((item) => {
+    addInsightActivity(activity, item.createdAt, 1, { mode: "listening", knownWrong: true });
+    addInsightActivity(activity, item.lastReviewedAt, item.reviewCount ? 1 : 0, { mode: "listening" });
+  });
+  state.readingMistakes.forEach((item) => {
+    addInsightActivity(activity, item.createdAt, 1, { mode: "reading", knownWrong: true });
+    addInsightActivity(activity, item.lastReviewedAt, item.reviewCount ? 1 : 0, { mode: "reading" });
+  });
+  (state.writingStudio?.sessions || []).forEach((session) => {
+    addInsightActivity(activity, session.completedAt || session.updatedAt || session.createdAt, 1, { mode: "writing" });
+  });
+  (state.writingStudio?.errors || []).forEach((error) => {
+    addInsightActivity(activity, error.createdAt || error.updatedAt, 1, { mode: "writing", knownWrong: true });
+    addInsightActivity(activity, error.updatedAt, Number(error.reviews || 0), { mode: "writing" });
+  });
+
+  return activity;
+}
+
+function getHeatmapLevel(count) {
+  if (!count) return 0;
+  if (count <= 2) return 1;
+  if (count <= 5) return 2;
+  if (count <= 10) return 3;
+  return 4;
+}
+
+function getInsightDayScore(record) {
+  if (!record) return { answered: 0, correct: 0 };
+  if (record.answers > 0) {
+    const recordedWrong = Math.max(0, record.answers - record.correct);
+    const additionalKnownWrong = Math.max(0, record.knownWrong - recordedWrong);
+    return {
+      answered: record.answers + additionalKnownWrong,
+      correct: record.correct,
+    };
+  }
+  return {
+    answered: record.legacyCorrect + record.knownWrong,
+    correct: record.legacyCorrect,
+  };
+}
+
+function formatInsightAccuracy(answered, correct) {
+  if (!answered) return "—";
+  const accuracy = Math.round((correct / answered) * 1000) / 10;
+  return `${Number.isInteger(accuracy) ? accuracy : accuracy.toFixed(1)}%`;
+}
+
+function getInsightPeriodRange(year, month = -1) {
+  const startMonth = month >= 0 ? month : 0;
+  const endMonth = month >= 0 ? month : 11;
+  const periodStart = new Date(Date.UTC(year, startMonth, 1));
+  const periodEnd = new Date(Date.UTC(year, endMonth + 1, 0));
+  const gridStart = new Date(periodStart);
+  gridStart.setUTCDate(periodStart.getUTCDate() - periodStart.getUTCDay());
+  const gridEnd = new Date(periodEnd);
+  gridEnd.setUTCDate(periodEnd.getUTCDate() + (6 - periodEnd.getUTCDay()));
+  return { periodStart, periodEnd, gridStart, gridEnd };
+}
+
+function getInsightPeriodLabel(year, month) {
+  return month >= 0 ? `${year}年${month + 1}月` : `${year}年`;
+}
+
+function isInsightDateWithin(date, start, end) {
+  const time = date.getTime();
+  return time >= start.getTime() && time <= end.getTime();
+}
+
+function getInsightYearBounds(activity) {
+  const currentYear = getInsightDateParts()?.year || new Date().getFullYear();
+  const years = [...activity.keys()]
+    .map((key) => Number(String(key).slice(0, 4)))
+    .filter(Number.isFinite);
+  return {
+    min: Math.min(currentYear, ...(years.length ? years : [currentYear])),
+    max: Math.max(currentYear, ...(years.length ? years : [currentYear])),
+    current: currentYear,
+  };
+}
+
+function syncActivityPeriodControls(activity) {
+  if (!activityYearSelect || !activityMonthSelect) return;
+  const bounds = getInsightYearBounds(activity);
+  if (!state.insightActivityYear) state.insightActivityYear = bounds.current;
+  state.insightActivityYear = Math.min(bounds.max, Math.max(bounds.min, Number(state.insightActivityYear)));
+  const options = [];
+  for (let year = bounds.max; year >= bounds.min; year -= 1) {
+    options.push(`<option value="${year}">${year} 年</option>`);
+  }
+  activityYearSelect.innerHTML = options.join("");
+  activityYearSelect.value = String(state.insightActivityYear);
+  activityMonthSelect.value = String(state.insightActivityMonth);
+  activityPreviousYear.disabled = state.insightActivityYear <= bounds.min;
+  activityNextYear.disabled = state.insightActivityYear >= bounds.max;
+}
+
+function getDefaultInsightSelectedDay(activity, range, today) {
+  if (isInsightDateWithin(today, range.periodStart, range.periodEnd)) return getInsightCalendarKey(today);
+  const available = [...activity.keys()]
+    .filter((key) => {
+      const date = getInsightCalendarDateFromKey(key);
+      return isInsightDateWithin(date, range.periodStart, range.periodEnd) && date <= today;
+    })
+    .sort();
+  return available.at(-1) || getInsightCalendarKey(range.periodStart);
+}
+
+function renderInsightSelectedDay(activity) {
+  if (!activitySelectedDate) return;
+  const key = state.insightActivityDay;
+  const date = getInsightCalendarDateFromKey(key);
+  const record = activity.get(key) || createInsightDayRecord();
+  const score = getInsightDayScore(record);
+  activitySelectedDate.textContent = Number.isFinite(date.getTime())
+    ? insightFullDateFormatter.format(date)
+    : "未选择日期";
+  activitySelectedItems.textContent = String(record.count);
+  activitySelectedAccuracy.textContent = formatInsightAccuracy(score.answered, score.correct);
+  const modeSummary = Object.entries(record.modes)
+    .filter(([, count]) => count > 0)
+    .map(([mode, count]) => `${insightModeLabels[mode]} ${count} 项`)
+    .join(" · ");
+  activitySelectedModes.textContent = modeSummary || "当天暂无训练记录。";
+  activityDayDetail.classList.toggle("has-activity", record.count > 0);
+}
+
+function renderActivityMonthLabels(range, columnCount, month) {
+  if (!activityMonthLabels) return;
+  activityMonthLabels.innerHTML = "";
+  activityMonthLabels.style.setProperty("--activity-column-count", String(columnCount));
+  const firstMonth = month >= 0 ? month : 0;
+  const lastMonth = month >= 0 ? month : 11;
+  for (let monthIndex = firstMonth; monthIndex <= lastMonth; monthIndex += 1) {
+    const firstDay = new Date(Date.UTC(state.insightActivityYear, monthIndex, 1));
+    const dayOffset = Math.round((firstDay - range.gridStart) / 86400000);
+    const column = Math.max(1, Math.floor(dayOffset / 7) + 1);
+    const label = document.createElement("span");
+    label.textContent = `${monthIndex + 1}月`;
+    label.style.gridColumn = `${column} / span 4`;
+    activityMonthLabels.append(label);
+  }
+}
+
+function renderActivityHeatmap() {
+  if (!activityHeatmap) return;
+  const activity = collectLearningActivity();
+  syncActivityPeriodControls(activity);
+  const today = getInsightCalendarDate();
+  const range = getInsightPeriodRange(state.insightActivityYear, state.insightActivityMonth);
+  const selectedDate = getInsightCalendarDateFromKey(state.insightActivityDay);
+  if (
+    !Number.isFinite(selectedDate.getTime()) ||
+    !isInsightDateWithin(selectedDate, range.periodStart, range.periodEnd) ||
+    selectedDate > today
+  ) {
+    state.insightActivityDay = getDefaultInsightSelectedDay(activity, range, today);
+  }
+
+  let activeDays = 0;
+  let completedItems = 0;
+  let answered = 0;
+  let correct = 0;
+  const totalDays = Math.round((range.gridEnd - range.gridStart) / 86400000) + 1;
+  const columnCount = Math.ceil(totalDays / 7);
+  const fragment = document.createDocumentFragment();
+  for (let index = 0; index < totalDays; index += 1) {
+    const date = new Date(range.gridStart);
+    date.setUTCDate(range.gridStart.getUTCDate() + index);
+    const inPeriod = isInsightDateWithin(date, range.periodStart, range.periodEnd);
+    if (!inPeriod) {
+      const placeholder = document.createElement("span");
+      placeholder.className = "activity-cell is-outside";
+      placeholder.setAttribute("aria-hidden", "true");
+      fragment.append(placeholder);
+      continue;
+    }
+    const isFuture = date > today;
+    const key = getInsightCalendarKey(date);
+    const record = isFuture ? createInsightDayRecord() : activity.get(key) || createInsightDayRecord();
+    const count = record.count;
+    if (count > 0) activeDays += 1;
+    completedItems += count;
+    const score = getInsightDayScore(record);
+    answered += score.answered;
+    correct += score.correct;
+    const level = getHeatmapLevel(count);
+    const dateLabel = insightFullDateFormatter.format(date);
+    const activityLabel = count ? `${count} 个训练记录` : isFuture ? "尚未到达" : "没有训练记录";
+    const cell = document.createElement("button");
+    cell.type = "button";
+    cell.className = `activity-cell level-${level}${isFuture ? " is-future" : ""}${key === state.insightActivityDay ? " is-selected" : ""}${key === getInsightCalendarKey(today) ? " is-today" : ""}`;
+    cell.dataset.insightDay = key;
+    cell.title = `${dateLabel} · ${activityLabel}`;
+    cell.setAttribute("role", "gridcell");
+    cell.setAttribute("aria-label", `${dateLabel}，${activityLabel}`);
+    cell.setAttribute("aria-pressed", key === state.insightActivityDay ? "true" : "false");
+    cell.disabled = isFuture;
+    fragment.append(cell);
+  }
+
+  activityHeatmap.innerHTML = "";
+  activityHeatmap.append(fragment);
+  activityHeatmap.style.setProperty("--activity-column-count", String(columnCount));
+  renderActivityMonthLabels(range, columnCount, state.insightActivityMonth);
+  const periodLabel = getInsightPeriodLabel(state.insightActivityYear, state.insightActivityMonth);
+  activityHeatmap.setAttribute("aria-label", `${periodLabel}每日学习记录`);
+  activityStats.setAttribute("aria-label", `${periodLabel}学习统计`);
+  activityActiveDays.textContent = String(activeDays);
+  activityCompletedItems.textContent = String(completedItems);
+  activityAccuracy.textContent = formatInsightAccuracy(answered, correct);
+  renderInsightSelectedDay(activity);
+}
+
+function scheduleLearningInsightsRender() {
+  if (state.activeSurface !== "insights" || learningInsightsRenderFrame) return;
+  learningInsightsRenderFrame = window.requestAnimationFrame(() => {
+    learningInsightsRenderFrame = 0;
+    renderLearningInsights();
+  });
+}
+
+function shortenInsightLabel(value, maxLength = 18) {
+  const label = String(value || "").trim();
+  return label.length > maxLength ? `${label.slice(0, maxLength)}…` : label;
+}
+
+function normaliseInsightWord(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9'-]/g, "");
+}
+
+function getInsightWordStem(value) {
+  const word = normaliseInsightWord(value);
+  if (word.endsWith("ies") && word.length > 3) return `${word.slice(0, -3)}y`;
+  if (word.endsWith("es") && word.length > 3) return word.slice(0, -2);
+  if (word.endsWith("s") && word.length > 2) return word.slice(0, -1);
+  return word;
+}
+
+function getDictationRecurringErrorLabel(item) {
+  const response = String(item?.response || "").trim();
+  const target = normaliseInsightWord(item?.word);
+  const answer = normaliseInsightWord(response);
+  if (!response) return "漏词";
+  if (/显示答案|未作答|跳过/.test(response)) return "未独立作答";
+  if (target && answer === target) return "格式/大小写";
+  if (target && answer && getInsightWordStem(target) === getInsightWordStem(answer)) return "单复数";
+  return "拼写错误";
+}
+
+function collectRecurringErrors(mode = state.insightErrorMode) {
+  const counts = new Map();
+  const add = (label, amount = 1) => {
+    const key = shortenInsightLabel(label);
+    const value = Math.max(0, Number(amount) || 0);
+    if (!key || !value) return;
+    counts.set(key, (counts.get(key) || 0) + value);
+  };
+
+  if (mode === "listening") {
+    state.listeningMistakes.forEach((item) => add(listeningMistakeErrorLabels[item.errorType] || "其他听力错因"));
+    const listeningFavorites = Object.values(state.favoriteBook?.listening || {});
+    if (!counts.size && listeningFavorites.length) add("单词听辨未掌握", listeningFavorites.length);
+  } else if (mode === "dictation") {
+    Object.values(state.favoriteBook?.dictation || {}).forEach((item) => add(getDictationRecurringErrorLabel(item)));
+  } else if (mode === "reading") {
+    state.readingMistakes.forEach((item) => add(getReadingMistakeErrorLabel(item)));
+    const readingFavorites = Object.values(state.favoriteBook?.reading || {});
+    if (!counts.size && readingFavorites.length) add("词义未掌握", readingFavorites.length);
+  } else if (mode === "writing") {
+    Object.entries(state.writingStats?.repeatedErrors || {}).forEach(([label, count]) => add(label, count));
+    (state.writingStudio?.errors || []).forEach((error) => {
+      const label = error.criterion && error.criterion !== "本次重点" ? error.criterion : error.issue || "写作错误";
+      add(label);
+    });
+  }
+
+  return [...counts.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "zh-CN"))
+    .slice(0, 3);
+}
+
+function renderRecurringErrors() {
+  if (!recurringErrorsList || !recurringErrorsRecommendation) return;
+  const mode = insightErrorModeLabels[state.insightErrorMode] ? state.insightErrorMode : "listening";
+  const modeLabel = insightErrorModeLabels[mode];
+  recurringErrorModeButtons.forEach((button) => {
+    const active = button.dataset.insightErrorMode === mode;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", active ? "true" : "false");
+    button.tabIndex = active ? 0 : -1;
+  });
+
+  const items = collectRecurringErrors(mode);
+  if (!items.length) {
+    recurringErrorsList.innerHTML = `<p class="insight-empty">${modeLabel}模式暂无可统计的错题记录。</p>`;
+    recurringErrorsRecommendation.textContent = "";
+    return;
+  }
+
+  const maximum = Math.max(...items.map((item) => item.count), 1);
+  recurringErrorsList.innerHTML = items
+    .map(
+      (item) => `
+        <div class="recurring-error-row">
+          <strong>${escapeHtml(item.label)}</strong>
+          <span class="recurring-error-track" aria-hidden="true"><i style="width:${Math.max(16, Math.round((item.count / maximum) * 100))}%"></i></span>
+          <span>${item.count} 次</span>
+        </div>`,
+    )
+    .join("");
+  recurringErrorsRecommendation.textContent = `建议今天先复习${modeLabel}中的“${items[0].label}”，共 ${items[0].count} 项。`;
+}
+
+function setInsightErrorMode(mode) {
+  if (!insightErrorModeLabels[mode]) return;
+  state.insightErrorMode = mode;
+  renderRecurringErrors();
+}
+
+function getInsightErrorModeForCurrentSurface() {
+  if (state.activeSurface === "writing") return "writing";
+  if (state.activeSurface === "listeningMistakes") return "listening";
+  if (state.activeSurface === "readingMistakes") return "reading";
+  return bookModes.includes(state.mode) ? state.mode : "listening";
+}
+
+function renderLearningInsights() {
+  renderActivityHeatmap();
+  renderRecurringErrors();
 }
 
 function normaliseListeningMistakeImage(image) {
@@ -1866,22 +2407,101 @@ function normaliseListeningMistake(record = {}) {
   };
 }
 
-function loadListeningMistakes() {
+function parseStoredJsonValue(raw, fallback = null) {
+  if (!raw) return fallback;
   try {
-    const saved = JSON.parse(window.localStorage.getItem(LISTENING_MISTAKE_STORAGE_KEY) || "[]");
-    if (!Array.isArray(saved)) return [];
-    return saved
-      .map(normaliseListeningMistake)
-      .filter((item) => item.id && item.title)
-      .sort((a, b) => b.createdAt - a.createdAt);
+    return JSON.parse(raw);
   } catch {
-    return [];
+    return fallback;
   }
+}
+
+function loadStoredJsonCopies(primaryKey, backupKeys = []) {
+  return [primaryKey, ...backupKeys]
+    .map((key) => parseStoredJsonValue(window.localStorage.getItem(key), null))
+    .filter((value) => value !== null);
+}
+
+function saveRotatingJson(primaryKey, backupKeys, value) {
+  const nextRaw = JSON.stringify(value);
+  const previousRaw = window.localStorage.getItem(primaryKey);
+  try {
+    window.localStorage.setItem(primaryKey, nextRaw);
+  } catch {
+    return false;
+  }
+
+  if (previousRaw && previousRaw !== nextRaw) {
+    try {
+      const firstBackup = backupKeys[0] ? window.localStorage.getItem(backupKeys[0]) : "";
+      if (backupKeys[1] && firstBackup) window.localStorage.setItem(backupKeys[1], firstBackup);
+      if (backupKeys[0]) window.localStorage.setItem(backupKeys[0], previousRaw);
+    } catch {
+      // The primary copy is already safe; backups are best-effort when storage is nearly full.
+    }
+  }
+  return true;
+}
+
+function normaliseMistakeDeletedIds(values) {
+  return Array.isArray(values) ? [...new Set(values.map(String).filter(Boolean))] : [];
+}
+
+function mergeMistakeDeletedIds(...sources) {
+  return [...new Set(sources.flatMap(normaliseMistakeDeletedIds))];
+}
+
+function loadMistakeLibraryVault() {
+  const copies = loadStoredJsonCopies(MISTAKE_LIBRARY_VAULT_STORAGE_KEY, MISTAKE_LIBRARY_VAULT_BACKUP_KEYS);
+  return copies.reduce((merged, copy) => {
+    if (!copy || typeof copy !== "object") return merged;
+    merged.listeningDeletedIds = mergeMistakeDeletedIds(merged.listeningDeletedIds, copy.listeningDeletedIds);
+    merged.readingDeletedIds = mergeMistakeDeletedIds(merged.readingDeletedIds, copy.readingDeletedIds);
+    merged.listeningMistakes = mergeListeningMistakeSnapshots(
+      copy.listeningMistakes,
+      merged.listeningMistakes,
+      merged.listeningDeletedIds,
+    );
+    merged.readingMistakes = mergeReadingMistakeSnapshots(
+      copy.readingMistakes,
+      merged.readingMistakes,
+      merged.readingDeletedIds,
+    );
+    return merged;
+  }, {
+    listeningMistakes: [],
+    listeningDeletedIds: [],
+    readingMistakes: [],
+    readingDeletedIds: [],
+  });
+}
+
+function loadListeningMistakeDeletedIds() {
+  const vault = loadMistakeLibraryVault();
+  const copies = loadStoredJsonCopies(
+    LISTENING_MISTAKE_DELETED_STORAGE_KEY,
+    LISTENING_MISTAKE_DELETED_BACKUP_KEYS,
+  );
+  return mergeMistakeDeletedIds(vault.listeningDeletedIds, ...copies);
+}
+
+function loadListeningMistakes() {
+  const vault = loadMistakeLibraryVault();
+  const deletedIds = loadListeningMistakeDeletedIds();
+  const copies = loadStoredJsonCopies(LISTENING_MISTAKE_STORAGE_KEY, LISTENING_MISTAKE_BACKUP_KEYS);
+  return [...copies, vault.listeningMistakes].reduce(
+    (merged, copy) => mergeListeningMistakeSnapshots(copy, merged, deletedIds),
+    [],
+  );
 }
 
 function saveListeningMistakes() {
   try {
-    window.localStorage.setItem(LISTENING_MISTAKE_STORAGE_KEY, JSON.stringify(state.listeningMistakes));
+    if (!saveRotatingJson(
+      LISTENING_MISTAKE_STORAGE_KEY,
+      LISTENING_MISTAKE_BACKUP_KEYS,
+      state.listeningMistakes,
+    )) throw new Error("Listening mistake storage unavailable");
     return true;
   } catch {
     listeningMistakeFormStatus.textContent = "保存失败：浏览器本地存储不可用。";
@@ -1889,11 +2509,28 @@ function saveListeningMistakes() {
   }
 }
 
+function saveListeningMistakeDeletedIds() {
+  return saveRotatingJson(
+    LISTENING_MISTAKE_DELETED_STORAGE_KEY,
+    LISTENING_MISTAKE_DELETED_BACKUP_KEYS,
+    state.listeningMistakeDeletedIds,
+  );
+}
+
 function mergeListeningMistakes(primary = [], secondary = []) {
+  return mergeListeningMistakeSnapshots(
+    primary,
+    secondary,
+    state.listeningMistakeDeletedIds || [],
+  );
+}
+
+function mergeListeningMistakeSnapshots(primary = [], secondary = [], deletedIds = []) {
   const merged = new Map();
+  const deleted = new Set(normaliseMistakeDeletedIds(deletedIds));
   [...secondary, ...primary].forEach((record) => {
     const item = normaliseListeningMistake(record);
-    if (!item.id || !item.title) return;
+    if (!item.id || !item.title || deleted.has(item.id)) return;
     const existing = merged.get(item.id);
     if (!existing || item.updatedAt >= existing.updatedAt) merged.set(item.id, item);
   });
@@ -2159,13 +2796,15 @@ function submitListeningMistakeForm(event) {
     reviewCount: existing?.reviewCount || 0,
   });
 
+  state.listeningMistakeDeletedIds = state.listeningMistakeDeletedIds
+    .filter((itemId) => itemId !== record.id);
   if (existing) {
     state.listeningMistakes = state.listeningMistakes.map((item) => item.id === record.id ? record : item);
   } else {
     state.listeningMistakes.unshift(record);
   }
   state.listeningMistakeSelectedId = record.id;
-  if (!saveListeningMistakes()) return;
+  if (!persistMistakeLibraries()) return;
   void saveTraining(false);
   closeListeningMistakeForm();
   renderListeningMistakeLibrary();
@@ -2177,7 +2816,7 @@ function updateListeningMistakeStatus(id, status) {
   if (!item) return;
   item.status = status;
   item.updatedAt = Date.now();
-  saveListeningMistakes();
+  persistMistakeLibraries();
   void saveTraining(false);
   renderListeningMistakeLibrary();
 }
@@ -2188,7 +2827,7 @@ function completeListeningMistakeReview(id) {
   item.lastReviewedAt = Date.now();
   item.reviewCount += 1;
   item.updatedAt = Date.now();
-  saveListeningMistakes();
+  persistMistakeLibraries();
   void saveTraining(false);
   renderListeningMistakeLibrary();
 }
@@ -2196,9 +2835,13 @@ function completeListeningMistakeReview(id) {
 function deleteListeningMistake(id) {
   const item = state.listeningMistakes.find((entry) => entry.id === id);
   if (!item || !window.confirm(`确定删除“${item.title}”吗？此操作无法撤销。`)) return;
+  state.listeningMistakeDeletedIds = mergeMistakeDeletedIds(
+    state.listeningMistakeDeletedIds,
+    [id],
+  );
   state.listeningMistakes = state.listeningMistakes.filter((entry) => entry.id !== id);
   state.listeningMistakeSelectedId = state.listeningMistakes[0]?.id || "";
-  saveListeningMistakes();
+  persistMistakeLibraries();
   void saveTraining(false);
   renderListeningMistakeLibrary();
 }
@@ -2575,16 +3218,13 @@ function getReadingMistakeImageKeys(item, kind) {
 }
 
 function loadReadingMistakes() {
-  try {
-    const saved = JSON.parse(window.localStorage.getItem(READING_MISTAKE_STORAGE_KEY) || "[]");
-    const deletedIds = new Set(loadReadingMistakeDeletedIds());
-    if (!Array.isArray(saved)) return [];
-    return sortReadingMistakesByQuestionType(saved
-      .map(normaliseReadingMistake)
-      .filter((item) => item.id && !deletedIds.has(item.id)));
-  } catch {
-    return [];
-  }
+  const vault = loadMistakeLibraryVault();
+  const deletedIds = loadReadingMistakeDeletedIds();
+  const copies = loadStoredJsonCopies(READING_MISTAKE_STORAGE_KEY, READING_MISTAKE_BACKUP_KEYS);
+  return [...copies, vault.readingMistakes].reduce(
+    (merged, copy) => mergeReadingMistakeSnapshots(copy, merged, deletedIds),
+    [],
+  );
 }
 
 function getReadingMistakeQuestionTypeLabel(item) {
@@ -2609,26 +3249,29 @@ function sortReadingMistakesByQuestionType(items = []) {
 }
 
 function loadReadingMistakeDeletedIds() {
-  try {
-    const saved = JSON.parse(window.localStorage.getItem(READING_MISTAKE_DELETED_STORAGE_KEY) || "[]");
-    return Array.isArray(saved) ? [...new Set(saved.map(String).filter(Boolean))] : [];
-  } catch {
-    return [];
-  }
+  const vault = loadMistakeLibraryVault();
+  const copies = loadStoredJsonCopies(
+    READING_MISTAKE_DELETED_STORAGE_KEY,
+    READING_MISTAKE_DELETED_BACKUP_KEYS,
+  );
+  return mergeMistakeDeletedIds(vault.readingDeletedIds, ...copies);
 }
 
 function saveReadingMistakeDeletedIds() {
-  try {
-    window.localStorage.setItem(
-      READING_MISTAKE_DELETED_STORAGE_KEY,
-      JSON.stringify(state.readingMistakeDeletedIds),
-    );
-  } catch {}
+  return saveRotatingJson(
+    READING_MISTAKE_DELETED_STORAGE_KEY,
+    READING_MISTAKE_DELETED_BACKUP_KEYS,
+    state.readingMistakeDeletedIds,
+  );
 }
 
 function saveReadingMistakes() {
   try {
-    window.localStorage.setItem(READING_MISTAKE_STORAGE_KEY, JSON.stringify(state.readingMistakes));
+    if (!saveRotatingJson(
+      READING_MISTAKE_STORAGE_KEY,
+      READING_MISTAKE_BACKUP_KEYS,
+      state.readingMistakes,
+    )) throw new Error("Reading mistake storage unavailable");
     return true;
   } catch {
     readingMistakeFormStatus.textContent = "保存失败：浏览器本地存储不可用。";
@@ -2637,15 +3280,43 @@ function saveReadingMistakes() {
 }
 
 function mergeReadingMistakes(primary = [], secondary = []) {
-  const merged = new Map();
-  const deletedIds = new Set(state.readingMistakeDeletedIds || []);
-  [...secondary, ...primary].forEach((record) => {
-    const item = normaliseReadingMistake(record);
-    if (!item.id || deletedIds.has(item.id)) return;
-    const existing = merged.get(item.id);
-    if (!existing || item.updatedAt >= existing.updatedAt) merged.set(item.id, item);
-  });
-  return sortReadingMistakesByQuestionType([...merged.values()]);
+  return mergeReadingMistakeSnapshots(
+    primary,
+    secondary,
+    state.readingMistakeDeletedIds || [],
+  );
+}
+
+function buildMistakeLibraryVault() {
+  return {
+    version: 1,
+    savedAt: Date.now(),
+    listeningMistakes: state.listeningMistakes,
+    listeningDeletedIds: state.listeningMistakeDeletedIds,
+    readingMistakes: state.readingMistakes,
+    readingDeletedIds: state.readingMistakeDeletedIds,
+  };
+}
+
+function saveMistakeLibraryVault() {
+  return saveRotatingJson(
+    MISTAKE_LIBRARY_VAULT_STORAGE_KEY,
+    MISTAKE_LIBRARY_VAULT_BACKUP_KEYS,
+    buildMistakeLibraryVault(),
+  );
+}
+
+function persistMistakeLibraries() {
+  const listeningDeletedSaved = saveListeningMistakeDeletedIds();
+  const readingDeletedSaved = saveReadingMistakeDeletedIds();
+  const listeningSaved = saveListeningMistakes();
+  const readingSaved = saveReadingMistakes();
+  const vaultSaved = saveMistakeLibraryVault();
+  return listeningDeletedSaved
+    && readingDeletedSaved
+    && listeningSaved
+    && readingSaved
+    && vaultSaved;
 }
 
 function createReadingMistakeId() {
@@ -3098,11 +3769,13 @@ async function submitReadingMistakeForm(event) {
       lastReviewedAt: existing?.lastReviewedAt || 0,
       reviewCount: existing?.reviewCount || 0,
     });
+    state.readingMistakeDeletedIds = state.readingMistakeDeletedIds
+      .filter((itemId) => itemId !== record.id);
     state.readingMistakes = sortReadingMistakesByQuestionType(existing
       ? state.readingMistakes.map((item) => item.id === record.id ? record : item)
       : [record, ...state.readingMistakes]);
     state.readingMistakeSelectedId = record.id;
-    if (!saveReadingMistakes()) return;
+    if (!persistMistakeLibraries()) return;
     void saveTraining(false);
     closeReadingMistakeForm();
     renderReadingMistakeLibrary();
@@ -3117,7 +3790,7 @@ function updateReadingMistakeStatus(id, status) {
   if (!item) return;
   item.status = status;
   item.updatedAt = Date.now();
-  saveReadingMistakes();
+  persistMistakeLibraries();
   void saveTraining(false);
   renderReadingMistakeLibrary();
 }
@@ -3128,7 +3801,7 @@ function completeReadingMistakeReview(id) {
   item.lastReviewedAt = Date.now();
   item.reviewCount += 1;
   item.updatedAt = Date.now();
-  saveReadingMistakes();
+  persistMistakeLibraries();
   void saveTraining(false);
   renderReadingMistakeLibrary();
 }
@@ -3136,17 +3809,19 @@ function completeReadingMistakeReview(id) {
 async function deleteReadingMistake(id) {
   const item = state.readingMistakes.find((entry) => entry.id === id);
   if (!item || !window.confirm(`确定删除“${getReadingMistakeDisplayTitle(item)}”吗？此操作无法撤销。`)) return;
+  state.readingMistakeDeletedIds = mergeMistakeDeletedIds(
+    state.readingMistakeDeletedIds,
+    [id],
+  );
+  state.readingMistakes = state.readingMistakes.filter((entry) => entry.id !== id);
+  state.readingMistakeSelectedId = state.readingMistakes[0]?.id || "";
+  persistMistakeLibraries();
+  void saveTraining(false);
+  renderReadingMistakeLibrary();
   await Promise.all([
     ...getReadingMistakeImageKeys(item, "question"),
     ...getReadingMistakeImageKeys(item, "evidence"),
   ].map((key) => deleteReadingMedia(key)));
-  state.readingMistakeDeletedIds = [...new Set([...state.readingMistakeDeletedIds, id])];
-  state.readingMistakes = state.readingMistakes.filter((entry) => entry.id !== id);
-  state.readingMistakeSelectedId = state.readingMistakes[0]?.id || "";
-  saveReadingMistakes();
-  saveReadingMistakeDeletedIds();
-  void saveTraining(false);
-  renderReadingMistakeLibrary();
 }
 
 function createEmptyBook() {
@@ -3155,6 +3830,65 @@ function createEmptyBook() {
     dictation: {},
     reading: {},
   };
+}
+
+function toStoredTimestamp(value) {
+  const numeric = Number(value);
+  if (Number.isFinite(numeric) && numeric > 0) return numeric;
+  const parsed = Date.parse(String(value || ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normaliseFavoriteDeleted(source) {
+  return bookModes.reduce((deleted, mode) => {
+    const entries = source?.[mode] && typeof source[mode] === "object" ? source[mode] : {};
+    deleted[mode] = Object.entries(entries).reduce((items, [rawKey, value]) => {
+      const key = normaliseKey(rawKey);
+      const deletedAt = toStoredTimestamp(value);
+      if (key && deletedAt) items[key] = deletedAt;
+      return items;
+    }, {});
+    return deleted;
+  }, createEmptyBook());
+}
+
+function mergeFavoriteDeleted(first, second) {
+  const firstDeleted = normaliseFavoriteDeleted(first);
+  const secondDeleted = normaliseFavoriteDeleted(second);
+  return bookModes.reduce((deleted, mode) => {
+    const keys = new Set([
+      ...Object.keys(firstDeleted[mode]),
+      ...Object.keys(secondDeleted[mode]),
+    ]);
+    deleted[mode] = {};
+    keys.forEach((key) => {
+      deleted[mode][key] = Math.max(firstDeleted[mode][key] || 0, secondDeleted[mode][key] || 0);
+    });
+    return deleted;
+  }, createEmptyBook());
+}
+
+function filterFavoriteBookByDeleted(book, deleted) {
+  const normalisedDeleted = normaliseFavoriteDeleted(deleted);
+  return bookModes.reduce((filtered, mode) => {
+    const entries = book?.[mode] && typeof book[mode] === "object" ? book[mode] : {};
+    filtered[mode] = Object.entries(entries).reduce((items, [rawKey, item]) => {
+      const key = normaliseKey(rawKey || item?.word);
+      if (!key || !item || typeof item !== "object") return items;
+      const deletedAt = normalisedDeleted[mode][key] || 0;
+      const favoritedAt = toStoredTimestamp(item.missedAt || item.updatedAt || item.createdAt);
+      if (!deletedAt || favoritedAt > deletedAt) items[key] = item;
+      return items;
+    }, {});
+    return filtered;
+  }, createEmptyBook());
+}
+
+function mergeFavoriteBooks(primary, secondary, deleted) {
+  return filterFavoriteBookByDeleted(
+    mergeBookByTimestamp(primary, secondary, "missedAt"),
+    deleted,
+  );
 }
 
 function mergeBookByTimestamp(primary, secondary, timestampKey) {
@@ -3178,13 +3912,49 @@ function mergeBookByTimestamp(primary, secondary, timestampKey) {
 function loadFavoriteBook() {
   try {
     const saved = JSON.parse(window.localStorage.getItem(BOOK_STORAGE_KEY) || "{}");
-    return bookModes.reduce((book, mode) => {
-      book[mode] = saved && typeof saved[mode] === "object" && saved[mode] ? saved[mode] : {};
-      return book;
+    const book = bookModes.reduce((result, mode) => {
+      result[mode] = saved && typeof saved[mode] === "object" && saved[mode] ? saved[mode] : {};
+      return result;
     }, createEmptyBook());
+    return filterFavoriteBookByDeleted(book, loadFavoriteDeleted());
   } catch {
     return createEmptyBook();
   }
+}
+
+function loadFavoriteDeleted() {
+  try {
+    return normaliseFavoriteDeleted(
+      JSON.parse(window.localStorage.getItem(FAVORITE_DELETED_STORAGE_KEY) || "{}"),
+    );
+  } catch {
+    return createEmptyBook();
+  }
+}
+
+function saveFavoriteDeleted() {
+  try {
+    window.localStorage.setItem(
+      FAVORITE_DELETED_STORAGE_KEY,
+      JSON.stringify(normaliseFavoriteDeleted(state.favoriteDeleted)),
+    );
+  } catch {
+    return false;
+  }
+  return true;
+}
+
+function markFavoriteDeleted(mode, key) {
+  if (!bookModes.includes(mode) || !key) return false;
+  if (!state.favoriteDeleted?.[mode]) state.favoriteDeleted[mode] = {};
+  state.favoriteDeleted[mode][key] = Date.now();
+  return saveFavoriteDeleted();
+}
+
+function clearFavoriteDeleted(mode, key) {
+  if (!bookModes.includes(mode) || !key || !state.favoriteDeleted?.[mode]?.[key]) return;
+  delete state.favoriteDeleted[mode][key];
+  saveFavoriteDeleted();
 }
 
 function saveFavoriteBook() {
@@ -3351,6 +4121,255 @@ function loadSavedSessions() {
   }
 }
 
+function normaliseAnswerHistory(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((entry, index) => {
+      if (!entry || typeof entry !== "object" || typeof entry.correct !== "boolean") return null;
+      const answeredAt = Number(entry.answeredAt || entry.timestamp || entry.savedAt);
+      if (!Number.isFinite(answeredAt) || answeredAt <= 0) return null;
+      const mode = bookModes.includes(entry.mode) ? entry.mode : "listening";
+      const id = String(entry.id || `answer-${mode}-${answeredAt}-${index}-${entry.correct ? 1 : 0}`);
+      return { id, answeredAt, mode, correct: entry.correct };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.answeredAt - b.answeredAt)
+    .slice(-ANSWER_HISTORY_LIMIT);
+}
+
+function mergeAnswerHistory(current, incoming) {
+  const merged = new Map();
+  [...normaliseAnswerHistory(current), ...normaliseAnswerHistory(incoming)].forEach((entry) => {
+    merged.set(entry.id, entry);
+  });
+  return [...merged.values()]
+    .sort((a, b) => a.answeredAt - b.answeredAt)
+    .slice(-ANSWER_HISTORY_LIMIT);
+}
+
+function getSnapshotSavedAt(snapshot) {
+  const savedAt = Number(snapshot?.savedAt);
+  return Number.isFinite(savedAt) && savedAt > 0 ? savedAt : 0;
+}
+
+function mergeModeInputText(primaryText, secondaryText) {
+  const lines = [];
+  const indexes = new Map();
+  const getRichness = (line) => {
+    const parts = String(line || "")
+      .split("|")
+      .map((part) => part.trim())
+      .filter(Boolean);
+    return parts.length * 10000 + String(line || "").length;
+  };
+
+  [primaryText, secondaryText].forEach((value) => {
+    String(value || "")
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .forEach((line) => {
+        const wordKey = normaliseKey(line.split("|")[0]) || line.toLocaleLowerCase();
+        const existingIndex = indexes.get(wordKey);
+        if (existingIndex === undefined) {
+          indexes.set(wordKey, lines.length);
+          lines.push(line);
+          return;
+        }
+        if (getRichness(line) > getRichness(lines[existingIndex])) {
+          lines[existingIndex] = line;
+        }
+      });
+  });
+
+  return lines.join("\n");
+}
+
+function mergeSnapshotSessions(primary, secondary) {
+  const getSessionProgress = (session) => {
+    if (!session || typeof session !== "object") return [-1, -1, -1, -1, -1];
+    return [
+      Array.isArray(session.results) ? session.results.length : 0,
+      Number(session.currentIndex) || 0,
+      Number(session.score) || 0,
+      Array.isArray(session.deck) ? session.deck.length : 0,
+      Number(session.savedAt) || 0,
+    ];
+  };
+
+  const chooseRicherSession = (first, second) => {
+    if (!first) return second;
+    if (!second) return first;
+    const firstProgress = getSessionProgress(first);
+    const secondProgress = getSessionProgress(second);
+    for (let index = 0; index < firstProgress.length; index += 1) {
+      if (firstProgress[index] !== secondProgress[index]) {
+        return firstProgress[index] > secondProgress[index] ? first : second;
+      }
+    }
+    return first;
+  };
+
+  return bookModes.reduce((sessions, mode) => {
+    const primarySession = primary?.[mode] || null;
+    const secondarySession = secondary?.[mode] || null;
+    sessions[mode] = chooseRicherSession(primarySession, secondarySession);
+    return sessions;
+  }, createEmptyBook());
+}
+
+function mergeSnapshotRecordMaps(primary, secondary, timestampKeys = []) {
+  const primaryItems = primary && typeof primary === "object" ? primary : {};
+  const secondaryItems = secondary && typeof secondary === "object" ? secondary : {};
+  const merged = { ...secondaryItems };
+
+  Object.entries(primaryItems).forEach(([key, item]) => {
+    const existing = merged[key];
+    if (!existing || !timestampKeys.length) {
+      merged[key] = item;
+      return;
+    }
+    const itemTimestamp = Math.max(...timestampKeys.map((name) => Number(item?.[name]) || 0));
+    const existingTimestamp = Math.max(...timestampKeys.map((name) => Number(existing?.[name]) || 0));
+    if (itemTimestamp >= existingTimestamp) merged[key] = item;
+  });
+  return merged;
+}
+
+function mergeReadingMistakeSnapshots(primary = [], secondary = [], deletedIds = []) {
+  const deleted = new Set(deletedIds.map(String));
+  const merged = new Map();
+  [...secondary, ...primary].forEach((record) => {
+    const item = normaliseReadingMistake(record);
+    if (!item.id || deleted.has(item.id)) return;
+    const existing = merged.get(item.id);
+    if (!existing || item.updatedAt >= existing.updatedAt) merged.set(item.id, item);
+  });
+  return sortReadingMistakesByQuestionType([...merged.values()]);
+}
+
+function mergeTrainingSnapshots(first, second) {
+  const validFirst = first && typeof first === "object" ? first : null;
+  const validSecond = second && typeof second === "object" ? second : null;
+  if (!validFirst && !validSecond) return null;
+  if (!validFirst) return validSecond;
+  if (!validSecond) return validFirst;
+
+  const firstIsNewer = getSnapshotSavedAt(validFirst) >= getSnapshotSavedAt(validSecond);
+  const newer = firstIsNewer ? validFirst : validSecond;
+  const older = firstIsNewer ? validSecond : validFirst;
+  const deletedListeningIds = mergeMistakeDeletedIds(
+    older.listeningMistakeDeletedIds,
+    newer.listeningMistakeDeletedIds,
+  );
+  const deletedReadingIds = mergeMistakeDeletedIds(
+    older.readingMistakeDeletedIds,
+    newer.readingMistakeDeletedIds,
+  );
+  const favoriteDeleted = mergeFavoriteDeleted(newer.favoriteDeleted, older.favoriteDeleted);
+
+  const merged = {
+    ...older,
+    ...newer,
+    version: Math.max(Number(older.version) || 0, Number(newer.version) || 0, 4),
+    savedAt: Math.max(getSnapshotSavedAt(older), getSnapshotSavedAt(newer)),
+    modeInputs: bookModes.reduce((inputs, mode) => {
+      inputs[mode] = mergeModeInputText(newer.modeInputs?.[mode], older.modeInputs?.[mode]);
+      return inputs;
+    }, createEmptyModeInputs()),
+    favoriteDeleted,
+    favoriteBook: mergeFavoriteBooks(newer.favoriteBook, older.favoriteBook, favoriteDeleted),
+    correctBook: mergeBookByTimestamp(newer.correctBook, older.correctBook, "correctAt"),
+    userNotes: mergeSnapshotRecordMaps(newer.userNotes, older.userNotes, ["updatedAt", "createdAt"]),
+    shortcutSettings: { ...(older.shortcutSettings || {}), ...(newer.shortcutSettings || {}) },
+    sessions: mergeSnapshotSessions(newer.sessions, older.sessions),
+    answerHistory: mergeAnswerHistory(newer.answerHistory, older.answerHistory),
+    writingMistakeBook: mergeSnapshotRecordMaps(
+      newer.writingMistakeBook,
+      older.writingMistakeBook,
+      ["updatedAt", "createdAt", "missedAt"],
+    ),
+    writingFavoriteBook: mergeSnapshotRecordMaps(
+      newer.writingFavoriteBook,
+      older.writingFavoriteBook,
+      ["updatedAt", "createdAt", "favoritedAt"],
+    ),
+    writingStats: {
+      ...(older.writingStats || {}),
+      ...(newer.writingStats || {}),
+      repeatedErrors: {
+        ...(older.writingStats?.repeatedErrors || {}),
+        ...(newer.writingStats?.repeatedErrors || {}),
+      },
+    },
+    writingStudio: mergeWritingStudioState(newer.writingStudio, older.writingStudio),
+    listeningMistakeDeletedIds: deletedListeningIds,
+    listeningMistakes: mergeListeningMistakeSnapshots(
+      newer.listeningMistakes,
+      older.listeningMistakes,
+      deletedListeningIds,
+    ),
+    readingMistakeDeletedIds: deletedReadingIds,
+    readingMistakes: mergeReadingMistakeSnapshots(
+      newer.readingMistakes,
+      older.readingMistakes,
+      deletedReadingIds,
+    ),
+  };
+
+  return merged;
+}
+
+function loadAnswerHistory() {
+  try {
+    return normaliseAnswerHistory(JSON.parse(window.localStorage.getItem(ANSWER_HISTORY_STORAGE_KEY) || "[]"));
+  } catch {
+    return [];
+  }
+}
+
+function saveAnswerHistory() {
+  try {
+    window.localStorage.setItem(ANSWER_HISTORY_STORAGE_KEY, JSON.stringify(state.answerHistory));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function seedAnswerHistoryFromSessions() {
+  const seeded = [];
+  Object.entries(state.savedSessions || {}).forEach(([mode, session]) => {
+    if (!session || typeof session !== "object") return;
+    const savedAt = Number(session.savedAt) || Date.now();
+    const results = Array.isArray(session.results) ? session.results : [];
+    results.forEach((result, index) => {
+      if (typeof result?.correct !== "boolean") return;
+      seeded.push({
+        id: `legacy-${mode}-${savedAt}-${index}`,
+        answeredAt: savedAt + index,
+        mode: bookModes.includes(mode) ? mode : "listening",
+        correct: result.correct,
+      });
+    });
+  });
+  if (!seeded.length) return false;
+  const current = normaliseAnswerHistory(state.answerHistory);
+  const merged = mergeAnswerHistory(current, seeded);
+  if (merged.length === current.length) return false;
+  state.answerHistory = merged;
+  saveAnswerHistory();
+  return true;
+}
+
+function recordAnswerHistory(mode, correct) {
+  const answeredAt = Date.now();
+  const id = `answer-${mode}-${answeredAt}-${Math.random().toString(36).slice(2, 9)}`;
+  state.answerHistory = mergeAnswerHistory(state.answerHistory, [{ id, answeredAt, mode, correct: Boolean(correct) }]);
+  saveAnswerHistory();
+  scheduleLearningInsightsRender();
+}
+
 function createDefaultWritingStats() {
   return {
     dayKey: "",
@@ -3438,46 +4457,72 @@ function captureCurrentSession() {
 
 function buildTrainingSnapshot() {
   saveCurrentModeInput();
-  state.savedSessions[state.mode] = captureCurrentSession();
+  const currentSession = captureCurrentSession();
+  if (currentSession) state.savedSessions[state.mode] = currentSession;
 
   return {
-    version: 1,
+    version: 4,
     savedAt: Date.now(),
     mode: state.mode,
     bookMode: state.bookMode,
     modeInputs: state.modeInputs,
+    favoriteDeleted: state.favoriteDeleted,
     favoriteBook: state.favoriteBook,
     correctBook: state.correctBook,
     userNotes: state.userNotes,
     shortcutSettings: state.shortcutSettings,
     sessions: state.savedSessions,
+    answerHistory: state.answerHistory,
     writingMistakeBook: state.writingMistakeBook,
     writingFavoriteBook: state.writingFavoriteBook,
     writingStats: state.writingStats,
     writingPackId: state.writingPackId,
     writingPhase: state.writingPhase,
     writingStudio: state.writingStudio,
+    listeningMistakeDeletedIds: state.listeningMistakeDeletedIds,
     listeningMistakes: state.listeningMistakes,
     readingMistakes: state.readingMistakes,
     readingMistakeDeletedIds: state.readingMistakeDeletedIds,
   };
 }
 
-function applyTrainingSnapshot(snapshot) {
+function applyTrainingSnapshot(snapshot, options = {}) {
   if (!snapshot || typeof snapshot !== "object") return false;
 
-  state.modeInputs = { ...createEmptyModeInputs(), ...(snapshot.modeInputs || {}) };
-  state.favoriteBook = mergeBookByTimestamp(state.favoriteBook, snapshot.favoriteBook, "missedAt");
-  state.correctBook = mergeBookByTimestamp(state.correctBook, snapshot.correctBook, "correctAt");
-  state.userNotes =
-    snapshot.userNotes && typeof snapshot.userNotes === "object"
+  const authoritative = Boolean(options.authoritative);
+
+  state.modeInputs = bookModes.reduce((inputs, mode) => {
+    inputs[mode] = authoritative
+      ? String(snapshot.modeInputs?.[mode] || "")
+      : mergeModeInputText(snapshot.modeInputs?.[mode], state.modeInputs?.[mode]);
+    return inputs;
+  }, createEmptyModeInputs());
+  state.favoriteDeleted = mergeFavoriteDeleted(state.favoriteDeleted, snapshot.favoriteDeleted);
+  state.favoriteBook = authoritative
+    ? mergeFavoriteBooks(snapshot.favoriteBook, createEmptyBook(), state.favoriteDeleted)
+    : mergeFavoriteBooks(state.favoriteBook, snapshot.favoriteBook, state.favoriteDeleted);
+  state.correctBook = authoritative
+    ? mergeBookByTimestamp(snapshot.correctBook, createEmptyBook(), "correctAt")
+    : mergeBookByTimestamp(state.correctBook, snapshot.correctBook, "correctAt");
+  state.userNotes = authoritative
+    ? snapshot.userNotes && typeof snapshot.userNotes === "object"
+      ? { ...snapshot.userNotes }
+      : {}
+    : snapshot.userNotes && typeof snapshot.userNotes === "object"
       ? { ...snapshot.userNotes, ...state.userNotes }
       : state.userNotes;
-  state.shortcutSettings = normaliseShortcutSettings({
-    ...state.shortcutSettings,
-    ...(snapshot.shortcutSettings || {}),
-  });
-  state.savedSessions = { ...createEmptyBook(), ...(snapshot.sessions || {}) };
+  state.shortcutSettings = normaliseShortcutSettings(
+    authoritative
+      ? snapshot.shortcutSettings || {}
+      : { ...state.shortcutSettings, ...(snapshot.shortcutSettings || {}) },
+  );
+  state.savedSessions = authoritative
+    ? mergeSnapshotSessions(snapshot.sessions, createEmptyBook())
+    : mergeSnapshotSessions(snapshot.sessions, state.savedSessions);
+  state.answerHistory = authoritative
+    ? normaliseAnswerHistory(snapshot.answerHistory)
+    : mergeAnswerHistory(state.answerHistory, snapshot.answerHistory);
+  seedAnswerHistoryFromSessions();
   state.writingPackId =
     typeof snapshot.writingPackId === "string" && writingPatternPacks.some((pack) => pack.id === snapshot.writingPackId)
       ? snapshot.writingPackId
@@ -3486,35 +4531,73 @@ function applyTrainingSnapshot(snapshot) {
     typeof snapshot.writingPhase === "string" && writingPhaseLabels[snapshot.writingPhase]
       ? snapshot.writingPhase
       : state.writingPhase;
-  state.writingMistakeBook =
-    snapshot.writingMistakeBook && typeof snapshot.writingMistakeBook === "object"
+  state.writingMistakeBook = authoritative
+    ? snapshot.writingMistakeBook && typeof snapshot.writingMistakeBook === "object"
+      ? { ...snapshot.writingMistakeBook }
+      : {}
+    : snapshot.writingMistakeBook && typeof snapshot.writingMistakeBook === "object"
       ? { ...state.writingMistakeBook, ...snapshot.writingMistakeBook }
       : state.writingMistakeBook;
-  state.writingFavoriteBook =
-    snapshot.writingFavoriteBook && typeof snapshot.writingFavoriteBook === "object"
+  state.writingFavoriteBook = authoritative
+    ? snapshot.writingFavoriteBook && typeof snapshot.writingFavoriteBook === "object"
+      ? { ...snapshot.writingFavoriteBook }
+      : {}
+    : snapshot.writingFavoriteBook && typeof snapshot.writingFavoriteBook === "object"
       ? { ...snapshot.writingFavoriteBook, ...state.writingFavoriteBook }
       : state.writingFavoriteBook;
   state.writingStats =
     snapshot.writingStats && typeof snapshot.writingStats === "object"
-      ? {
-          ...state.writingStats,
-          ...snapshot.writingStats,
-          repeatedErrors: {
-            ...(state.writingStats?.repeatedErrors || {}),
-            ...(snapshot.writingStats.repeatedErrors || {}),
-          },
-        }
+      ? authoritative
+        ? {
+            ...createDefaultWritingStats(),
+            ...snapshot.writingStats,
+            repeatedErrors: { ...(snapshot.writingStats.repeatedErrors || {}) },
+          }
+        : {
+            ...state.writingStats,
+            ...snapshot.writingStats,
+            repeatedErrors: {
+              ...(state.writingStats?.repeatedErrors || {}),
+              ...(snapshot.writingStats.repeatedErrors || {}),
+            },
+          }
       : state.writingStats;
   if (snapshot.writingStudio && typeof snapshot.writingStudio === "object") {
-    state.writingStudio = mergeWritingStudioState(state.writingStudio, snapshot.writingStudio);
+    state.writingStudio = authoritative
+      ? mergeWritingStudioState(snapshot.writingStudio, createWritingStudioState())
+      : mergeWritingStudioState(state.writingStudio, snapshot.writingStudio);
     saveWritingStudioState();
   }
-  state.listeningMistakes = mergeListeningMistakes(state.listeningMistakes, snapshot.listeningMistakes);
-  state.readingMistakeDeletedIds = [...new Set([
-    ...state.readingMistakeDeletedIds,
-    ...(Array.isArray(snapshot.readingMistakeDeletedIds) ? snapshot.readingMistakeDeletedIds.map(String).filter(Boolean) : []),
-  ])];
-  state.readingMistakes = mergeReadingMistakes(state.readingMistakes, snapshot.readingMistakes);
+  state.listeningMistakeDeletedIds = authoritative
+    ? normaliseMistakeDeletedIds(snapshot.listeningMistakeDeletedIds)
+    : mergeMistakeDeletedIds(
+        state.listeningMistakeDeletedIds,
+        snapshot.listeningMistakeDeletedIds,
+      );
+  state.listeningMistakes = authoritative
+    ? mergeListeningMistakeSnapshots(
+        snapshot.listeningMistakes,
+        [],
+        state.listeningMistakeDeletedIds,
+      )
+    : mergeListeningMistakeSnapshots(
+        state.listeningMistakes,
+        snapshot.listeningMistakes,
+        state.listeningMistakeDeletedIds,
+      );
+  state.readingMistakeDeletedIds = authoritative
+    ? normaliseMistakeDeletedIds(snapshot.readingMistakeDeletedIds)
+    : mergeMistakeDeletedIds(
+        state.readingMistakeDeletedIds,
+        snapshot.readingMistakeDeletedIds,
+      );
+  state.readingMistakes = authoritative
+    ? mergeReadingMistakeSnapshots(snapshot.readingMistakes, [], state.readingMistakeDeletedIds)
+    : mergeReadingMistakeSnapshots(
+        state.readingMistakes,
+        snapshot.readingMistakes,
+        state.readingMistakeDeletedIds,
+      );
   state.bookMode = bookModes.includes(snapshot.bookMode) ? snapshot.bookMode : state.bookMode;
 
   const nextMode = bookModes.includes(snapshot.mode) ? snapshot.mode : getSelectedMode();
@@ -3526,15 +4609,15 @@ function applyTrainingSnapshot(snapshot) {
   updateSetupControls();
   updateScoreBox();
   saveFavoriteBook();
+  saveFavoriteDeleted();
   saveCorrectBook();
   saveUserNotes();
   saveShortcutSettings();
+  saveAnswerHistory();
   saveWritingMistakeBook();
   saveWritingFavoriteBook();
   saveWritingStats();
-  saveListeningMistakes();
-  saveReadingMistakes();
-  saveReadingMistakeDeletedIds();
+  persistMistakeLibraries();
   renderShortcutSettings();
   populateWritingPackSelect();
   setWritingPhase(state.writingPhase);
@@ -3550,11 +4633,48 @@ function applyTrainingSnapshot(snapshot) {
 
 function saveSnapshotToLocal(snapshot) {
   try {
-    window.localStorage.setItem(TRAINING_SNAPSHOT_STORAGE_KEY, JSON.stringify(snapshot));
+    const currentRaw = window.localStorage.getItem(TRAINING_SNAPSHOT_STORAGE_KEY) || "";
+    const currentSnapshot = parseStoredTrainingSnapshot(currentRaw);
+    const protectedSnapshot = mergeTrainingSnapshots(currentSnapshot, snapshot) || snapshot;
+    const nextRaw = JSON.stringify(protectedSnapshot);
+    window.localStorage.setItem(TRAINING_SNAPSHOT_STORAGE_KEY, nextRaw);
+
+    if (currentRaw && currentRaw !== nextRaw) {
+      const previousBackup = window.localStorage.getItem(TRAINING_SNAPSHOT_BACKUP_KEYS[0]) || "";
+      try {
+        if (previousBackup && previousBackup !== currentRaw) {
+          window.localStorage.setItem(TRAINING_SNAPSHOT_BACKUP_KEYS[1], previousBackup);
+        }
+        window.localStorage.setItem(TRAINING_SNAPSHOT_BACKUP_KEYS[0], currentRaw);
+      } catch {
+        try {
+          window.localStorage.removeItem(TRAINING_SNAPSHOT_BACKUP_KEYS[1]);
+          window.localStorage.setItem(TRAINING_SNAPSHOT_BACKUP_KEYS[0], currentRaw);
+        } catch {
+          // The merged primary snapshot is already safe even if storage is too full for another copy.
+        }
+      }
+    }
     return true;
   } catch {
     return false;
   }
+}
+
+function parseStoredTrainingSnapshot(raw) {
+  try {
+    const snapshot = JSON.parse(raw || "null");
+    return snapshot && typeof snapshot === "object" ? snapshot : null;
+  } catch {
+    return null;
+  }
+}
+
+function loadSnapshotFromLocal() {
+  return [TRAINING_SNAPSHOT_STORAGE_KEY, ...TRAINING_SNAPSHOT_BACKUP_KEYS]
+    .map((key) => parseStoredTrainingSnapshot(window.localStorage.getItem(key) || ""))
+    .filter(Boolean)
+    .reduce((snapshot, candidate) => mergeTrainingSnapshots(snapshot, candidate), null);
 }
 
 function getSaveStateEndpoint() {
@@ -3564,6 +4684,7 @@ function getSaveStateEndpoint() {
 async function saveTraining(manual = false) {
   const snapshot = buildTrainingSnapshot();
   const localSaved = saveSnapshotToLocal(snapshot);
+  scheduleLearningInsightsRender();
 
   if (window.location.protocol === "file:") {
     if (manual) {
@@ -3626,20 +4747,7 @@ async function exportTrainingData() {
 
 function importTrainingSnapshot(snapshot) {
   if (!snapshot || typeof snapshot !== "object") return false;
-
-  state.favoriteBook = mergeBookByTimestamp(state.favoriteBook, snapshot.favoriteBook, "missedAt");
-  state.correctBook = mergeBookByTimestamp(state.correctBook, snapshot.correctBook, "correctAt");
-  state.userNotes =
-    snapshot.userNotes && typeof snapshot.userNotes === "object"
-      ? { ...snapshot.userNotes, ...state.userNotes }
-      : state.userNotes;
-
-  saveFavoriteBook();
-  saveCorrectBook();
-  saveUserNotes();
-  renderFavoriteBook();
-  updateScoreBox();
-  return true;
+  return applyTrainingSnapshot(snapshot, { authoritative: false });
 }
 
 function importTrainingData() {
@@ -3661,29 +4769,124 @@ function importTrainingData() {
 
   saveSnapshotToLocal(buildTrainingSnapshot());
   void saveTraining(false);
-  saveStatus.textContent = "导入完成，旧收藏已合并到当前收藏本。";
+  saveStatus.textContent = "导入完成，训练、收藏和错题数据已合并。";
+}
+
+function shouldForceServerRecovery() {
+  try {
+    return new URLSearchParams(window.location.search).get("recover") === "server";
+  } catch {
+    return false;
+  }
+}
+
+function mergeSnapshotsForRestore(localSnapshot, serverSnapshot) {
+  // A recovery URL is an explicit request to restore the project snapshot.
+  // Return it before merging so legacy browser data cannot interrupt recovery.
+  if (serverSnapshot && shouldForceServerRecovery()) return serverSnapshot;
+  return mergeTrainingSnapshots(localSnapshot, serverSnapshot);
+}
+
+function applyBootTrainingSnapshot() {
+  if (window.location.protocol === "file:") return false;
+
+  try {
+    const serverSnapshot = window.__IELTS_SERVER_SNAPSHOT__;
+    if (!serverSnapshot || typeof serverSnapshot !== "object") return false;
+    const snapshot = mergeSnapshotsForRestore(loadSnapshotFromLocal(), serverSnapshot);
+    if (!applyTrainingSnapshot(snapshot, { authoritative: shouldForceServerRecovery() })) return false;
+    saveSnapshotToLocal(snapshot);
+    return true;
+  } catch (error) {
+    window.__IELTS_RESTORE_ERROR__ = String(error?.message || error || "restore failed");
+    return false;
+  }
+}
+
+function areRecoveryMistakesCovered(recoverySnapshot) {
+  const listeningPresent = new Set(state.listeningMistakes.map((item) => item.id));
+  const listeningDeleted = new Set(state.listeningMistakeDeletedIds);
+  const readingPresent = new Set(state.readingMistakes.map((item) => item.id));
+  const readingDeleted = new Set(state.readingMistakeDeletedIds);
+  const recoveryListening = Array.isArray(recoverySnapshot.listeningMistakes)
+    ? recoverySnapshot.listeningMistakes
+    : [];
+  const recoveryReading = Array.isArray(recoverySnapshot.readingMistakes)
+    ? recoverySnapshot.readingMistakes
+    : [];
+
+  return recoveryListening.every(
+    (item) => !item?.id || listeningPresent.has(item.id) || listeningDeleted.has(item.id),
+  ) && recoveryReading.every(
+    (item) => !item?.id || readingPresent.has(item.id) || readingDeleted.has(item.id),
+  );
+}
+
+function applyFileRecoverySnapshot() {
+  if (window.location.protocol !== "file:") return false;
+
+  try {
+    const recoverySnapshot = window.__IELTS_FILE_RECOVERY_SNAPSHOT__;
+    if (!recoverySnapshot || typeof recoverySnapshot !== "object") return false;
+
+    const recoveryId = String(
+      window.__IELTS_FILE_RECOVERY_ID__ || recoverySnapshot.savedAt || "file-recovery-v1",
+    );
+    if (
+      window.localStorage.getItem(FILE_RECOVERY_MARKER_KEY) === recoveryId
+      && areRecoveryMistakesCovered(recoverySnapshot)
+    ) return false;
+
+    const snapshot = mergeTrainingSnapshots(loadSnapshotFromLocal(), recoverySnapshot);
+    if (!applyTrainingSnapshot(snapshot, { authoritative: false })) return false;
+
+    const saved = saveSnapshotToLocal(buildTrainingSnapshot());
+    if (saved) window.localStorage.setItem(FILE_RECOVERY_MARKER_KEY, recoveryId);
+    return saved;
+  } catch (error) {
+    window.__IELTS_RESTORE_ERROR__ = String(error?.message || error || "file recovery failed");
+    return false;
+  }
 }
 
 async function restoreTraining() {
-  let snapshot = null;
+  if (window.location.protocol === "file:") {
+    const localSnapshot = loadSnapshotFromLocal();
+    if (applyTrainingSnapshot(localSnapshot, { authoritative: false })) {
+      saveSnapshotToLocal(buildTrainingSnapshot());
+      saveStatus.textContent = "已从这个本地 HTML 恢复训练、收藏和错题数据。";
+      restoreSavedSessionForMode(state.mode, false);
+    }
+    updateListeningMistakeNavVisibility();
+    return;
+  }
+
+  let serverSnapshot =
+    window.__IELTS_SERVER_SNAPSHOT__ && typeof window.__IELTS_SERVER_SNAPSHOT__ === "object"
+      ? window.__IELTS_SERVER_SNAPSHOT__
+      : null;
   try {
     const response = await fetch("/load-state", { cache: "no-store" });
-    if (response.ok) snapshot = await response.json();
-  } catch {
-    snapshot = null;
-  }
-
-  if (!snapshot) {
-    try {
-      snapshot = JSON.parse(window.localStorage.getItem(TRAINING_SNAPSHOT_STORAGE_KEY) || "null");
-    } catch {
-      snapshot = null;
+    if (response.ok) {
+      const fetchedSnapshot = await response.json();
+      serverSnapshot = mergeTrainingSnapshots(fetchedSnapshot, serverSnapshot);
     }
+  } catch {
+    // The synchronous bootstrap snapshot remains available when the request fails.
   }
 
-  if (applyTrainingSnapshot(snapshot)) {
-    saveStatus.textContent = "已恢复上次保存的训练。";
+  const localSnapshot = loadSnapshotFromLocal();
+  const snapshot = mergeSnapshotsForRestore(localSnapshot, serverSnapshot);
+
+  if (applyTrainingSnapshot(snapshot, { authoritative: shouldForceServerRecovery() && Boolean(serverSnapshot) })) {
+    saveSnapshotToLocal(snapshot);
+    saveStatus.textContent = localSnapshot && serverSnapshot
+      ? "已合并恢复浏览器与项目文件中的训练数据。"
+      : "已恢复上次保存的训练。";
     restoreSavedSessionForMode(state.mode, false);
+    if (window.location.protocol !== "file:") {
+      window.setTimeout(() => void saveTraining(false), 0);
+    }
   }
   updateListeningMistakeNavVisibility();
 }
@@ -3791,8 +4994,10 @@ function updateFavoriteBook(entry, mode, isCorrect, response) {
     response,
     missedAt: Date.now(),
   };
+  clearFavoriteDeleted(mode, key);
   saveFavoriteBook();
   renderFavoriteBook();
+  void saveTraining(false);
 }
 
 function refreshFavoriteBookNote(word) {
@@ -3828,10 +5033,18 @@ function refreshFavoriteBookNote(word) {
 }
 
 function removeFavoriteBookItem(mode, key) {
-  if (!bookModes.includes(mode) || !state.favoriteBook[mode]?.[key]) return;
+  if (!bookModes.includes(mode) || !state.favoriteBook[mode]?.[key]) return false;
+  const deletionSaved = markFavoriteDeleted(mode, key);
   delete state.favoriteBook[mode][key];
-  saveFavoriteBook();
+  const bookSaved = saveFavoriteBook();
   renderFavoriteBook();
+  if (saveStatus) {
+    saveStatus.textContent = deletionSaved && bookSaved
+      ? "收藏本变更已自动保存。"
+      : "自动保存失败，请检查浏览器本地存储。";
+  }
+  void saveTraining(false);
+  return deletionSaved && bookSaved;
 }
 
 function addEntryToFavoriteBook(mode, entry, response = "") {
@@ -3850,8 +5063,10 @@ function addEntryToFavoriteBook(mode, entry, response = "") {
     response,
     missedAt: Date.now(),
   };
+  clearFavoriteDeleted(mode, key);
   saveFavoriteBook();
   renderFavoriteBook();
+  void saveTraining(false);
   return true;
 }
 
@@ -3869,11 +5084,13 @@ function moveCorrectItemToFavoriteBook(mode, key, shouldRenderCorrectAnswers = t
     response: item.response,
     missedAt: Date.now(),
   };
+  clearFavoriteDeleted(mode, key);
   delete state.correctBook[mode][key];
   saveFavoriteBook();
   saveCorrectBook();
   renderFavoriteBook();
   updateScoreBox();
+  void saveTraining(false);
   if (shouldRenderCorrectAnswers) renderCorrectAnswers();
 }
 
@@ -3910,6 +5127,10 @@ function renderFavoriteBook() {
     : entries;
 
   const practiceEntries = getFavoritePracticeEntries(entries);
+  const totalFavoriteEntries = bookModes.reduce(
+    (total, mode) => total + Object.keys(state.favoriteBook[mode] || {}).length,
+    0,
+  );
   bookPracticeReviewButton.disabled = practiceEntries.entries.length === 0;
   bookPracticeReviewButton.title = practiceEntries.entries.length
     ? `按${getModeLabel(state.bookMode)}练习 ${practiceEntries.entries.length} 个收藏词`
@@ -3919,10 +5140,10 @@ function renderFavoriteBook() {
     practiceEntries.entries.length ? ` ${practiceEntries.entries.length}` : ""
   }`;
 
-  bookListReviewButton.disabled = entries.length === 0;
-  bookListReviewButton.title = entries.length
-    ? `排序复习${getModeLabel(state.bookMode)}收藏本里的 ${entries.length} 个单词`
-    : `${getModeLabel(state.bookMode)}暂无错词`;
+  bookListReviewButton.disabled = totalFavoriteEntries === 0;
+  bookListReviewButton.title = totalFavoriteEntries
+    ? `打开收藏本复习，可切换听力、填空和阅读收藏本（共 ${totalFavoriteEntries} 个单词）`
+    : "三个收藏本都暂无单词";
   bookListReviewButton.setAttribute("aria-label", bookListReviewButton.title);
   bookListReviewButton.innerHTML = `<span class="button-icon" aria-hidden="true">≡</span>排序${
     entries.length ? ` ${entries.length}` : ""
@@ -4101,19 +5322,42 @@ function cleanInputLine(value) {
 }
 
 function parseEntries(rawText) {
-  const rows = rawText
+  const sourceRows = rawText
     .split(/\r?\n/)
-    .flatMap((line) => {
-      const trimmed = cleanInputLine(line);
-      if (!trimmed) return [];
-      if (trimmed.includes("|") || trimmed.includes("\t")) return [trimmed.replace(/\t+/g, "|")];
-      return trimmed.split(/[,\uFF0C;\uFF1B]/).map(cleanInputLine);
-    })
-    .map((line) => line.trim())
+    .map(cleanInputLine)
     .filter(Boolean);
+  const rows = [];
 
-  const entries = [];
-  const seen = new Set();
+  sourceRows.forEach((line) => {
+    const structuredLine = line.replace(/\t+/g, "|");
+    const hasSeparator = structuredLine.includes("|");
+    const previous = rows[rows.length - 1] || "";
+
+    if (!hasSeparator && previous.includes("|")) {
+      const previousParts = previous.split("|");
+      const existingExample = previousParts.slice(2).join(" ").trim();
+      const looksLikeContinuation =
+        existingExample &&
+        (/^[a-z"'(\[]/i.test(structuredLine) ||
+          /[.!?]$/.test(structuredLine) ||
+          structuredLine.split(/\s+/).length > 2);
+
+      if (looksLikeContinuation) {
+        rows[rows.length - 1] = `${previous} ${structuredLine}`;
+        return;
+      }
+    }
+
+    if (hasSeparator) {
+      rows.push(structuredLine);
+      return;
+    }
+
+    rows.push(...structuredLine.split(/[,\uFF0C;\uFF1B]/).map(cleanInputLine).filter(Boolean));
+  });
+
+  const entriesByKey = new Map();
+  let duplicateCount = 0;
 
   rows.forEach((line) => {
     const parts = line.split("|").map(normaliseWord);
@@ -4121,9 +5365,6 @@ function parseEntries(rawText) {
     if (!word) return;
 
     const key = normaliseKey(word);
-    if (seen.has(key)) return;
-    seen.add(key);
-
     const fields = parts.slice(1).filter(Boolean);
     const zhField = fields.find(hasChinese) || "";
     const exampleField =
@@ -4137,17 +5378,37 @@ function parseEntries(rawText) {
     const example = exampleField || savedExample || "";
     const isManualReady = Boolean(meaningZh && isSpecificPracticeExample(example, word));
 
-    entries.push({
+    const nextEntry = {
       word,
       example,
-      exampleSource: isManualReady ? "manual" : "api",
+      exampleSource: isManualReady ? "manual" : "offline",
       meaningZh,
       meaningEn,
       mnemonic: localNote?.mnemonic || "",
       apiError: "",
+    };
+    const existingEntry = entriesByKey.get(key);
+
+    if (!existingEntry) {
+      entriesByKey.set(key, nextEntry);
+      return;
+    }
+
+    duplicateCount += 1;
+    entriesByKey.set(key, {
+      ...existingEntry,
+      word: existingEntry.word || nextEntry.word,
+      meaningZh: existingEntry.meaningZh || nextEntry.meaningZh,
+      meaningEn: existingEntry.meaningEn || nextEntry.meaningEn,
+      example: existingEntry.example || nextEntry.example,
+      mnemonic: existingEntry.mnemonic || nextEntry.mnemonic,
+      exampleSource:
+        existingEntry.example || nextEntry.example ? "manual" : "offline",
     });
   });
 
+  const entries = [...entriesByKey.values()];
+  entries.duplicateCount = duplicateCount;
   return entries;
 }
 
@@ -4255,17 +5516,41 @@ function escapeRegExp(value) {
 function getTargetWordPattern(word) {
   const cleaned = normaliseWord(word);
   const escaped = escapeRegExp(cleaned).replace(/\s+/g, "\\s+");
-  if (/\s/.test(cleaned) || !/^[A-Za-z][A-Za-z'-]*$/.test(cleaned)) return escaped;
+  if (!/^[A-Za-z][A-Za-z'-]*(?:\s+[A-Za-z][A-Za-z'-]*)*$/.test(cleaned)) return escaped;
+
+  if (/\s/.test(cleaned)) {
+    const words = cleaned.split(/\s+/);
+    const lastWord = words.pop();
+    const prefix = words.map(escapeRegExp).join("\\s+");
+    return `${prefix}\\s+(?:${getTargetWordPattern(lastWord)})`;
+  }
 
   const forms = new Set([cleaned]);
   forms.add(`${cleaned}s`);
   forms.add(`${cleaned}es`);
   forms.add(`${cleaned}ed`);
   forms.add(`${cleaned}ing`);
-  if (cleaned.endsWith("e") && cleaned.length > 2) forms.add(`${cleaned.slice(0, -1)}ing`);
+  if (cleaned.endsWith("e") && cleaned.length > 2) {
+    forms.add(`${cleaned}d`);
+    forms.add(`${cleaned.slice(0, -1)}ing`);
+  }
   if (cleaned.endsWith("y") && cleaned.length > 2) {
     forms.add(`${cleaned.slice(0, -1)}ies`);
     forms.add(`${cleaned.slice(0, -1)}ied`);
+  }
+  if (cleaned.endsWith("f") && cleaned.length > 2) forms.add(`${cleaned.slice(0, -1)}ves`);
+  if (cleaned.endsWith("fe") && cleaned.length > 3) forms.add(`${cleaned.slice(0, -2)}ves`);
+
+  const finalThree = cleaned.slice(-3);
+  if (
+    cleaned.length > 3 &&
+    /[aeiou][bcdfghjklmnpqrstvwxyz]$/.test(cleaned) &&
+    !/[wxy]$/.test(cleaned) &&
+    !["ate", "ite", "ute"].includes(finalThree)
+  ) {
+    const finalLetter = cleaned.slice(-1);
+    forms.add(`${cleaned}${finalLetter}ed`);
+    forms.add(`${cleaned}${finalLetter}ing`);
   }
 
   return [...forms]
@@ -4524,99 +5809,22 @@ function hasCompletePracticeData(entry) {
   return hasMeaning(entry) && isSpecificPracticeExample(entry.example, entry.word);
 }
 
-async function loadApiGeneratedEntries(entries) {
-  state.definitionServiceAvailable = true;
-  const entriesNeedingApi = entries.filter((entry) => !hasCompletePracticeData(entry));
+function prepareOfflinePracticeEntries(entries) {
+  const ready = [];
+  const invalid = [];
 
-  entries
-    .filter(hasCompletePracticeData)
-    .forEach((entry) => {
-      saveUserNote(entry.word, getWordNote(entry).zh, getWordNote(entry).en, entry.example, entry.mnemonic);
-    });
-
-  if (!entriesNeedingApi.length) {
-    return { ok: true };
-  }
-
-  for (const [index, entry] of entriesNeedingApi.entries()) {
-    roundState.textContent = `正在调用 API 生成释义和例句 ${index + 1} / ${entriesNeedingApi.length}`;
-
-    const note = await fetchGeneratedNote(entry.word);
-    const error = getGeneratedNoteError(note, entry.word);
-    if (error) {
-      entry.apiError = error;
-      return { ok: false, entry, error };
+  entries.forEach((entry) => {
+    if (!hasCompletePracticeData(entry)) {
+      invalid.push(entry);
+      return;
     }
 
-    entry.meaningZh = note.zh;
-    entry.meaningEn = note.en;
-    entry.example = note.example;
-    entry.exampleSource = "api";
-    entry.apiError = "";
-    saveUserNote(entry.word, note.zh, note.en, note.example, entry.mnemonic);
-  }
+    const note = getWordNote(entry);
+    saveUserNote(entry.word, note.zh, note.en, entry.example, entry.mnemonic);
+    ready.push(entry);
+  });
 
-  return { ok: true };
-}
-
-function getGeneratedNoteError(note, word) {
-  if (!note) return "API 没有返回结果，请检查网络或服务端日志。";
-  if (note.serviceUnavailable) return note.error || "OPENAI_API_KEY 未配置，无法调用 API 生成释义和例句。";
-  if (note.error) return note.error;
-  if (!normaliseWord(note.zh)) return "API 返回结果缺少中文释义。";
-  if (!normaliseWord(note.en)) return "API 返回结果缺少英文释义。";
-  if (!isSpecificPracticeExample(note.example, word)) {
-    return "API 返回的例句不合格：必须自然、符合语法、体现词义，并包含目标单词或短语。";
-  }
-  return "";
-}
-
-function renderApiGenerationError(entry, error) {
-  quizTitle.textContent = "API 生成失败";
-  roundState.textContent = "本轮未开始";
-  blankSentence.textContent = "";
-  choices.hidden = true;
-  choices.innerHTML = "";
-  answerForm.hidden = true;
-  reviewPanel.innerHTML = `
-    <strong>${escapeHtml(entry?.word || "当前单词")}</strong>
-    <p>${escapeHtml(error || "API 没有生成可用的中文释义和例句。")}</p>
-    <p class="review-warning">没有 API 时，请按 <code>word|中文释义|English example</code> 的格式批量粘贴。例句需要包含这个单词或常见变形。</p>
-  `;
-  setAnswerDisabled(true);
-  listenButton.disabled = true;
-  nextButton.disabled = true;
-}
-
-async function fetchGeneratedNote(word) {
-  try {
-    const response = await fetch(`/define?word=${encodeURIComponent(word)}`, { cache: "no-store" });
-    let data = {};
-    try {
-      data = await response.json();
-    } catch {
-      data = {};
-    }
-
-    if (response.status === 404 || response.status === 502 || response.status === 503) {
-      return {
-        serviceUnavailable: true,
-        error: normaliseWord(data.error || ""),
-      };
-    }
-    if (!response.ok) {
-      return {
-        error: normaliseWord(data.error || `API 请求失败：HTTP ${response.status}`),
-      };
-    }
-    return {
-      zh: normaliseWord(data.zh || ""),
-      en: normaliseWord(data.en || ""),
-      example: normaliseWord(data.example || ""),
-    };
-  } catch {
-    return null;
-  }
+  return { ready, invalid };
 }
 
 function loadSpeechSettings() {
@@ -5139,48 +6347,35 @@ async function startQuiz() {
   }
 
   const parsedEntries = parseEntries(wordInput.value);
-  const { entries, skippedCount } = filterFavoriteEntriesForPractice(parsedEntries, state.mode);
+  const { ready: offlineEntries, invalid: invalidEntries } = prepareOfflinePracticeEntries(parsedEntries);
+  const { entries, skippedCount } = filterFavoriteEntriesForPractice(offlineEntries, state.mode);
 
   if (!entries.length) {
-    quizTitle.textContent = parsedEntries.length ? "已跳过收藏本" : "还没有单词";
-    roundState.textContent = parsedEntries.length ? "请点收藏本复习" : "请先输入单词";
+    const onlyInvalid = invalidEntries.length > 0 && !offlineEntries.length;
+    quizTitle.textContent = onlyInvalid ? "导入格式需要检查" : parsedEntries.length ? "已跳过收藏本" : "还没有单词";
+    roundState.textContent = onlyInvalid ? "没有可练习的完整记录" : parsedEntries.length ? "请点收藏本复习" : "请先输入单词";
     blankSentence.textContent = "";
     choices.hidden = true;
     choices.innerHTML = "";
     answerForm.hidden = true;
-    reviewPanel.innerHTML = parsedEntries.length
-      ? "<strong>输入列表里的单词都在当前模式收藏本里。</strong> 普通练习已跳过它们；需要练这些词时，请点收藏本里的“复习”。"
-      : "";
+    reviewPanel.innerHTML = onlyInvalid
+      ? `<strong>请按每行一条记录粘贴：</strong> <code>word|中文释义|English example</code><p>例句需要包含该单词或常见变形。需要检查：${escapeHtml(invalidEntries.map((entry) => entry.word).join("、"))}</p>`
+      : parsedEntries.length
+        ? "<strong>输入列表里的单词都在当前模式收藏本里。</strong> 普通练习已跳过它们；需要练这些词时，请点收藏本里的“复习”。"
+        : "";
     setAnswerDisabled(true);
     listenButton.disabled = true;
     nextButton.disabled = true;
     return;
   }
 
-  if (skippedCount) {
-    saveStatus.textContent = `普通练习已跳过收藏本中的 ${skippedCount} 个单词。`;
-  }
-
-  const apiResult = await loadApiGeneratedEntries(entries);
-  if (!apiResult.ok) {
-    renderApiGenerationError(apiResult.entry, apiResult.error);
-    return;
-  }
-
-  const missingMeaning = entries.find((entry) => !hasCompletePracticeData(entry));
-  if (missingMeaning) {
-    quizTitle.textContent = "缺少释义或例句";
-    roundState.textContent = "请补全后再开始";
-    blankSentence.textContent = "";
-    choices.hidden = true;
-    choices.innerHTML = "";
-    answerForm.hidden = true;
-    reviewPanel.innerHTML = `<strong>${escapeHtml(missingMeaning.word)}</strong> 还缺少中文释义或合格英文例句。请使用 <code>word|中文释义|English example</code>，例句里要包含这个单词或常见变形。`;
-    setAnswerDisabled(true);
-    listenButton.disabled = true;
-    nextButton.disabled = true;
-    return;
-  }
+  const statusParts = [];
+  if (invalidEntries.length) statusParts.push(`已跳过 ${invalidEntries.length} 条不完整记录`);
+  if (skippedCount) statusParts.push(`已跳过收藏本中的 ${skippedCount} 个单词`);
+  if (parsedEntries.duplicateCount) statusParts.push(`已合并 ${parsedEntries.duplicateCount} 条重复单词`);
+  saveStatus.textContent = statusParts.length
+    ? `${statusParts.join("；")}。`
+    : `已离线导入 ${entries.length} 个不重复单词。`;
 
   state.deck = shuffle(entries);
   state.currentIndex = 0;
@@ -5426,6 +6621,7 @@ function completeAnswer({ current, isCorrect, response, mode, revealed = false }
     mode,
     revealed,
   });
+  recordAnswerHistory(mode, isCorrect);
 
   updateFavoriteBook(current, mode, isCorrect, response);
   updateCorrectBook(current, mode, isCorrect, response);
@@ -5759,16 +6955,46 @@ function getFavoriteReviewItems(mode = state.bookMode) {
     });
 }
 
-function startFavoriteBookReview() {
-  const entries = getFavoriteReviewItems();
-  if (!entries.length) return;
+function getFavoriteReviewBookCount(mode) {
+  return Object.values(state.favoriteBook[mode] || {}).filter((item) => item.word).length;
+}
+
+function renderFavoriteReviewBookSwitch() {
+  favoriteReviewBookButtons.forEach((button) => {
+    const active = button.dataset.favoriteReviewBook === state.favoriteReviewMode;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+
+  favoriteReviewBookCounts.forEach((badge) => {
+    badge.textContent = String(getFavoriteReviewBookCount(badge.dataset.favoriteReviewCount));
+  });
+}
+
+function setFavoriteReviewBook(mode, { resetSearch = true, scrollToTop = true } = {}) {
+  if (!bookModes.includes(mode)) return;
 
   stopRoundSpeech();
-  state.favoriteReviewItems = entries;
-  state.favoriteReviewMode = state.bookMode;
-  state.favoriteReviewQuery = "";
+  state.favoriteReviewMode = mode;
+  state.favoriteReviewItems = getFavoriteReviewItems(mode);
   state.favoriteReviewRevealedWords = new Set();
-  favoriteListReviewSearch.value = "";
+  if (resetSearch) {
+    state.favoriteReviewQuery = "";
+    favoriteListReviewSearch.value = "";
+  }
+  favoriteReviewMode.textContent = `${getModeLabel(mode)} · 收藏本复习`;
+  renderFavoriteReviewBookSwitch();
+  renderFavoriteReviewList();
+  if (scrollToTop) favoriteListReviewMain.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function startFavoriteBookReview() {
+  const initialMode = getFavoriteReviewBookCount(state.bookMode)
+    ? state.bookMode
+    : bookModes.find((mode) => getFavoriteReviewBookCount(mode));
+  if (!initialMode) return;
+
+  stopRoundSpeech();
   favoriteListReviewSort.value = state.favoriteReviewSort;
   favoriteListLayoutButtons.forEach((button) => {
     const active = button.dataset.favoriteListLayout === state.favoriteReviewLayout;
@@ -5778,8 +7004,7 @@ function startFavoriteBookReview() {
   favoriteReviewScreen.hidden = false;
   document.body.classList.add("favorite-review-open");
   favoriteReviewTitle.textContent = "收藏本复习";
-  favoriteReviewMode.textContent = `${getModeLabel(state.favoriteReviewMode)} · 收藏本复习`;
-  renderFavoriteReviewList();
+  setFavoriteReviewBook(initialMode, { resetSearch: true, scrollToTop: false });
   favoriteReviewClose.focus();
 }
 
@@ -5847,6 +7072,7 @@ function toggleFavoriteReviewWord(word) {
 function renderFavoriteReviewList() {
   const items = getSortedFavoriteReviewItems();
   const practiceEntries = getFavoritePracticeEntries(items);
+  renderFavoriteReviewBookSwitch();
   favoriteReviewProgress.textContent = `${items.length} 个词`;
   favoriteReviewProgressBar.style.width = items.length ? "100%" : "0%";
   favoriteListReviewCount.textContent = `${items.length} 个单词`;
@@ -5863,9 +7089,13 @@ function renderFavoriteReviewList() {
   favoriteListReviewRows.classList.toggle("layout-list", state.favoriteReviewLayout !== "grid");
 
   if (!items.length) {
-    favoriteListReviewRows.innerHTML = `<p class="favorite-list-review-empty">没有找到与“${escapeHtml(
-      state.favoriteReviewQuery,
-    )}”相关的收藏词。</p>`;
+    favoriteListReviewRows.innerHTML = state.favoriteReviewQuery
+      ? `<p class="favorite-list-review-empty">没有找到与“${escapeHtml(
+          state.favoriteReviewQuery,
+        )}”相关的收藏词。</p>`
+      : `<p class="favorite-list-review-empty">${escapeHtml(
+          getModeLabel(state.favoriteReviewMode),
+        )}收藏本暂无单词，可切换到其他收藏本。</p>`;
     return;
   }
 
@@ -5940,14 +7170,13 @@ function removeFavoriteReviewWord(word) {
   if (!key || !state.favoriteBook[state.favoriteReviewMode]?.[key]) return;
 
   stopRoundSpeech();
-  removeFavoriteBookItem(state.favoriteReviewMode, key);
-  state.favoriteReviewItems = state.favoriteReviewItems.filter((item) => normaliseKey(item.word) !== key);
-
-  if (!state.favoriteReviewItems.length) {
-    closeFavoriteBookReview();
-    return;
-  }
+  const saved = removeFavoriteBookItem(state.favoriteReviewMode, key);
+  state.favoriteReviewItems = getFavoriteReviewItems(state.favoriteReviewMode);
+  state.favoriteReviewRevealedWords.delete(key);
   renderFavoriteReviewList();
+  favoriteListReviewStatus.textContent = saved
+    ? `${word} 已移除并自动保存。`
+    : `${word} 已移除，但自动保存失败。`;
 }
 
 function getFinalRoundResults() {
@@ -8025,7 +9254,12 @@ function normaliseWritingStudioSession(session) {
 
 function mergeWritingStudioCollections(currentItems, incomingItems) {
   const merged = new Map();
-  [...(incomingItems || []), ...(currentItems || [])].forEach((item) => {
+  const toCollection = (items) => {
+    if (Array.isArray(items)) return items;
+    if (items && typeof items === "object") return Object.values(items);
+    return [];
+  };
+  [...toCollection(incomingItems), ...toCollection(currentItems)].forEach((item) => {
     if (!item?.id) return;
     const existing = merged.get(String(item.id));
     const itemTimestamp = Number(item.updatedAt || item.createdAt || 0);
@@ -8077,7 +9311,12 @@ function mergeWritingStudioState(current, incoming) {
       .sort((a, b) => Number(a.dueAt || 0) - Number(b.dueAt || 0)),
     templates: mergeWritingStudioCollections(current?.templates, incoming?.templates).filter(Boolean),
     templateOverrides: { ...(incoming?.templateOverrides || {}), ...(current?.templateOverrides || {}) },
-    hiddenTemplateIds: [...new Set([...(incoming?.hiddenTemplateIds || []), ...(current?.hiddenTemplateIds || [])])],
+    hiddenTemplateIds: [
+      ...new Set([
+        ...(Array.isArray(incoming?.hiddenTemplateIds) ? incoming.hiddenTemplateIds : []),
+        ...(Array.isArray(current?.hiddenTemplateIds) ? current.hiddenTemplateIds : []),
+      ]),
+    ],
     settings: { ...base.settings, ...(incoming?.settings || {}), ...(current?.settings || {}) },
   };
 }
@@ -9393,6 +10632,7 @@ sidebarRailModeButtons.forEach((button) => {
 sidebarRailSurfaceButtons.forEach((button) => {
   button.addEventListener("click", () => {
     if (button.dataset.sidebarRailSurface === "writing") writingModeNavButton.click();
+    if (button.dataset.sidebarRailSurface === "insights") insightsNavButton.click();
     if (button.dataset.sidebarRailSurface === "settings") settingsNavButton.click();
   });
 });
@@ -9408,6 +10648,49 @@ listeningMistakeNavButton.addEventListener("click", () => {
 readingMistakeNavButton.addEventListener("click", () => {
   setPrimarySurface("readingMistakes", true);
   renderReadingMistakeLibrary();
+});
+insightsNavButton.addEventListener("click", () => {
+  state.insightErrorMode = getInsightErrorModeForCurrentSurface();
+  setPrimarySurface("insights", true);
+});
+recurringErrorModeButtons.forEach((button) => {
+  button.addEventListener("click", () => setInsightErrorMode(button.dataset.insightErrorMode));
+});
+activityHeatmap?.addEventListener("click", (event) => {
+  const cell = event.target.closest("[data-insight-day]");
+  if (!cell || cell.disabled) return;
+  state.insightActivityDay = cell.dataset.insightDay || "";
+  renderActivityHeatmap();
+});
+activityYearSelect?.addEventListener("change", () => {
+  state.insightActivityYear = Number(activityYearSelect.value);
+  state.insightActivityDay = "";
+  renderActivityHeatmap();
+});
+activityMonthSelect?.addEventListener("change", () => {
+  state.insightActivityMonth = Number(activityMonthSelect.value);
+  state.insightActivityDay = "";
+  renderActivityHeatmap();
+});
+activityPreviousYear?.addEventListener("click", () => {
+  if (activityPreviousYear.disabled) return;
+  state.insightActivityYear -= 1;
+  state.insightActivityDay = "";
+  renderActivityHeatmap();
+});
+activityNextYear?.addEventListener("click", () => {
+  if (activityNextYear.disabled) return;
+  state.insightActivityYear += 1;
+  state.insightActivityDay = "";
+  renderActivityHeatmap();
+});
+activityTodayButton?.addEventListener("click", () => {
+  const todayParts = getInsightDateParts();
+  if (!todayParts) return;
+  state.insightActivityYear = todayParts.year;
+  state.insightActivityMonth = todayParts.month - 1;
+  state.insightActivityDay = getInsightDateKey(Date.now());
+  renderActivityHeatmap();
 });
 settingsNavButton.addEventListener("click", () => setPrimarySurface("settings", true));
 addListeningMistakeButton.addEventListener("click", () => openListeningMistakeForm());
@@ -9597,6 +10880,9 @@ bookPracticeReviewButton.addEventListener("click", () => {
 });
 bookListReviewButton.addEventListener("click", startFavoriteBookReview);
 favoriteReviewClose.addEventListener("click", closeFavoriteBookReview);
+favoriteReviewBookButtons.forEach((button) => {
+  button.addEventListener("click", () => setFavoriteReviewBook(button.dataset.favoriteReviewBook));
+});
 favoriteModePracticeButton.addEventListener("click", () => {
   void startFavoriteBookPractice(getSortedFavoriteReviewItems(), state.favoriteReviewMode);
 });
@@ -9676,6 +10962,8 @@ document.addEventListener(
       setPrimarySurface("listeningMistakes");
     } else if (event.target?.closest?.(".reading-mistake-panel")) {
       setPrimarySurface("readingMistakes");
+    } else if (event.target?.closest?.(".insights-panel")) {
+      setPrimarySurface("insights");
     } else if (event.target?.closest?.(".settings-panel")) {
       setPrimarySurface("settings");
     } else if (event.target?.closest?.(".quiz-panel")) {
@@ -9693,6 +10981,8 @@ document.addEventListener(
       setPrimarySurface("listeningMistakes");
     } else if (event.target?.closest?.(".reading-mistake-panel")) {
       setPrimarySurface("readingMistakes");
+    } else if (event.target?.closest?.(".insights-panel")) {
+      setPrimarySurface("insights");
     } else if (event.target?.closest?.(".settings-panel")) {
       setPrimarySurface("settings");
     } else if (event.target?.closest?.(".quiz-panel")) {
@@ -9986,10 +11276,27 @@ renderWritingMistakeBook();
 renderListeningMistakeLibrary();
 renderReadingMistakeLibrary();
 setWritingEmpty("选择主题包后开始，先练 5 句 Body 段骨架。");
-restoreTraining();
 mountWritingStudio();
+if (applyFileRecoverySnapshot() || applyBootTrainingSnapshot()) {
+  restoreSavedSessionForMode(state.mode, false);
+}
+void restoreTraining();
 updateListeningMistakeNavVisibility();
+let lastInsightTodayKey = getInsightDateKey(Date.now());
+window.setInterval(() => {
+  const currentDayKey = getInsightDateKey(Date.now());
+  if (currentDayKey === lastInsightTodayKey) return;
+  lastInsightTodayKey = currentDayKey;
+  scheduleLearningInsightsRender();
+}, 60000);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible") return;
+  lastInsightTodayKey = getInsightDateKey(Date.now());
+  scheduleLearningInsightsRender();
+});
 window.addEventListener("pagehide", () => {
+  persistMistakeLibraries();
+  saveSnapshotToLocal(buildTrainingSnapshot());
   captureWritingStudioForm();
   pauseWritingStudioTimer();
   saveWritingStudioState();

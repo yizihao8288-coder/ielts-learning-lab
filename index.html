@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ielts listening trainer</title>
-    <link rel="stylesheet" href="styles.css?v=20260715-1" />
+    <link rel="stylesheet" href="styles.css?v=20260721-activity-calendar1" />
   </head>
   <body>
     <div class="site-intro" id="siteIntro" role="status" aria-live="polite" aria-label="IELTS practice system loading">
@@ -53,6 +53,9 @@
           <span class="sidebar-rail-divider" aria-hidden="true"></span>
           <button class="sidebar-rail-button is-turn" id="sidebarRailFavoritesButton" type="button" data-tooltip="收藏本" aria-label="打开收藏本">
             <i data-lucide="star" aria-hidden="true"></i>
+          </button>
+          <button class="sidebar-rail-button is-lift" id="sidebarRailInsightsButton" type="button" data-sidebar-rail-surface="insights" data-tooltip="学习洞察" aria-label="打开学习洞察">
+            <i data-lucide="chart-no-axes-combined" aria-hidden="true"></i>
           </button>
           <span class="sidebar-rail-spacer" aria-hidden="true"></span>
           <button class="sidebar-rail-button is-turn" id="sidebarRailSettingsButton" type="button" data-sidebar-rail-surface="settings" data-tooltip="设置" aria-label="打开设置">
@@ -124,8 +127,8 @@ environment
 evidence
 significant
 
-每行一个单词，也可以用逗号或分号分隔。
-无 API 时使用：word|中文释义|English example
+完整记录请每行一条，格式：word|中文释义|English example
+完全离线，不调用 API；重复单词会自动合并。
 例：category|类别；种类|The books are arranged by category, such as history, science, and literature."
         ></textarea>
 
@@ -343,6 +346,10 @@ significant
         </details>
         </div>
         <nav class="sidebar-footer-nav" aria-label="其他页面">
+          <button class="sidebar-page-link icon-react-lift" id="insightsNavButton" type="button">
+            <i data-lucide="chart-no-axes-combined" aria-hidden="true"></i>
+            <span>学习洞察</span>
+          </button>
           <button class="sidebar-page-link" id="settingsNavButton" type="button">
             <span aria-hidden="true">⚙</span>
             <span>设置</span>
@@ -919,6 +926,105 @@ significant
         </div>
       </section>
 
+      <section class="insights-panel" aria-labelledby="insights-title" hidden>
+        <header class="insights-page-header">
+          <p class="eyebrow">Learning insights</p>
+          <h2 id="insights-title">学习洞察</h2>
+          <p>用已有训练记录观察练习节奏和反复出现的问题。</p>
+        </header>
+
+        <div class="insights-grid">
+          <article class="insight-card activity-insight-card" aria-labelledby="activity-insight-title">
+            <header class="insight-card-header">
+              <div>
+                <p class="eyebrow">Activity</p>
+                <h3 id="activity-insight-title">每日学习记录</h3>
+              </div>
+              <div class="activity-legend" aria-label="训练强度图例">
+                <span>少</span>
+                <i class="level-0" aria-hidden="true"></i>
+                <i class="level-1" aria-hidden="true"></i>
+                <i class="level-2" aria-hidden="true"></i>
+                <i class="level-3" aria-hidden="true"></i>
+                <i class="level-4" aria-hidden="true"></i>
+                <span>多</span>
+              </div>
+            </header>
+            <div class="activity-period-controls" aria-label="学习记录时间范围">
+              <button class="activity-period-arrow" id="activityPreviousYear" type="button" aria-label="查看上一年">‹</button>
+              <label>
+                <span class="sr-only">年份</span>
+                <select id="activityYearSelect" aria-label="选择年份"></select>
+              </label>
+              <label>
+                <span class="sr-only">月份</span>
+                <select id="activityMonthSelect" aria-label="选择月份">
+                  <option value="-1">全年</option>
+                  <option value="0">1 月</option>
+                  <option value="1">2 月</option>
+                  <option value="2">3 月</option>
+                  <option value="3">4 月</option>
+                  <option value="4">5 月</option>
+                  <option value="5">6 月</option>
+                  <option value="6">7 月</option>
+                  <option value="7">8 月</option>
+                  <option value="8">9 月</option>
+                  <option value="9">10 月</option>
+                  <option value="10">11 月</option>
+                  <option value="11">12 月</option>
+                </select>
+              </label>
+              <button class="activity-today-button" id="activityTodayButton" type="button">今天</button>
+              <button class="activity-period-arrow" id="activityNextYear" type="button" aria-label="查看下一年">›</button>
+            </div>
+            <div class="activity-calendar-scroll">
+              <div class="activity-calendar">
+                <div class="activity-month-labels" id="activityMonthLabels" aria-hidden="true"></div>
+                <div class="activity-calendar-body">
+                  <div class="activity-weekday-labels" aria-hidden="true">
+                    <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+                  </div>
+                  <div class="activity-heatmap" id="activityHeatmap" role="grid" aria-label="每日学习日历"></div>
+                </div>
+              </div>
+            </div>
+            <div class="activity-day-detail" id="activityDayDetail" aria-live="polite">
+              <div class="activity-day-heading">
+                <span>选中日期</span>
+                <strong id="activitySelectedDate">今天</strong>
+              </div>
+              <div class="activity-day-metrics">
+                <span><strong id="activitySelectedItems">0</strong> 完成项</span>
+                <span><strong id="activitySelectedAccuracy">—</strong> 正确率</span>
+              </div>
+              <p id="activitySelectedModes">当天暂无训练记录。</p>
+            </div>
+            <div class="activity-stats" id="activityStats" aria-label="当前周期学习统计">
+              <div><strong id="activityActiveDays">0</strong><span>训练天数</span></div>
+              <div><strong id="activityCompletedItems">0</strong><span>完成项</span></div>
+              <div><strong id="activityAccuracy">—</strong><span>平均正确率</span></div>
+            </div>
+          </article>
+
+          <article class="insight-card recurring-insight-card" aria-labelledby="recurring-insight-title">
+            <header class="insight-card-header">
+              <div>
+                <p class="eyebrow">Recurring errors</p>
+                <h3 id="recurring-insight-title">反复出现的问题</h3>
+              </div>
+            </header>
+            <div class="insight-mode-tabs" role="tablist" aria-label="选择错误来源">
+              <button class="insight-mode-tab active" type="button" role="tab" aria-selected="true" data-insight-error-mode="listening">听力</button>
+              <button class="insight-mode-tab" type="button" role="tab" aria-selected="false" data-insight-error-mode="dictation">填空</button>
+              <button class="insight-mode-tab" type="button" role="tab" aria-selected="false" data-insight-error-mode="reading">阅读</button>
+              <button class="insight-mode-tab" type="button" role="tab" aria-selected="false" data-insight-error-mode="writing">写作</button>
+            </div>
+            <div class="recurring-errors-list" id="recurringErrorsList" aria-live="polite"></div>
+            <p class="recurring-errors-recommendation" id="recurringErrorsRecommendation"></p>
+          </article>
+        </div>
+      </section>
+
       <section class="settings-panel" aria-labelledby="settings-title" hidden>
         <header class="settings-page-header">
           <p class="eyebrow">Preferences</p>
@@ -1189,6 +1295,20 @@ significant
         <div class="favorite-review-heading">
           <p class="eyebrow" id="favoriteReviewMode">收藏本复习</p>
           <h2 id="favoriteReviewTitle">收藏本复习</h2>
+          <div class="favorite-review-book-switch" role="group" aria-label="切换收藏本">
+            <button type="button" data-favorite-review-book="listening" aria-pressed="false">
+              <span>听力</span>
+              <strong data-favorite-review-count="listening">0</strong>
+            </button>
+            <button type="button" data-favorite-review-book="dictation" aria-pressed="false">
+              <span>填空</span>
+              <strong data-favorite-review-count="dictation">0</strong>
+            </button>
+            <button type="button" data-favorite-review-book="reading" aria-pressed="false">
+              <span>阅读</span>
+              <strong data-favorite-review-count="reading">0</strong>
+            </button>
+          </div>
         </div>
         <div class="favorite-review-progress-wrap" aria-live="polite">
           <span id="favoriteReviewProgress">1 / 1</span>
@@ -1256,10 +1376,14 @@ significant
             <dt>中文释义</dt>
             <dd id="wordDetailZh"></dd>
           </div>
-          <div>
-            <dt>English definition</dt>
-            <dd id="wordDetailEn"></dd>
-          </div>
+            <div id="wordDetailConfusablesGroup" hidden>
+              <dt>相近易错词</dt>
+              <dd id="wordDetailConfusables"></dd>
+            </div>
+            <div id="wordDetailWordFormsGroup" hidden>
+              <dt>不同形态与词性</dt>
+              <dd id="wordDetailWordForms"></dd>
+            </div>
           <div>
             <dt>Example sentence</dt>
             <dd id="wordDetailExample"></dd>
@@ -1312,6 +1436,7 @@ significant
       </div>
     </dialog>
 
-  <script src="app.js?v=20260715-2"></script>
+    <script src="file-recovery-state.js?v=20260726-mistake-vault1"></script>
+    <script src="app.js?v=20260727-offline-word-import1"></script>
   </body>
 </html>
