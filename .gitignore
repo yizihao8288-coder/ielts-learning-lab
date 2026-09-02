@@ -1,5 +1,6 @@
 .chrome-*-cache/
 .chrome-*-profile/
+.chrome-demo-shot-*/
 .runtime/
 trainer-state.json
 *.log
