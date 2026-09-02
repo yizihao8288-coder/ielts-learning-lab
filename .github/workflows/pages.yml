@@ -23,6 +23,8 @@ jobs:
         with:
           python-version: "3.13"
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - name: Build static research showcase
         run: python scripts/build_pages.py --output _site
       - uses: actions/upload-pages-artifact@v5
