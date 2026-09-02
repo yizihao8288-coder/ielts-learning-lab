@@ -1,3 +1,13 @@
+const ieltsLabConfig = window.IELTS_LAB_CONFIG || Object.freeze({
+  deployment: window.location.protocol === "file:" ? "file" : "static",
+  serverFeatures: false,
+  onlineGenerationAvailable: false,
+});
+
+function hasLocalServerFeatures() {
+  return ieltsLabConfig.deployment === "local" && ieltsLabConfig.serverFeatures === true;
+}
+
 const fallbackWords = [
   "accommodation",
   "analysis",
@@ -1523,6 +1533,7 @@ const wordDetailClose = document.querySelector("#wordDetailClose");
 const wordDetailMeta = document.querySelector("#wordDetailMeta");
 const wordDetailTitle = document.querySelector("#wordDetailTitle");
 const wordDetailZh = document.querySelector("#wordDetailZh");
+const wordDetailEn = document.querySelector("#wordDetailEn");
 const wordDetailConfusablesGroup = document.querySelector("#wordDetailConfusablesGroup");
 const wordDetailConfusables = document.querySelector("#wordDetailConfusables");
 const wordDetailWordFormsGroup = document.querySelector("#wordDetailWordFormsGroup");
@@ -1531,6 +1542,7 @@ const wordDetailExample = document.querySelector("#wordDetailExample");
 const wordDetailResponse = document.querySelector("#wordDetailResponse");
 const wordDetailSpeakWord = document.querySelector("#wordDetailSpeakWord");
 const wordDetailSpeakExample = document.querySelector("#wordDetailSpeakExample");
+const wordDetailGenerate = document.querySelector("#wordDetailGenerate");
 const wordDetailStatus = document.querySelector("#wordDetailStatus");
 const writingStartButton = document.querySelector("#writingStartButton");
 const writingAllButton = document.querySelector("#writingAllButton");
@@ -5000,7 +5012,7 @@ async function saveTraining(manual = false) {
   const localSaved = saveSnapshotToLocal(snapshot);
   scheduleLearningInsightsRender();
 
-  if (window.location.protocol === "file:") {
+  if (window.location.protocol === "file:" || !hasLocalServerFeatures()) {
     if (manual) {
       saveStatus.textContent = localSaved
         ? "训练已保存到当前本地 HTML 的浏览器数据。"
@@ -5102,7 +5114,7 @@ function mergeSnapshotsForRestore(localSnapshot, serverSnapshot) {
 }
 
 function applyBootTrainingSnapshot() {
-  if (window.location.protocol === "file:") return false;
+  if (window.location.protocol === "file:" || !hasLocalServerFeatures()) return false;
 
   try {
     const serverSnapshot = window.__IELTS_SERVER_SNAPSHOT__;
@@ -5164,7 +5176,7 @@ function applyFileRecoverySnapshot() {
 }
 
 async function restoreTraining() {
-  if (window.location.protocol === "file:") {
+  if (window.location.protocol === "file:" || !hasLocalServerFeatures()) {
     const localSnapshot = loadSnapshotFromLocal();
     if (applyTrainingSnapshot(localSnapshot, { authoritative: false })) {
       saveSnapshotToLocal(buildTrainingSnapshot());
@@ -5575,6 +5587,10 @@ function openWordDetail(mode, key, source = "") {
   wordDetailResponse.textContent = item.response || "未记录";
   wordDetailStatus.textContent = "";
   wordDetailSpeakExample.disabled = !example;
+  wordDetailGenerate.disabled = !hasLocalServerFeatures();
+  wordDetailGenerate.title = hasLocalServerFeatures()
+    ? "仅在你点击后把当前单词发送给已配置的服务端模型"
+    : "静态演示使用本地词典，不会发送单词";
   wordDetailDialog.hidden = false;
   wordDetailClose.focus();
   if (favoriteReviewAutoSpeak.checked) void speakWordDetail("word");
@@ -5601,6 +5617,49 @@ async function speakWordDetail(kind) {
 
   const spoken = await speak(text, { kind: kind === "example" ? "sentence" : "word" });
   wordDetailStatus.textContent = spoken ? "朗读完成。" : "朗读失败，请检查语音设置。";
+}
+
+async function generateWordDetailOnline() {
+  const detail = state.detailEntry;
+  if (!detail || !hasLocalServerFeatures()) {
+    wordDetailStatus.textContent = "当前是零密钥静态演示，已继续使用本地词典。";
+    return false;
+  }
+
+  wordDetailGenerate.disabled = true;
+  wordDetailStatus.textContent = "正在生成并执行结构与内容验证…";
+  try {
+    const response = await fetch("/api/v1/generate-item", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ word: detail.word }),
+      mode: "same-origin",
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.item) {
+      const message = data?.error?.message || "在线生成暂不可用";
+      wordDetailStatus.textContent = `${message} 已保留本地词典内容。`;
+      return false;
+    }
+
+    const item = data.item;
+    saveUserNote(detail.word, item.meaning_zh, item.meaning_en, item.example);
+    detail.meaningZh = item.meaning_zh;
+    detail.meaningEn = item.meaning_en;
+    detail.example = item.example;
+    wordDetailZh.textContent = item.meaning_zh;
+    wordDetailEn.textContent = item.meaning_en;
+    wordDetailExample.innerHTML = renderRevealedSentence(item.example, detail.word);
+    wordDetailSpeakExample.disabled = false;
+    const repaired = data.provenance?.repaired ? "，经一次自动修复" : "";
+    wordDetailStatus.textContent = `AI 内容已通过验证${repaired} · ${data.provenance?.model || "configured model"}`;
+    return true;
+  } catch {
+    wordDetailStatus.textContent = "网络不可用，已保留本地词典内容。";
+    return false;
+  } finally {
+    wordDetailGenerate.disabled = !hasLocalServerFeatures();
+  }
 }
 
 function normaliseWord(value) {
@@ -6267,6 +6326,7 @@ async function loadVoices() {
 }
 
 async function loadServerVoices() {
+  if (!hasLocalServerFeatures()) return false;
   try {
     const response = await fetch("/voices", { cache: "no-store" });
     if (!response.ok) return false;
@@ -6486,7 +6546,7 @@ async function speakWithBrowserVoice(text, selectedVoice, profile) {
 
 function speakWithServerVoice(text, selectedVoice, profile) {
   return new Promise(async (resolve) => {
-    if (!selectedVoice) {
+    if (!selectedVoice || !hasLocalServerFeatures()) {
       resolve(false);
       return;
     }
@@ -11365,6 +11425,7 @@ wordDetailDialog.addEventListener("click", (event) => {
 });
 wordDetailSpeakWord.addEventListener("click", () => speakWordDetail("word"));
 wordDetailSpeakExample.addEventListener("click", () => speakWordDetail("example"));
+wordDetailGenerate.addEventListener("click", generateWordDetailOnline);
 writingStartButton.addEventListener("click", () => startWritingPractice(false));
 writingAllButton.addEventListener("click", startWritingAllPractice);
 writingReviewButton.addEventListener("click", () => startWritingPractice(true));

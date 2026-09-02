@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this software or research prototype, please cite it as below."
+title: "IELTS Learning Lab: Constraint-Aware Vocabulary Generation and Practice"
+type: software
+authors:
+  - family-names: Yi
+    given-names: Zihao
+repository-code: "https://github.com/yizihao8288-coder/ielts-learning-lab"
+url: "https://yizihao8288-coder.github.io/ielts-learning-lab/"
+license: MIT
+version: 0.1.0
+date-released: 2026-09-02
+abstract: >-
+  A local-first IELTS practice application and research prototype for comparing
+  prompt-only JSON, strict JSON Schema, and schema plus semantic validation and repair.

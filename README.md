@@ -1,84 +1,123 @@
-# IELTS 本地训练系统
+# IELTS Learning Lab
 
-一个不依赖付费 API 的浏览器端 IELTS 学习工具。项目以高频练习、错题沉淀和本地数据安全为核心，支持听力、填空、阅读与写作训练。
+> A local-first IELTS practice application and a small research prototype for schema-constrained, automatically validated LLM vocabulary generation.
 
-## 主要功能
+[Open the zero-key demo](https://yizihao8288-coder.github.io/ielts-learning-lab/demo/) · [Research status](https://yizihao8288-coder.github.io/ielts-learning-lab/results/) · [中文说明](README.zh-CN.md)
 
-- 听力模式：朗读目标词，并从相近选项中辨认单词。
-- 填空模式：根据例句听写目标词，答错后可重复练习。
-- 阅读模式：查看例句并选择中文释义。
-- 写作模式：三步写作训练、题图对照、字数统计、模板库和复盘记录。
-- 三类收藏本：听力、填空、阅读分别保存和复习。
-- 听力与阅读错题库：记录题目、截图、错因、状态和复习次数。
-- 学习洞察：按日期展示训练热力图、正确率和反复出现的问题。
-- 本地语音：使用浏览器 `SpeechSynthesis`，不上传语音或单词数据。
-- 自动保存：收藏、删除、训练进度和错题修改都会写入浏览器本地存储。
+![Listening practice interface](site/assets/app-listening.png)
 
-## 打开方式
+## Why this project exists
 
-推荐直接打开：
+Vocabulary generators can return valid JSON while still producing unusable learning content: the requested word may change, a Chinese definition may contain no Chinese, or an example may omit the target phrase. IELTS Learning Lab separates two questions:
+
+1. **Is the output structurally valid?**
+2. **Is it usable as a vocabulary learning item?**
+
+The product remains useful without any model. Listening, dictation, reading, writing, favourites, mistake review, browser storage and browser speech all work in the static demo. A local server can optionally request a generated item, validate it, and perform at most one repair.
+
+## Try it
+
+### Browser demo — no installation or API key
+
+Use the [GitHub Pages demo](https://yizihao8288-coder.github.io/ielts-learning-lab/demo/). Data stays in that browser. The static build never calls the Python API.
+
+### Local app — Windows
+
+1. Install Python 3.10 or newer.
+2. Double-click `启动雅思训练器.bat`.
+3. The app opens at `http://127.0.0.1:8765`.
+
+### Local app — macOS or Linux
+
+```bash
+python3 run.py
+```
+
+No package installation is required for core use. `run.py` binds only to `127.0.0.1`; generated runtime files remain under `.runtime/` or in ignored local state files.
+
+## Research prototype
+
+**Question.** In IELTS vocabulary item generation, does strict JSON Schema plus semantic validation and one repair improve final usability over a plain JSON prompt?
+
+The shared validator checks:
+
+- all four fields exist and are strings;
+- the returned word matches the requested word or phrase;
+- the Chinese meaning contains Chinese characters;
+- the English meaning has a bounded length;
+- the 8–35 word example contains the complete target;
+- placeholders, meta-talk and duplicate content are absent.
+
+| Condition | Generation constraint | Post-generation handling |
+|---|---|---|
+| `baseline` | JSON requested in the prompt | validation only |
+| `schema` | strict JSON Schema | validation only |
+| `guarded` | strict JSON Schema | validation + at most one repair |
+
+**Current evidence status:** the pipeline and 12 automated tests are implemented; the planned 100-word × 3-condition × 3-repeat model evaluation and human blind review have **not** been run. No model-quality result is claimed yet. See [the protocol](docs/research-protocol.md).
+
+Related methodology: [Wang et al. (2023)](https://aclanthology.org/2023.nlp4dh-1.7/), [JSONSchemaBench](https://arxiv.org/abs/2501.10868), and [Structured Output Benchmark](https://arxiv.org/abs/2604.25359).
+
+## System boundary
 
 ```text
-file:///D:/其他项目/index.html
+Static demo                         Optional local enhancement
+Browser UI                          run.py (standard library)
+├─ practice modes                   ├─ local save/load
+├─ local dictionary                 ├─ POST /api/v1/generate-item
+├─ browser storage                  └─ guarded generation pipeline
+└─ browser speech                       ├─ strict schema
+                                         ├─ semantic validation
+                                         └─ one repair maximum
 ```
 
-也可以在项目目录运行本地服务：
+The API key is read only from the server environment. It is never embedded in the page, saved in snapshots, or written to experiment records. A target word is sent to the model only after the user clicks the online-generation button.
 
-```powershell
-.\serve-ielts.ps1
+## API
+
+```http
+POST /api/v1/generate-item
+Content-Type: application/json
+
+{"word":"research"}
 ```
 
-然后访问 `http://127.0.0.1:8765/index.html`。
+Success returns `item` and `provenance`. Missing credentials, network errors, rate limits and failed second validation return an explicit error plus `"fallback":"local_dictionary"`. The legacy `GET /define?word=...` route remains available.
 
-> 重要：`file://` 与 `http://127.0.0.1` 属于不同的浏览器存储空间。长期使用时应固定一种打开方式，否则会看起来像数据丢失。
-
-## 批量导入单词
-
-无需 API，每行一条：
+Optional server configuration:
 
 ```text
-word|中文释义|English example
+OPENAI_API_KEY=...       # never commit this
+OPENAI_MODEL=...         # defaults to gpt-5.6-luna
+IELTS_PORT=8765
 ```
 
-示例：
+The Responses API request uses `reasoning.effort=none`, `store=false`, and strict `json_schema` output for the schema and guarded conditions. See the [official model documentation](https://developers.openai.com/api/docs/models/gpt-5.6-luna) and [Responses API reference](https://developers.openai.com/api/reference/resources/responses/methods/create).
 
-```text
-predator|捕食者；食肉动物|Large predators play an important role in maintaining the balance of ecosystems.
-vegetation|植被；植物|Dense vegetation covers much of the tropical rainforest.
-```
+## Verification
 
-要求：
-
-- 例句必须包含目标单词或其常见变形。
-- 一条记录必须保持在同一行；程序会合并因页面换行造成的常见续行。
-- 重复单词会按单词本身自动合并，不会重复出题。
-- 只输入英文单词也可以，但没有本地释义和例句时不能生成完整练习。
-
-## 数据与备份
-
-个人训练数据默认保存在当前浏览器的 `localStorage` 中，不提交到 GitHub。这样可以避免公开个人错题和学习记录，但也意味着清理浏览器数据、切换浏览器或更换打开地址可能导致记录不可见。
-
-建议定期使用页面内的“导出”或“保存训练”功能生成备份。恢复时使用对应的“导入”功能，不要直接编辑浏览器存储。
-
-GitHub 仓库只保存程序代码、界面和公开说明，不包含个人学习数据、恢复快照、日志或浏览器缓存。
-
-## 项目文件
-
-- `index.html`：页面结构。
-- `styles.css`：界面样式和响应式布局。
-- `app.js`：训练、收藏、错题、写作和本地存储逻辑。
-- `serve-ielts.ps1`：可选本地服务启动脚本。
-
-## 开发检查
-
-修改后至少执行：
-
-```powershell
+```bash
+python -m unittest discover -s tests -v
+python -m py_compile run.py research/pipeline.py
 node --check app.js
 ```
 
-并在浏览器中验证四种模式、收藏删除后的刷新恢复、错题自动保存和旧数据兼容。
+Continuous integration repeats Python tests, JavaScript syntax checks, PowerShell parsing, and static-site assembly. The current local suite covers validator rules, repair limits, API input, no-key fallback, request size and path safety.
 
-## 隐私说明
+A deliberately small API smoke experiment (3 words × 3 conditions × 1 repeat) can be run with `python -m research.run_experiment`. The full planned call requires the explicit flags `--limit 100 --repeats 3`. Recompute metrics with `python -m research.evaluate PATH_TO_JSONL`.
 
-不要把 `trainer-state.json`、恢复文件、浏览器 profile、日志或包含真实学习记录的导出文件提交到公开仓库。
+## Privacy and limitations
+
+- Personal answer history, timing records, API keys, caches and browser state are excluded from the public repository.
+- The public 99-word source is used without personal response fields; the former CSV remains local and untracked.
+- Browser speech and OCR availability vary by browser. OCR may fetch model data from a third-party CDN when the user invokes it.
+- Automated constraints do not prove definition correctness or pedagogical quality. Human review is still required before making research claims.
+- The present human-study status is “not run”, not “expert reviewed”.
+
+## Authorship and AI assistance
+
+Zihao Yi defined the learning problem, supplied the original application and vocabulary data, selected the research question, reviewed product behaviour, and is responsible for any future human ratings and conclusions. Codex was used as an AI-assisted engineering tool for implementation, refactoring, test scaffolding and documentation. The author should be able to explain every submitted component; this repository does not claim that all code was typed without assistance.
+
+## Citation and licence
+
+Citation metadata is in [`CITATION.cff`](CITATION.cff). Released under the [MIT License](LICENSE).

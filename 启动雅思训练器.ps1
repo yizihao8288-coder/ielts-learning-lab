@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$IndexPath = Join-Path $Root "index.html"
-$ResolvedIndex = Resolve-Path -LiteralPath $IndexPath
+$ServerScript = Join-Path $Root "serve-ielts.ps1"
 
-Start-Process -FilePath $ResolvedIndex.Path
+& $ServerScript
+exit $LASTEXITCODE
