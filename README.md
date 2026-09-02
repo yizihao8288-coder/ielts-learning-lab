@@ -1,68 +1,61 @@
 # IELTS Learning Lab
 
-> A local-first IELTS practice application and a small research prototype for schema-constrained, automatically validated LLM vocabulary generation.
+> I built the IELTS vocabulary desk I kept wishing existed. Then one stubborn product problem turned into a research question.
 
-[Open the zero-key demo](https://yizihao8288-coder.github.io/ielts-learning-lab/demo/) · [Research status](https://yizihao8288-coder.github.io/ielts-learning-lab/results/) · [中文说明](README.zh-CN.md)
+[Try it in your browser](https://yizihao8288-coder.github.io/ielts-learning-lab/demo/) · [See the research status](https://yizihao8288-coder.github.io/ielts-learning-lab/results/) · [中文说明](README.zh-CN.md)
 
 ![Listening practice interface](site/assets/app-listening.png)
 
-## Why this project exists
+## This started with my own IELTS mistakes
 
-Vocabulary generators can return valid JSON while still producing unusable learning content: the requested word may change, a Chinese definition may contain no Chinese, or an example may omit the target phrase. IELTS Learning Lab separates two questions:
+While preparing for IELTS, I found plenty of word lists but no single place that matched the way I actually reviewed: listen to a word, type it, read it in context, save it, and come back to the mistakes later. I wanted those actions to belong to one learning loop instead of several disconnected tools, so I built one.
 
-1. **Is the output structurally valid?**
-2. **Is it usable as a vocabulary learning item?**
+The app now has listening, dictation, reading and writing modes, plus favourites, mistake review, import/export, browser storage and speech. It works without an account or an API key.
 
-The product remains useful without any model. Listening, dictation, reading, writing, favourites, mistake review, browser storage and browser speech all work in the static demo. A local server can optionally request a generated item, validate it, and perform at most one repair.
+Later I experimented with generated definitions and examples. That exposed a more interesting failure: a model can return flawless JSON and still produce a poor learning item. The word may change, the Chinese meaning may contain no Chinese, or the example may never use the phrase it is supposed to teach.
 
-## Try it
+That is why this repository has two connected halves:
 
-### Browser demo — no installation or API key
+- a practice tool I can genuinely use;
+- a small experiment about making generated vocabulary entries structurally valid **and** useful enough to review.
 
-Use the [GitHub Pages demo](https://yizihao8288-coder.github.io/ielts-learning-lab/demo/). Data stays in that browser. The static build never calls the Python API.
+## Open it before reading more
 
-### Local app — Windows
+The [public demo](https://yizihao8288-coder.github.io/ielts-learning-lab/demo/) runs entirely in the browser. Nothing needs to be installed, and the static version never calls a model or the Python server.
 
-1. Install Python 3.10 or newer.
-2. Double-click `启动雅思训练器.bat`.
-3. The app opens at `http://127.0.0.1:8765`.
-
-### Local app — macOS or Linux
+To run the local version on Windows, install Python 3.10 or newer and double-click `启动雅思训练器.bat`. On macOS or Linux:
 
 ```bash
 python3 run.py
 ```
 
-No package installation is required for core use. `run.py` binds only to `127.0.0.1`; generated runtime files remain under `.runtime/` or in ignored local state files.
+The app opens at `http://127.0.0.1:8765`. Core use has no third-party package dependency. Runtime files stay inside `.runtime/` or other ignored local files.
 
-## Research prototype
+## The research question hiding inside the product
 
-**Question.** In IELTS vocabulary item generation, does strict JSON Schema plus semantic validation and one repair improve final usability over a plain JSON prompt?
+Can strict JSON Schema, semantic checks and one targeted repair make an IELTS vocabulary item more usable than simply asking a model to “return JSON”?
 
-The shared validator checks:
+I compare three versions of the same request:
 
-- all four fields exist and are strings;
-- the returned word matches the requested word or phrase;
-- the Chinese meaning contains Chinese characters;
-- the English meaning has a bounded length;
-- the 8–35 word example contains the complete target;
-- placeholders, meta-talk and duplicate content are absent.
-
-| Condition | Generation constraint | Post-generation handling |
+| Version | What the model receives | What happens afterwards |
 |---|---|---|
-| `baseline` | JSON requested in the prompt | validation only |
-| `schema` | strict JSON Schema | validation only |
-| `guarded` | strict JSON Schema | validation + at most one repair |
+| `baseline` | a plain request for JSON | validate the answer |
+| `schema` | a strict JSON Schema | validate the answer |
+| `guarded` | the same strict schema | validate, then repair once if a named rule fails |
 
-**Current evidence status:** the pipeline and 12 automated tests are implemented; the planned 100-word × 3-condition × 3-repeat model evaluation and human blind review have **not** been run. No model-quality result is claimed yet. See [the protocol](docs/research-protocol.md).
+The structural check asks whether all four string fields are present. The content check asks more human questions: Is this still the word I requested? Is the Chinese meaning actually Chinese? Does the 8–35 word example contain the complete target? Are there placeholders, meta-talk or duplicated fields?
 
-Related methodology: [Wang et al. (2023)](https://aclanthology.org/2023.nlp4dh-1.7/), [JSONSchemaBench](https://arxiv.org/abs/2501.10868), and [Structured Output Benchmark](https://arxiv.org/abs/2604.25359).
+### Where it stands today
 
-## System boundary
+The validator, local/API path and 12 automated tests are working. The planned 100-word comparison and blind rating have **not** been run, so I am not putting a model-quality claim or a decorative results chart here. The [results page](https://yizihao8288-coder.github.io/ielts-learning-lab/results/) says exactly what evidence exists, and the full design is recorded in the [research protocol](docs/research-protocol.md).
+
+The evaluation design was informed by [Wang et al. (2023)](https://aclanthology.org/2023.nlp4dh-1.7/), [JSONSchemaBench](https://arxiv.org/abs/2501.10868), and the [Structured Output Benchmark](https://arxiv.org/abs/2604.25359).
+
+## One product, two ways to run it
 
 ```text
-Static demo                         Optional local enhancement
-Browser UI                          run.py (standard library)
+Public demo                         Optional local enhancement
+Browser UI                          run.py (Python standard library)
 ├─ practice modes                   ├─ local save/load
 ├─ local dictionary                 ├─ POST /api/v1/generate-item
 ├─ browser storage                  └─ guarded generation pipeline
@@ -71,9 +64,11 @@ Browser UI                          run.py (standard library)
                                          └─ one repair maximum
 ```
 
-The API key is read only from the server environment. It is never embedded in the page, saved in snapshots, or written to experiment records. A target word is sent to the model only after the user clicks the online-generation button.
+The public demo stays deliberately simple. The local server adds saving and optional online generation, but failure never stops the training flow: missing credentials, network errors, rate limits or a failed repair all fall back to the local dictionary.
 
-## API
+A word is sent to a model only after the user chooses the online-generation action. The API key is read from the server environment and is never embedded in the page, saved in a snapshot or written to experiment records.
+
+## Poking the API
 
 ```http
 POST /api/v1/generate-item
@@ -82,19 +77,21 @@ Content-Type: application/json
 {"word":"research"}
 ```
 
-Success returns `item` and `provenance`. Missing credentials, network errors, rate limits and failed second validation return an explicit error plus `"fallback":"local_dictionary"`. The legacy `GET /define?word=...` route remains available.
+A successful response contains the learning `item` and its `provenance`. The older `GET /define?word=...` route is still available so the original interface keeps working.
 
-Optional server configuration:
+Optional configuration:
 
 ```text
-OPENAI_API_KEY=...       # never commit this
+OPENAI_API_KEY=...       # keep this on the server
 OPENAI_MODEL=...         # defaults to gpt-5.6-luna
 IELTS_PORT=8765
 ```
 
-The Responses API request uses `reasoning.effort=none`, `store=false`, and strict `json_schema` output for the schema and guarded conditions. See the [official model documentation](https://developers.openai.com/api/docs/models/gpt-5.6-luna) and [Responses API reference](https://developers.openai.com/api/reference/resources/responses/methods/create).
+The online path uses the Responses API with `reasoning.effort=none`, `store=false`, and strict `json_schema` output for the schema and guarded versions. See the [model documentation](https://developers.openai.com/api/docs/models/gpt-5.6-luna) and [Responses API reference](https://developers.openai.com/api/reference/resources/responses/methods/create).
 
-## Verification
+## Reproducing the work
+
+Run the checks:
 
 ```bash
 python -m unittest discover -s tests -v
@@ -102,21 +99,21 @@ python -m py_compile run.py research/pipeline.py
 node --check app.js
 ```
 
-Continuous integration repeats Python tests, JavaScript syntax checks, PowerShell parsing, and static-site assembly. The current local suite covers validator rules, repair limits, API input, no-key fallback, request size and path safety.
+Run a deliberately small API smoke experiment (3 words × 3 versions × 1 repeat):
 
-A deliberately small API smoke experiment (3 words × 3 conditions × 1 repeat) can be run with `python -m research.run_experiment`. The full planned call requires the explicit flags `--limit 100 --repeats 3`. Recompute metrics with `python -m research.evaluate PATH_TO_JSONL`.
+```bash
+python -m research.run_experiment
+```
 
-## Privacy and limitations
+The full planned call is opt-in: `python -m research.run_experiment --limit 100 --repeats 3`. Frozen JSONL results can be recalculated with `python -m research.evaluate PATH_TO_JSONL`.
 
-- Personal answer history, timing records, API keys, caches and browser state are excluded from the public repository.
-- The public 99-word source is used without personal response fields; the former CSV remains local and untracked.
-- Browser speech and OCR availability vary by browser. OCR may fetch model data from a third-party CDN when the user invokes it.
-- Automated constraints do not prove definition correctness or pedagogical quality. Human review is still required before making research claims.
-- The present human-study status is “not run”, not “expert reviewed”.
+## Boundaries I care about
 
-## Authorship and AI assistance
-
-Zihao Yi defined the learning problem, supplied the original application and vocabulary data, selected the research question, reviewed product behaviour, and is responsible for any future human ratings and conclusions. Codex was used as an AI-assisted engineering tool for implementation, refactoring, test scaffolding and documentation. The author should be able to explain every submitted component; this repository does not claim that all code was typed without assistance.
+- Personal answer history, timings, keys, caches and browser state do not belong in the public repository.
+- The original 99-word source is used without personal response fields; the old CSV remains local and untracked.
+- Browser speech varies by browser, and OCR may download model data only when the user invokes it.
+- Passing an automated check is not the same as having a correct definition or a natural example. Human review is still necessary.
+- This is currently a working product and an unfinished experiment—not evidence of learning improvement or an expert-reviewed system.
 
 ## Citation and licence
 
