@@ -1,12 +1,25 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="site-intro-active">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ielts listening trainer</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23c95735'/%3E%3Ctext x='32' y='45' text-anchor='middle' font-size='42' font-style='italic' fill='white'%3EI%3C/text%3E%3C/svg%3E" />
+    <title>IELTS Learning Lab</title>
+    <link rel="stylesheet" href="styles.css?v=20260820-listening-parts1" />
   </head>
   <body>
+    <div class="site-intro" id="siteIntro" role="status" aria-live="polite" aria-label="IELTS practice system loading">
+      <div class="site-intro-content">
+        <div class="site-intro-lockup">
+          <div class="site-intro-title">IELTS</div>
+          <div class="site-intro-progress" aria-hidden="true">
+            <span></span>
+          </div>
+        </div>
+        <p>Practice system preview</p>
+      </div>
+    </div>
+
     <main class="app-shell">
       <section class="input-panel" aria-labelledby="setup-title">
         <div class="brand-row">
@@ -24,6 +37,32 @@
             </button>
           </div>
         </div>
+
+        <nav class="sidebar-rail" id="sidebarRail" aria-label="折叠侧边栏快捷入口">
+          <button class="sidebar-rail-button is-wiggle" type="button" data-sidebar-rail-mode="listening" data-tooltip="听力模式" aria-label="听力模式">
+            <i data-lucide="headphones" aria-hidden="true"></i>
+          </button>
+          <button class="sidebar-rail-button is-tilt" type="button" data-sidebar-rail-mode="dictation" data-tooltip="填空模式" aria-label="填空模式">
+            <i data-lucide="square-pen" aria-hidden="true"></i>
+          </button>
+          <button class="sidebar-rail-button is-lift" type="button" data-sidebar-rail-mode="reading" data-tooltip="阅读模式" aria-label="阅读模式">
+            <i data-lucide="book-open" aria-hidden="true"></i>
+          </button>
+          <button class="sidebar-rail-button is-tilt" type="button" data-sidebar-rail-surface="writing" data-tooltip="写作模式" aria-label="写作模式">
+            <i data-lucide="file-pen-line" aria-hidden="true"></i>
+          </button>
+          <span class="sidebar-rail-divider" aria-hidden="true"></span>
+          <button class="sidebar-rail-button is-turn" id="sidebarRailFavoritesButton" type="button" data-tooltip="收藏本" aria-label="打开收藏本">
+            <i data-lucide="star" aria-hidden="true"></i>
+          </button>
+          <button class="sidebar-rail-button is-lift" id="sidebarRailInsightsButton" type="button" data-sidebar-rail-surface="insights" data-tooltip="学习洞察" aria-label="打开学习洞察">
+            <i data-lucide="chart-no-axes-combined" aria-hidden="true"></i>
+          </button>
+          <span class="sidebar-rail-spacer" aria-hidden="true"></span>
+          <button class="sidebar-rail-button is-turn" id="sidebarRailSettingsButton" type="button" data-sidebar-rail-surface="settings" data-tooltip="设置" aria-label="打开设置">
+            <i data-lucide="settings" aria-hidden="true"></i>
+          </button>
+        </nav>
 
         <div class="sidebar-body">
         <p class="sidebar-nav-label">练习模式</p>
@@ -66,6 +105,14 @@
           </span>
         </button>
 
+        <button class="listening-mistake-nav reading-mistake-nav" id="readingMistakeNavButton" type="button" hidden>
+          <span class="listening-mistake-nav-icon" aria-hidden="true">错</span>
+          <span>
+            <strong>阅读错题库</strong>
+            <small id="readingMistakeNavCount">0</small>
+          </span>
+        </button>
+
         <details class="sidebar-section practice-drawer">
           <summary class="sidebar-section-summary">
             <span class="sidebar-section-icon" aria-hidden="true">▤</span>
@@ -81,8 +128,8 @@ environment
 evidence
 significant
 
-每行一个单词，也可以用逗号或分号分隔。
-无 API 时使用：word|中文释义|English example
+完整记录请每行一条，格式：word|中文释义|English example
+完全离线，不调用 API；重复单词会自动合并。
 例：category|类别；种类|The books are arranged by category, such as history, science, and literature."
         ></textarea>
 
@@ -132,6 +179,11 @@ significant
           <label class="switch">
             <input id="autoSpeak" type="checkbox" checked />
             <span>自动朗读</span>
+          </label>
+
+          <label class="switch">
+            <input id="favoriteReviewAutoSpeak" type="checkbox" />
+            <span>收藏复习揭示后自动朗读</span>
           </label>
 
           <label class="switch">
@@ -265,13 +317,13 @@ significant
               <button class="secondary-button book-utility-button" id="importDataButton" type="button">
                 导入
               </button>
-              <button class="secondary-button book-review-button" id="bookReviewButton" type="button" disabled>
-                <span class="button-icon" aria-hidden="true">↻</span>
-                复习
+              <button class="secondary-button book-practice-button" id="bookPracticeReviewButton" type="button" disabled>
+                <span class="button-icon" aria-hidden="true">▶</span>
+                做题
               </button>
               <button class="secondary-button book-review-button" id="bookListReviewButton" type="button" disabled>
                 <span class="button-icon" aria-hidden="true">≡</span>
-                排序复习
+                排序
               </button>
             </div>
           </div>
@@ -295,6 +347,10 @@ significant
         </details>
         </div>
         <nav class="sidebar-footer-nav" aria-label="其他页面">
+          <button class="sidebar-page-link icon-react-lift" id="insightsNavButton" type="button">
+            <i data-lucide="chart-no-axes-combined" aria-hidden="true"></i>
+            <span>学习洞察</span>
+          </button>
           <button class="sidebar-page-link" id="settingsNavButton" type="button">
             <span aria-hidden="true">⚙</span>
             <span>设置</span>
@@ -370,7 +426,7 @@ significant
           <div>
             <p class="eyebrow">Listening review</p>
             <h2 id="listening-mistake-title">IELTS 听力极简错题库</h2>
-            <p>截图只用于本地 OCR，保存后仅保留文字和复习记录。</p>
+            <p>截图用于录入参照，保存后仅保留文字和复习记录。</p>
           </div>
           <button class="primary-button" id="addListeningMistakeButton" type="button">
             <span class="button-icon" aria-hidden="true">+</span>
@@ -384,6 +440,18 @@ significant
           <div><strong id="listeningMistakeMastered">0</strong><span>已掌握</span></div>
           <div><strong id="listeningMistakeReviews">0</strong><span>累计复习</span></div>
         </div>
+
+        <nav class="listening-mistake-part-bar" aria-label="按 IELTS Listening Part 分类">
+          <div class="listening-mistake-part-tabs" id="listeningMistakePartTabs">
+            <button type="button" data-listening-mistake-part="all" aria-pressed="true">全部 <span>0</span></button>
+            <button type="button" data-listening-mistake-part="part1" aria-pressed="false">Part 1 <span>0</span></button>
+            <button type="button" data-listening-mistake-part="part2" aria-pressed="false">Part 2 <span>0</span></button>
+            <button type="button" data-listening-mistake-part="part3" aria-pressed="false">Part 3 <span>0</span></button>
+            <button type="button" data-listening-mistake-part="part4" aria-pressed="false">Part 4 <span>0</span></button>
+            <button type="button" data-listening-mistake-part="unassigned" aria-pressed="false">未分类 <span>0</span></button>
+          </div>
+          <button class="secondary-button listening-mistake-start-part" id="listeningMistakeStartPartReview" type="button">开始复习全部错题</button>
+        </nav>
 
         <section class="listening-mistake-toolbar" aria-label="筛选错题">
           <label class="listening-mistake-search">
@@ -434,7 +502,363 @@ significant
         </div>
       </section>
 
-      <section class="writing-panel" aria-labelledby="writing-title" hidden>
+      <section class="reading-mistake-panel" aria-labelledby="reading-mistake-title" hidden>
+        <header class="listening-mistake-header">
+          <div>
+            <p class="eyebrow">Reading review</p>
+            <h2 id="reading-mistake-title">IELTS 阅读极简错题库</h2>
+            <p>保留题目与原文证据，集中回看定位、同义替换和题型陷阱；默认按题型排序。</p>
+          </div>
+          <button class="primary-button" id="addReadingMistakeButton" type="button">
+            <span class="button-icon" aria-hidden="true">+</span>
+            新建错题
+          </button>
+        </header>
+
+        <div class="listening-mistake-summary" aria-label="阅读错题库统计">
+          <div><strong id="readingMistakeTotal">0</strong><span>全部错题</span></div>
+          <div><strong id="readingMistakeReviewing">0</strong><span>复习中</span></div>
+          <div><strong id="readingMistakeMastered">0</strong><span>已掌握</span></div>
+          <div><strong id="readingMistakeReviews">0</strong><span>累计复习</span></div>
+        </div>
+
+        <section class="listening-mistake-toolbar reading-mistake-toolbar" aria-label="筛选阅读错题">
+          <label class="listening-mistake-search">
+            <span class="sr-only">搜索标题和备注</span>
+            <input id="readingMistakeSearch" type="search" autocomplete="off" placeholder="搜索来源标题或备注" />
+          </label>
+          <label>
+            <span>题型</span>
+            <select id="readingMistakeQuestionFilter">
+              <option value="all">全部题型</option>
+              <option value="trueFalseNotGiven">True / False / Not Given</option>
+              <option value="yesNoNotGiven">Yes / No / Not Given</option>
+              <option value="multipleChoice">选择题</option>
+              <option value="matchingHeadings">段落标题匹配</option>
+              <option value="matchingInformation">信息匹配</option>
+              <option value="completion">填空题</option>
+              <option value="shortAnswer">简答题</option>
+              <option value="other">其他</option>
+            </select>
+          </label>
+          <label>
+            <span>错因</span>
+            <select id="readingMistakeErrorFilter">
+              <option value="all">全部错因</option>
+              <option value="location">定位错</option>
+              <option value="paraphrase">同义替换没看出</option>
+              <option value="falseNotGiven">False/Not Given 混淆</option>
+              <option value="choiceTrap">选择题陷阱</option>
+              <option value="mainIdea">段落主旨抓偏</option>
+              <option value="timePressure">时间压力乱选</option>
+              <option value="custom">自定义错因</option>
+            </select>
+          </label>
+          <label>
+            <span>状态</span>
+            <select id="readingMistakeStatusFilter">
+              <option value="all">全部状态</option>
+              <option value="unmastered">未掌握</option>
+              <option value="reviewing">复习中</option>
+              <option value="mastered">已掌握</option>
+            </select>
+          </label>
+        </section>
+
+        <div class="listening-mistake-workspace">
+          <div class="listening-mistake-list" id="readingMistakeList" aria-live="polite"></div>
+          <article class="listening-mistake-detail" id="readingMistakeDetail" aria-live="polite">
+            <div class="listening-mistake-empty">
+              <span aria-hidden="true">01</span>
+              <h3>选择一条阅读错题</h3>
+              <p>查看题目、原文证据和复习记录。</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="writing-panel" aria-labelledby="writing-studio-title" spellcheck="false" hidden>
+        <div class="writing-studio" id="writingStudio">
+          <header class="writing-studio-header">
+            <div>
+              <p class="eyebrow">Writing score lab</p>
+              <h2 id="writing-studio-title">写作提分训练</h2>
+              <p class="writing-studio-subtitle">从真题出发，用准备、限时写作和复盘完成一次可积累的提分训练。</p>
+            </div>
+            <div class="writing-studio-header-actions">
+              <span class="writing-weight-note">Task 2 权重 ×2</span>
+              <button class="secondary-button" id="writingStudioResumeButton" type="button" hidden>继续上次训练</button>
+              <button class="text-button" id="writingStudioDiscardButton" type="button" hidden>放弃上次训练</button>
+            </div>
+          </header>
+
+          <div class="writing-studio-dashboard" id="writingStudioDashboard">
+            <section class="writing-start-panel" aria-labelledby="writing-start-title">
+              <div>
+                <span>Practice</span>
+                <h3 id="writing-start-title">把一篇作文写完</h3>
+                <p>从题图开始，完成准备、限时写作和复盘。复杂的反馈和重写只在需要时展开。</p>
+              </div>
+              <div class="writing-start-actions">
+                <button class="primary-button writing-start-button" type="button" data-writing-studio-mission="task2">
+                  <i data-lucide="pen-line" aria-hidden="true"></i>
+                  新建练习
+                </button>
+                <button class="secondary-button writing-template-open-button" id="writingTemplateOpenButton" type="button">
+                  <i data-lucide="library-big" aria-hidden="true"></i>
+                  模板库
+                </button>
+              </div>
+              <button class="writing-rewrite-callout" id="writingDueRewriteButton" type="button" hidden>
+                <span>待复习</span>
+                <strong id="writingDueRewriteTitle">有一项反馈等待修正</strong>
+                <small>打开后可继续复盘，按需做一次局部重写。</small>
+              </button>
+            </section>
+
+            <div class="writing-studio-overview writing-studio-overview-compact">
+              <section class="writing-history-section" aria-labelledby="writing-history-title">
+                <div class="writing-section-heading compact">
+                  <div>
+                    <span>Sessions</span>
+                    <h3 id="writing-history-title">最近训练</h3>
+                  </div>
+                </div>
+                <div class="writing-studio-list" id="writingStudioHistory"></div>
+              </section>
+              <section class="writing-error-section" aria-labelledby="writing-error-title">
+                <div class="writing-section-heading compact">
+                  <div>
+                    <span>Error loop</span>
+                    <h3 id="writing-error-title">个人错误库</h3>
+                  </div>
+                  <button class="text-button" id="writingLegacyDrillButton" type="button">语言急救</button>
+                </div>
+                <div class="writing-studio-list" id="writingStudioErrors"></div>
+              </section>
+            </div>
+          </div>
+
+          <section class="writing-template-library" id="writingTemplateLibrary" hidden aria-labelledby="writing-template-library-title">
+            <header class="writing-template-library-header">
+              <div>
+                <p class="eyebrow">Template library</p>
+                <h3 id="writing-template-library-title">题型模板库</h3>
+                <p>集中查看不同题型的结构、常用表达和你的个人模板；这里仅用于复习，不会开启新的练习。</p>
+              </div>
+              <div class="writing-template-library-actions">
+                <button class="secondary-button" id="writingTemplateAddButton" type="button">添加我的模板</button>
+                <button class="secondary-button" id="writingTemplateCloseButton" type="button">返回写作首页</button>
+              </div>
+            </header>
+            <div class="writing-template-library-body">
+              <nav class="writing-template-tabs" id="writingTemplateTabs" aria-label="写作模板分类">
+                <button type="button" data-writing-template-kind="task1">Academic Task 1</button>
+                <button type="button" data-writing-template-kind="task2">Academic Task 2</button>
+              </nav>
+              <form class="writing-template-form" id="writingTemplateForm" hidden>
+                <div class="writing-template-form-intro">
+                  <div><strong>编辑模板</strong><span>按题型整理结构、表达和复习重点。</span></div>
+                </div>
+                <div class="writing-template-form-meta">
+                  <label>题型
+                    <select id="writingTemplateFormKind">
+                      <option value="task1">Academic Task 1</option>
+                      <option value="task2">Academic Task 2</option>
+                    </select>
+                  </label>
+                  <label>模板名称<input id="writingTemplateFormTitle" type="text" placeholder="例如：地图题变化段模板" required></label>
+                </div>
+                <label class="writing-template-focus-field">复习重点（可选）<input id="writingTemplateFormFocus" type="text" placeholder="例如：先总述整体变化，再按区域写细节。"></label>
+                <label class="writing-template-content-field">模板内容<textarea id="writingTemplateFormContent" rows="7" placeholder="直接粘贴你的模板。之后会按原文呈现，便于随时查看。" required></textarea></label>
+                <label class="writing-template-vocabulary-field">关键词汇（可选，用逗号或换行分隔）<textarea id="writingTemplateFormVocabulary" rows="3" placeholder="例如：was converted into, was replaced by, remained unchanged"></textarea></label>
+                <section class="writing-template-example-fields" aria-labelledby="writing-template-example-title">
+                  <div class="writing-template-example-fields-heading">
+                    <strong id="writing-template-example-title">例题对照（可选）</strong>
+                    <span>每个模板可保存一张例题截图和对应范文；在该模板内打开「例题对照」查看。</span>
+                  </div>
+                  <section class="writing-template-example-upload image-paste-zone" data-image-paste-zone="writing-template-example-prompt" tabindex="0" aria-label="例题截图粘贴区">
+                    <div class="writing-template-example-upload-heading">
+                      <div><strong>例题截图</strong><span>点击此区域后按 Ctrl+V，或点击按钮粘贴。</span></div>
+                      <div class="writing-template-example-upload-actions">
+                        <button class="secondary-button clipboard-image-button" type="button" data-clipboard-image="writing-template-example-prompt">粘贴截图</button>
+                        <label class="secondary-button">选择图片<input id="writingTemplateExamplePromptImageInput" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" hidden></label>
+                      </div>
+                    </div>
+                    <p class="writing-template-example-upload-status" id="writingTemplateExamplePromptImageStatus">尚未添加例题截图。</p>
+                    <div class="writing-template-example-image-preview" id="writingTemplateExamplePromptImagePreview" hidden>
+                      <img id="writingTemplateExamplePromptImage" alt="例题截图预览">
+                      <button class="icon-button danger" id="writingTemplateExamplePromptImageRemove" type="button" title="移除例题截图" aria-label="移除例题截图"><i data-lucide="trash-2" aria-hidden="true"></i></button>
+                    </div>
+                  </section>
+                  <label class="writing-template-sample-field">范文<textarea id="writingTemplateFormSampleEssay" rows="10" placeholder="粘贴与这道题对应的范文。"></textarea></label>
+                </section>
+                <div class="writing-template-form-actions">
+                  <button class="secondary-button" id="writingTemplateFormCancel" type="button">取消</button>
+                  <button class="primary-button" id="writingTemplateFormSubmit" type="submit">保存模板</button>
+                </div>
+              </form>
+              <div class="writing-template-layout">
+                <div class="writing-template-list" id="writingTemplateList" aria-label="模板列表"></div>
+                <article class="writing-template-detail" id="writingTemplateDetail" aria-live="polite"></article>
+              </div>
+            </div>
+          </section>
+
+          <section class="writing-template-case-view" id="writingTemplateCaseView" hidden aria-labelledby="writing-template-case-view-title">
+            <header class="writing-template-library-header">
+              <div>
+                <p class="eyebrow">Template example</p>
+                <h3 id="writing-template-case-view-title">例题对照</h3>
+                <p>用模板结构和关键词汇，对照阅读题目与范文。这里只用于复习，不会开始新的练习。</p>
+              </div>
+              <div class="writing-template-library-actions">
+                <button class="secondary-button" id="writingTemplateCaseCloseButton" type="button">返回模板库</button>
+              </div>
+            </header>
+            <div class="writing-template-case-view-body" id="writingTemplateCaseContent" aria-live="polite"></div>
+          </section>
+
+          <section class="writing-studio-session" id="writingStudioSession" hidden aria-live="polite">
+            <header class="writing-session-header">
+              <div>
+                <span id="writingSessionLabel">Task 2 · 完整练习</span>
+                <h3 id="writingSessionTitle">建立本次训练</h3>
+              </div>
+              <div class="writing-session-tools">
+                <div class="writing-session-timer" id="writingSessionTimer" aria-label="剩余时间">40:00</div>
+                <button class="icon-button" id="writingSessionTemplateButton" type="button" title="查看题型模板" aria-label="查看题型模板"><i data-lucide="library-big" aria-hidden="true"></i></button>
+                <button class="icon-button" id="writingSessionCloseButton" type="button" title="退出并保存" aria-label="退出并保存">×</button>
+              </div>
+            </header>
+
+            <div class="writing-stage-progress" aria-hidden="true"><span id="writingStageProgressBar"></span></div>
+            <nav class="writing-stage-nav" id="writingStageNav" aria-label="写作训练步骤">
+              <button type="button" data-writing-studio-stage="prepare">准备</button>
+              <button type="button" data-writing-studio-stage="draft">限时写作</button>
+              <button type="button" data-writing-studio-stage="review">复盘</button>
+            </nav>
+
+            <aside class="writing-prompt-reference" id="writingPromptReference" aria-labelledby="writingPromptReferenceTitle">
+              <div class="writing-prompt-reference-copy">
+                <span>当前题目</span>
+                <p id="writingPromptReferenceTitle">题目会固定显示在这里。</p>
+              </div>
+              <button class="text-button writing-prompt-image-toggle" id="writingPromptImageToggle" type="button" hidden>
+                <i data-lucide="maximize-2" aria-hidden="true"></i>
+                全屏查看
+              </button>
+              <div class="writing-prompt-reference-image" id="writingPromptReferenceImage" hidden>
+                <img id="writingPromptReferenceImagePreview" alt="当前写作题目截图">
+              </div>
+            </aside>
+
+            <div
+              class="writing-session-splitter"
+              id="writingSessionSplitter"
+              role="separator"
+              aria-label="Adjust question and writing panel widths"
+              aria-orientation="vertical"
+              aria-valuemin="25"
+              aria-valuemax="70"
+              aria-valuenow="42"
+              tabindex="0"
+              title="Drag to resize; double-click to reset"
+            >
+              <i data-lucide="move-horizontal" aria-hidden="true"></i>
+            </div>
+
+            <div class="writing-stage-body">
+              <section class="writing-stage-panel" data-writing-stage-panel="prepare">
+                <div class="writing-stage-intro">
+                  <span>01 · Prompt</span>
+                  <h3>准备好题目，马上开始</h3>
+                  <p>只需要选择练习类型并粘贴题图。一句思路可写可不写，不再阻塞写作。</p>
+                </div>
+                <div class="writing-field-grid two-columns">
+                  <label>练习类型<select id="writingStudioTaskKind"><option value="task2">Academic Task 2 · 40 分钟</option><option value="task1">Academic Task 1 · 20 分钟</option><option value="paragraph">Task 2 主体段 · 15 分钟</option><option value="mock">完整写作模考 · 60 分钟</option></select></label>
+                  <details class="writing-time-settings"><summary>限时 <strong id="writingStudioTimeSummary">40 分钟</strong></summary><label>调整本次时长<select id="writingStudioTimeLimit"><option value="900">15 分钟</option><option value="1200">20 分钟</option><option value="1800">30 分钟</option><option value="2400">40 分钟</option><option value="3600">60 分钟</option></select></label></details>
+                </div>
+                <section class="writing-prompt-upload image-paste-zone" data-image-paste-zone="writing-prompt" tabindex="0" aria-labelledby="writingPromptUploadTitle">
+                  <div class="writing-prompt-upload-heading">
+                    <div>
+                      <strong id="writingPromptUploadTitle">题目截图</strong>
+                      <span>复制截图后点击此区域按 Ctrl+V。图片只会压缩保存在本机，不再自动识别文字。</span>
+                    </div>
+                    <div class="image-paste-actions">
+                      <button class="secondary-button clipboard-image-button" type="button" data-clipboard-image="writing-prompt">粘贴截图</button>
+                      <label class="secondary-button writing-prompt-upload-button">
+                        选择图片
+                        <input id="writingPromptImageInput" type="file" accept="image/png,image/jpeg,image/webp,image/bmp">
+                      </label>
+                    </div>
+                  </div>
+                  <p class="writing-prompt-upload-status" id="writingPromptImageStatus" aria-live="polite">尚未上传题图。</p>
+                  <div class="writing-prompt-upload-preview" id="writingPromptUploadPreview" hidden>
+                    <img id="writingPromptUploadImage" alt="已上传的写作题目截图">
+                    <div class="writing-prompt-upload-actions">
+                      <button class="text-button danger" id="writingPromptRemoveImageButton" type="button">移除图片</button>
+                    </div>
+                  </div>
+                </section>
+                <label class="writing-full-field writing-quick-plan"><span id="writingQuickPlanLabel">一句思路（可跳过）</span><textarea id="writingStudioQuickPlan" rows="3" placeholder="例如：我的立场是……；或本图最明显的整体趋势是……"></textarea><small id="writingQuickPlanHint">不需要展开规划，写一句即可。</small></label>
+              </section>
+
+              <section class="writing-stage-panel" data-writing-stage-panel="draft" hidden>
+                <div class="writing-stage-intro writing-draft-heading">
+                  <div><span>02 · Write</span><h3>在限时内完成</h3></div>
+                  <strong id="writingDraftWordCount">0 words</strong>
+                </div>
+                <label class="writing-full-field"><span id="writingDraftLabel">Task 2 正文</span><textarea class="writing-draft-editor" id="writingStudioDraft" rows="18" spellcheck="false" placeholder="从这里开始限时写作。"></textarea></label>
+                <label class="writing-full-field writing-mock-only" hidden><span>Task 1 正文</span><textarea class="writing-draft-editor" id="writingStudioTask1Draft" rows="12" spellcheck="false"></textarea></label>
+              </section>
+
+              <section class="writing-stage-panel writing-review-panel" data-writing-stage-panel="review" hidden>
+                <div class="writing-stage-intro">
+                  <span>03 · Review</span>
+                  <h3>用一分钟锁定下一次要改的点</h3>
+                  <p>完成四项快速确认并记录一个重点问题，就可以结束本轮训练。</p>
+                </div>
+                <div class="writing-checklist" id="writingStudioChecklist">
+                  <label><input type="checkbox" data-writing-check="task"><span><strong>任务回应</strong>题目要求都有对应内容</span></label>
+                  <label><input type="checkbox" data-writing-check="structure"><span><strong>结构</strong>每段只承担一个明确任务</span></label>
+                  <label><input type="checkbox" data-writing-check="language"><span><strong>语言</strong>搭配、连接与词汇使用自然</span></label>
+                  <label><input type="checkbox" data-writing-check="accuracy"><span><strong>准确性</strong>检查主谓、冠词、单复数、时态与拼写</span></label>
+                </div>
+                <label class="writing-full-field">本次最该改的问题<textarea id="writingStudioSelfErrors" rows="3" placeholder="例如：主体段的例子没有解释观点；下次先写因果链。"></textarea><small>这条会自动进入个人错误库，供下一次练习前回顾。</small></label>
+                <details class="writing-review-optional">
+                  <summary>需要 AI 反馈或局部重写？</summary>
+                  <div class="writing-review-optional-body">
+                    <div class="writing-feedback-actions">
+                      <button class="secondary-button" id="writingCopyFeedbackPromptButton" type="button">复制 AI 反馈请求</button>
+                      <span id="writingFeedbackCopyStatus"></span>
+                    </div>
+                    <label class="writing-full-field">粘贴 AI 反馈<textarea id="writingStudioFeedbackInput" rows="10" placeholder="支持约定的 JSON 格式，也可以保存普通文字反馈。"></textarea></label>
+                    <button class="secondary-button" id="writingImportFeedbackButton" type="button">导入反馈</button>
+                    <div class="writing-feedback-summary" id="writingFeedbackSummary"></div>
+                    <div class="writing-rewrite-brief" id="writingRewriteBrief">可粘贴最需要修改的一段，做一次局部重写。</div>
+                    <label class="writing-full-field">需要修改的原文<textarea id="writingRewriteOriginal" rows="5"></textarea></label>
+                    <label class="writing-full-field">我的重写<textarea id="writingRewriteDraft" rows="7" placeholder="保留自己的观点，只解决一个核心问题。"></textarea></label>
+                    <label class="writing-rewrite-confirm"><input id="writingRewriteResolved" type="checkbox"><span>我确认这次重写针对了一个明确问题。</span></label>
+                  </div>
+                </details>
+                <button class="primary-button writing-complete-button" id="writingCompleteSessionButton" type="button">完成本次训练</button>
+              </section>
+            </div>
+
+            <footer class="writing-session-footer">
+              <button class="secondary-button" id="writingStagePreviousButton" type="button">上一步</button>
+              <div class="writing-session-save">
+                <button class="text-button" id="writingSaveProgressButton" type="button">保存进度</button>
+                <span id="writingAutosaveStatus">自动保存到本机</span>
+              </div>
+              <button class="primary-button" id="writingStageNextButton" type="button">下一步</button>
+            </footer>
+          </section>
+        </div>
+
+        <div class="writing-legacy-runtime" id="writingLegacyRuntime" hidden aria-hidden="true">
+          <button class="writing-legacy-close secondary-button" id="writingLegacyCloseButton" type="button">返回写作工作台</button>
         <div class="writing-header">
           <div>
             <p class="eyebrow">Writing practice</p>
@@ -512,6 +936,106 @@ significant
             <div class="writing-mistake-list" id="writingMistakeList" aria-live="polite"></div>
           </aside>
         </div>
+        </div>
+      </section>
+
+      <section class="insights-panel" aria-labelledby="insights-title" hidden>
+        <header class="insights-page-header">
+          <p class="eyebrow">Learning insights</p>
+          <h2 id="insights-title">学习洞察</h2>
+          <p>用已有训练记录观察练习节奏和反复出现的问题。</p>
+        </header>
+
+        <div class="insights-grid">
+          <article class="insight-card activity-insight-card" aria-labelledby="activity-insight-title">
+            <header class="insight-card-header">
+              <div>
+                <p class="eyebrow">Activity</p>
+                <h3 id="activity-insight-title">每日学习记录</h3>
+              </div>
+              <div class="activity-legend" aria-label="训练强度图例">
+                <span>少</span>
+                <i class="level-0" aria-hidden="true"></i>
+                <i class="level-1" aria-hidden="true"></i>
+                <i class="level-2" aria-hidden="true"></i>
+                <i class="level-3" aria-hidden="true"></i>
+                <i class="level-4" aria-hidden="true"></i>
+                <span>多</span>
+              </div>
+            </header>
+            <div class="activity-period-controls" aria-label="学习记录时间范围">
+              <button class="activity-period-arrow" id="activityPreviousYear" type="button" aria-label="查看上一年">‹</button>
+              <label>
+                <span class="sr-only">年份</span>
+                <select id="activityYearSelect" aria-label="选择年份"></select>
+              </label>
+              <label>
+                <span class="sr-only">月份</span>
+                <select id="activityMonthSelect" aria-label="选择月份">
+                  <option value="-1">全年</option>
+                  <option value="0">1 月</option>
+                  <option value="1">2 月</option>
+                  <option value="2">3 月</option>
+                  <option value="3">4 月</option>
+                  <option value="4">5 月</option>
+                  <option value="5">6 月</option>
+                  <option value="6">7 月</option>
+                  <option value="7">8 月</option>
+                  <option value="8">9 月</option>
+                  <option value="9">10 月</option>
+                  <option value="10">11 月</option>
+                  <option value="11">12 月</option>
+                </select>
+              </label>
+              <button class="activity-today-button" id="activityTodayButton" type="button">今天</button>
+              <button class="activity-period-arrow" id="activityNextYear" type="button" aria-label="查看下一年">›</button>
+            </div>
+            <div class="activity-calendar-scroll">
+              <div class="activity-calendar">
+                <div class="activity-month-labels" id="activityMonthLabels" aria-hidden="true"></div>
+                <div class="activity-calendar-body">
+                  <div class="activity-weekday-labels" aria-hidden="true">
+                    <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+                  </div>
+                  <div class="activity-heatmap" id="activityHeatmap" role="grid" aria-label="每日学习日历"></div>
+                </div>
+              </div>
+            </div>
+            <div class="activity-day-detail" id="activityDayDetail" aria-live="polite">
+              <div class="activity-day-heading">
+                <span>选中日期</span>
+                <strong id="activitySelectedDate">今天</strong>
+              </div>
+              <div class="activity-day-metrics">
+                <span><strong id="activitySelectedItems">0</strong> 完成项</span>
+                <span><strong id="activitySelectedAccuracy">—</strong> 正确率</span>
+              </div>
+              <p id="activitySelectedModes">当天暂无训练记录。</p>
+            </div>
+            <div class="activity-stats" id="activityStats" aria-label="当前周期学习统计">
+              <div><strong id="activityActiveDays">0</strong><span>训练天数</span></div>
+              <div><strong id="activityCompletedItems">0</strong><span>完成项</span></div>
+              <div><strong id="activityAccuracy">—</strong><span>平均正确率</span></div>
+            </div>
+          </article>
+
+          <article class="insight-card recurring-insight-card" aria-labelledby="recurring-insight-title">
+            <header class="insight-card-header">
+              <div>
+                <p class="eyebrow">Recurring errors</p>
+                <h3 id="recurring-insight-title">反复出现的问题</h3>
+              </div>
+            </header>
+            <div class="insight-mode-tabs" role="tablist" aria-label="选择错误来源">
+              <button class="insight-mode-tab active" type="button" role="tab" aria-selected="true" data-insight-error-mode="listening">听力</button>
+              <button class="insight-mode-tab" type="button" role="tab" aria-selected="false" data-insight-error-mode="dictation">填空</button>
+              <button class="insight-mode-tab" type="button" role="tab" aria-selected="false" data-insight-error-mode="reading">阅读</button>
+              <button class="insight-mode-tab" type="button" role="tab" aria-selected="false" data-insight-error-mode="writing">写作</button>
+            </div>
+            <div class="recurring-errors-list" id="recurringErrorsList" aria-live="polite"></div>
+            <p class="recurring-errors-recommendation" id="recurringErrorsRecommendation"></p>
+          </article>
+        </div>
       </section>
 
       <section class="settings-panel" aria-labelledby="settings-title" hidden>
@@ -525,6 +1049,13 @@ significant
           <section class="settings-group" aria-labelledby="practice-settings-title">
             <h3 id="practice-settings-title">练习</h3>
             <div class="settings-card settings-control-grid" id="settingsPracticeMount"></div>
+          </section>
+
+          <section class="settings-group" aria-labelledby="writing-settings-title">
+            <h3 id="writing-settings-title">写作</h3>
+            <div class="settings-card settings-control-grid">
+              <label class="settings-writing-band-control">默认目标分数<select id="writingStudioTargetBand"><option value="6.5">6.5</option><option value="7" selected>7.0</option><option value="7.5">7.5</option><option value="8">8.0</option></select><small>用于复制 AI 反馈请求，不会阻碍开始练习。</small></label>
+            </div>
           </section>
 
           <section class="settings-group" aria-labelledby="voice-settings-title">
@@ -546,6 +1077,7 @@ significant
           <div>
             <p class="eyebrow">Listening mistake</p>
             <h2 id="listeningMistakeDialogTitle">新建听力错题</h2>
+            <p class="listening-mistake-autosave-note">自动保存草稿 · 点击灰色侧边不会关闭</p>
           </div>
           <button class="listening-mistake-dialog-close" id="listeningMistakeDialogClose" type="button" aria-label="关闭">×</button>
         </header>
@@ -556,6 +1088,17 @@ significant
           <label class="listening-mistake-field listening-mistake-field-wide">
             <span>来源标题</span>
             <input id="listeningMistakeTitle" type="text" maxlength="120" required placeholder="例如 Cambridge IELTS 18 Test 2 Section 3" />
+          </label>
+
+          <label class="listening-mistake-field">
+            <span>听力 Part</span>
+            <select id="listeningMistakePart" required>
+              <option value="part1">Part 1</option>
+              <option value="part2">Part 2</option>
+              <option value="part3">Part 3</option>
+              <option value="part4">Part 4</option>
+              <option value="unassigned">未分类（请稍后整理）</option>
+            </select>
           </label>
 
           <label class="listening-mistake-field">
@@ -588,39 +1131,43 @@ significant
             </select>
           </label>
 
-          <section class="listening-ocr-card listening-mistake-field-wide" aria-labelledby="questionOcrTitle">
+          <section class="listening-ocr-card listening-mistake-field-wide image-paste-zone" data-image-paste-zone="listening-question" tabindex="0" aria-labelledby="questionOcrTitle">
             <div class="listening-ocr-heading">
               <div>
                 <strong id="questionOcrTitle">题目截图</strong>
-                <small>选择后自动识别，图片不会保存。</small>
+                <small>复制截图后点击此区域按 Ctrl+V。图片会保存在这道错题中，复习时直接查看。</small>
               </div>
-              <label class="listening-ocr-upload">
-                <input id="listeningQuestionImage" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" />
-                上传并识别
-              </label>
+              <div class="image-paste-actions">
+                <button class="listening-ocr-upload clipboard-image-button" type="button" data-clipboard-image="listening-question">粘贴截图</button>
+                <label class="listening-ocr-upload">
+                  <input id="listeningQuestionImage" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" />
+                  选择图片
+                </label>
+              </div>
             </div>
             <p class="listening-ocr-status" id="listeningQuestionOcrStatus" aria-live="polite"></p>
-            <label class="listening-mistake-field">
-              <span>题目文字</span>
-              <textarea id="listeningQuestionText" rows="5" placeholder="OCR 结果会出现在这里，也可以手动修改。"></textarea>
-            </label>
+            <div class="listening-image-preview" id="listeningQuestionPreview" aria-live="polite"></div>
           </section>
 
-          <section class="listening-ocr-card listening-mistake-field-wide" aria-labelledby="transcriptOcrTitle">
+          <section class="listening-ocr-card listening-mistake-field-wide image-paste-zone" data-image-paste-zone="listening-transcript" tabindex="0" aria-labelledby="transcriptOcrTitle">
             <div class="listening-ocr-heading">
               <div>
                 <strong id="transcriptOcrTitle">Transcript 截图</strong>
-                <small>识别为可编辑文本，并用于朗读复习。</small>
+                <small>复制截图后点击此区域按 Ctrl+V。系统会自动识别英文并保存，复习时可直接朗读。</small>
               </div>
-              <label class="listening-ocr-upload">
-                <input id="listeningTranscriptImage" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" />
-                上传并识别
-              </label>
+              <div class="image-paste-actions">
+                <button class="listening-ocr-upload clipboard-image-button" type="button" data-clipboard-image="listening-transcript">粘贴截图</button>
+                <label class="listening-ocr-upload">
+                  <input id="listeningTranscriptImage" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" />
+                  选择图片
+                </label>
+              </div>
             </div>
             <p class="listening-ocr-status" id="listeningTranscriptOcrStatus" aria-live="polite"></p>
+            <div class="listening-image-preview" id="listeningTranscriptPreview" aria-live="polite"></div>
             <label class="listening-mistake-field">
               <span>Transcript 文本</span>
-              <textarea id="listeningTranscriptText" rows="7" placeholder="OCR 结果会出现在这里。保存后可直接朗读。"></textarea>
+              <textarea id="listeningTranscriptText" rows="7" placeholder="识别出的英文会自动出现在这里，可直接朗读或手动修正。"></textarea>
             </label>
           </section>
 
@@ -633,8 +1180,129 @@ significant
         <footer>
           <p id="listeningMistakeFormStatus" aria-live="polite"></p>
           <div>
-            <button class="secondary-button" id="listeningMistakeCancel" type="button">取消</button>
+            <button class="secondary-button" id="listeningMistakeCancel" type="button">稍后继续</button>
             <button class="primary-button" id="listeningMistakeSave" type="submit">保存错题</button>
+          </div>
+        </footer>
+      </form>
+    </div>
+
+    <div class="listening-mistake-dialog reading-mistake-dialog" id="readingMistakeDialog" role="dialog" aria-modal="true" aria-labelledby="readingMistakeDialogTitle" hidden>
+      <form class="listening-mistake-form" id="readingMistakeForm">
+        <header>
+          <div>
+            <p class="eyebrow">Reading mistake</p>
+            <h2 id="readingMistakeDialogTitle">新建阅读错题</h2>
+          </div>
+          <button class="listening-mistake-dialog-close" id="readingMistakeDialogClose" type="button" aria-label="关闭">×</button>
+        </header>
+
+        <input id="readingMistakeId" type="hidden" />
+
+        <div class="listening-mistake-form-grid">
+          <label class="listening-mistake-field listening-mistake-field-wide">
+            <span>来源标题（可跳过）</span>
+            <input id="readingMistakeTitle" type="text" maxlength="120" placeholder="例如 Cambridge IELTS 18 Test 1 Passage 2" />
+          </label>
+
+          <label class="listening-mistake-field">
+            <span>题型</span>
+            <select id="readingMistakeQuestionType" required>
+              <option value="trueFalseNotGiven">True / False / Not Given</option>
+              <option value="yesNoNotGiven">Yes / No / Not Given</option>
+              <option value="multipleChoice">选择题</option>
+              <option value="matchingHeadings">段落标题匹配</option>
+              <option value="matchingInformation">信息匹配</option>
+              <option value="completion">填空题</option>
+              <option value="shortAnswer">简答题</option>
+              <option value="other">其他</option>
+            </select>
+          </label>
+
+          <label class="listening-mistake-field">
+            <span>错因类型</span>
+            <select id="readingMistakeErrorType" required>
+              <option value="location">定位错</option>
+              <option value="paraphrase">同义替换没看出</option>
+              <option value="falseNotGiven">False/Not Given 混淆</option>
+              <option value="choiceTrap">选择题陷阱</option>
+              <option value="mainIdea">段落主旨抓偏</option>
+              <option value="timePressure">时间压力乱选</option>
+              <option value="custom">自定义填写</option>
+            </select>
+          </label>
+
+          <label class="listening-mistake-field" id="readingMistakeCustomErrorField" hidden>
+            <span>自定义错因</span>
+            <input id="readingMistakeCustomErrorType" type="text" maxlength="80" placeholder="例如：关键词看漏" />
+          </label>
+
+          <label class="listening-mistake-field listening-mistake-field-wide">
+            <span>掌握状态</span>
+            <select id="readingMistakeStatus" required>
+              <option value="unmastered">未掌握</option>
+              <option value="reviewing">复习中</option>
+              <option value="mastered">已掌握</option>
+            </select>
+          </label>
+
+          <section class="reading-image-upload-card listening-mistake-field-wide image-paste-zone" data-image-paste-zone="reading-question" tabindex="0">
+            <div class="reading-image-upload-heading">
+              <div>
+                <strong>题目截图</strong>
+                <small>复制截图后点击此区域按 Ctrl+V，并压缩保存。</small>
+              </div>
+              <div class="image-paste-actions">
+                <button class="listening-ocr-upload clipboard-image-button" type="button" data-clipboard-image="reading-question">粘贴截图</button>
+                <label class="listening-ocr-upload">
+                  <input id="readingQuestionImage" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" />
+                  选择图片
+                </label>
+              </div>
+            </div>
+            <div class="reading-image-preview" id="readingQuestionPreview">
+              <span>尚未上传题目截图</span>
+            </div>
+            <div class="reading-image-upload-footer">
+              <p id="readingQuestionImageStatus" aria-live="polite"></p>
+              <button class="listening-mistake-delete" id="removeReadingQuestionImage" type="button" hidden>清空全部</button>
+            </div>
+          </section>
+
+          <section class="reading-image-upload-card listening-mistake-field-wide image-paste-zone" data-image-paste-zone="reading-evidence" tabindex="0">
+            <div class="reading-image-upload-heading">
+              <div>
+                <strong>原文证据截图</strong>
+                <small>复制截图后点击此区域按 Ctrl+V，保留定位证据。</small>
+              </div>
+              <div class="image-paste-actions">
+                <button class="listening-ocr-upload clipboard-image-button" type="button" data-clipboard-image="reading-evidence">粘贴截图</button>
+                <label class="listening-ocr-upload">
+                  <input id="readingEvidenceImage" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" />
+                  选择图片
+                </label>
+              </div>
+            </div>
+            <div class="reading-image-preview" id="readingEvidencePreview">
+              <span>尚未上传原文证据截图</span>
+            </div>
+            <div class="reading-image-upload-footer">
+              <p id="readingEvidenceImageStatus" aria-live="polite"></p>
+              <button class="listening-mistake-delete" id="removeReadingEvidenceImage" type="button" hidden>清空全部</button>
+            </div>
+          </section>
+
+          <label class="listening-mistake-field listening-mistake-field-wide">
+            <span>简短备注</span>
+            <textarea id="readingMistakeNote" rows="4" maxlength="500" placeholder="记录正确定位、关键同义替换或下次需要注意的陷阱。"></textarea>
+          </label>
+        </div>
+
+        <footer>
+          <p id="readingMistakeFormStatus" aria-live="polite"></p>
+          <div>
+            <button class="secondary-button" id="readingMistakeCancel" type="button">取消</button>
+            <button class="primary-button" id="readingMistakeSave" type="submit">保存错题</button>
           </div>
         </footer>
       </form>
@@ -651,10 +1319,20 @@ significant
       <header class="favorite-review-header">
         <div class="favorite-review-heading">
           <p class="eyebrow" id="favoriteReviewMode">收藏本复习</p>
-          <h2 id="favoriteReviewTitle">逐词复习</h2>
-          <div class="favorite-review-view-switch" role="tablist" aria-label="收藏本复习方式">
-            <button class="active" type="button" data-favorite-review-view="cards">逐词复习</button>
-            <button type="button" data-favorite-review-view="list">排序复习</button>
+          <h2 id="favoriteReviewTitle">收藏本复习</h2>
+          <div class="favorite-review-book-switch" role="group" aria-label="切换收藏本">
+            <button type="button" data-favorite-review-book="listening" aria-pressed="false">
+              <span>听力</span>
+              <strong data-favorite-review-count="listening">0</strong>
+            </button>
+            <button type="button" data-favorite-review-book="dictation" aria-pressed="false">
+              <span>填空</span>
+              <strong data-favorite-review-count="dictation">0</strong>
+            </button>
+            <button type="button" data-favorite-review-book="reading" aria-pressed="false">
+              <span>阅读</span>
+              <strong data-favorite-review-count="reading">0</strong>
+            </button>
           </div>
         </div>
         <div class="favorite-review-progress-wrap" aria-live="polite">
@@ -663,47 +1341,16 @@ significant
             <span id="favoriteReviewProgressBar"></span>
           </div>
         </div>
+        <button class="secondary-button favorite-mode-practice-button" id="favoriteModePracticeButton" type="button">
+          <span class="button-icon" aria-hidden="true">▶</span>
+          按当前模式做题
+        </button>
         <button class="favorite-review-close" id="favoriteReviewClose" type="button" aria-label="退出收藏本复习">
           ×
         </button>
       </header>
 
-      <main class="favorite-review-main" id="favoriteReviewMain">
-        <article class="favorite-review-card">
-          <div class="favorite-review-word-row">
-            <div>
-              <span class="favorite-review-kicker">Word</span>
-              <h3 id="favoriteReviewWord"></h3>
-            </div>
-            <div class="favorite-review-word-actions">
-              <button class="favorite-review-speak" id="favoriteReviewSpeak" type="button">
-                <span class="button-icon" aria-hidden="true">♪</span>
-                朗读单词
-                <kbd>R</kbd>
-              </button>
-              <button class="favorite-review-remove" id="favoriteReviewRemove" type="button">
-                <span aria-hidden="true">×</span>
-                移除
-              </button>
-            </div>
-          </div>
-
-          <section class="favorite-review-detail" aria-labelledby="favoriteReviewMeaningLabel">
-            <p class="favorite-review-label" id="favoriteReviewMeaningLabel">中文释义</p>
-            <p class="favorite-review-meaning" id="favoriteReviewMeaning"></p>
-          </section>
-
-          <section class="favorite-review-detail" aria-labelledby="favoriteReviewExampleLabel">
-            <p class="favorite-review-label" id="favoriteReviewExampleLabel">Example sentence</p>
-            <p class="favorite-review-example" id="favoriteReviewExample"></p>
-          </section>
-
-          <p class="favorite-review-response" id="favoriteReviewResponse"></p>
-          <p class="favorite-review-status" id="favoriteReviewStatus" aria-live="polite"></p>
-        </article>
-      </main>
-
-      <main class="favorite-list-review-main" id="favoriteListReviewMain" hidden>
+      <main class="favorite-list-review-main" id="favoriteListReviewMain">
         <section class="favorite-list-review-shell">
           <header class="favorite-list-review-tools">
             <label class="favorite-list-search" for="favoriteListReviewSearch">
@@ -719,29 +1366,29 @@ significant
                 <option value="za">单词：Z → A</option>
               </select>
             </label>
+            <div class="favorite-list-layout-control">
+              <span>视图</span>
+              <div class="favorite-list-layout-switch" role="group" aria-label="收藏复习布局">
+                <button class="active" type="button" data-favorite-list-layout="list" aria-pressed="true" title="列表视图">
+                  <i data-lucide="list" aria-hidden="true"></i>
+                  <span>列表</span>
+                </button>
+                <button type="button" data-favorite-list-layout="grid" aria-pressed="false" title="网格视图">
+                  <i data-lucide="grid-2x2" aria-hidden="true"></i>
+                  <span>网格</span>
+                </button>
+              </div>
+            </div>
           </header>
           <div class="favorite-list-review-summary">
             <strong id="favoriteListReviewCount">0 个单词</strong>
-            <span>点击每行的朗读按钮可快速复听</span>
+            <span>点击单词卡片显示释义与例句</span>
           </div>
           <div class="favorite-list-review-rows" id="favoriteListReviewRows"></div>
           <p class="favorite-list-review-status" id="favoriteListReviewStatus" aria-live="polite"></p>
         </section>
       </main>
 
-      <footer class="favorite-review-footer" id="favoriteReviewFooter">
-        <p><kbd>←</kbd><kbd>→</kbd> 切换单词 · <kbd>Esc</kbd> 退出</p>
-        <div class="favorite-review-navigation">
-          <button class="secondary-button" id="favoriteReviewPrevious" type="button">
-            <span class="button-icon" aria-hidden="true">←</span>
-            上一个
-          </button>
-          <button class="primary-button" id="favoriteReviewNext" type="button">
-            下一个
-            <span class="button-icon" aria-hidden="true">→</span>
-          </button>
-        </div>
-      </footer>
     </div>
 
     <div class="word-detail-backdrop" id="wordDetailDialog" role="dialog" aria-modal="true" aria-labelledby="wordDetailTitle" hidden>
@@ -758,6 +1405,14 @@ significant
             <dt>English definition</dt>
             <dd id="wordDetailEn"></dd>
           </div>
+            <div id="wordDetailConfusablesGroup" hidden>
+              <dt>相近易错词</dt>
+              <dd id="wordDetailConfusables"></dd>
+            </div>
+            <div id="wordDetailWordFormsGroup" hidden>
+              <dt>不同形态与词性</dt>
+              <dd id="wordDetailWordForms"></dd>
+            </div>
           <div>
             <dt>Example sentence</dt>
             <dd id="wordDetailExample"></dd>
@@ -776,11 +1431,45 @@ significant
             <span class="button-icon" aria-hidden="true">▶</span>
             读例句
           </button>
+          <button class="secondary-button" id="wordDetailGenerate" type="button">
+            在线生成并验证
+          </button>
         </div>
         <p class="word-detail-status" id="wordDetailStatus" aria-live="polite"></p>
       </article>
     </div>
 
-    <script src="app.js"></script>
+    <dialog class="writing-image-dialog" id="writingPromptImageDialog" aria-labelledby="writingPromptImageDialogTitle">
+      <div class="writing-image-dialog-shell">
+        <header class="writing-image-dialog-header">
+          <div>
+            <span>Writing prompt</span>
+            <h2 id="writingPromptImageDialogTitle">题图全屏查看</h2>
+          </div>
+          <div class="writing-image-dialog-controls">
+            <button class="icon-button" id="writingPromptZoomOutButton" type="button" aria-label="缩小题图" title="缩小">
+              <i data-lucide="zoom-out" aria-hidden="true"></i>
+            </button>
+            <label class="writing-image-zoom-control">
+              <span>缩放</span>
+              <input id="writingPromptZoomControl" type="range" min="0.75" max="2.5" step="0.25" value="1">
+            </label>
+            <button class="icon-button" id="writingPromptZoomInButton" type="button" aria-label="放大题图" title="放大">
+              <i data-lucide="zoom-in" aria-hidden="true"></i>
+            </button>
+            <button class="icon-button" id="writingPromptImageDialogClose" type="button" aria-label="关闭题图" title="关闭">
+              <i data-lucide="x" aria-hidden="true"></i>
+            </button>
+          </div>
+        </header>
+        <div class="writing-image-dialog-viewport" id="writingPromptImageDialogViewport">
+          <img id="writingPromptImageDialogPreview" alt="写作题目大图">
+        </div>
+      </div>
+    </dialog>
+
+    <script src="deployment-config.js?v=20260902-research1"></script>
+    <script src="file-recovery-state.js?v=20260726-mistake-vault1"></script>
+    <script src="app.js?v=20260820-ocr-clean2"></script>
   </body>
 </html>

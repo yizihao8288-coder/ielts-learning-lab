@@ -1,92 +1,123 @@
-# IELTS 英式单词练习器
-闲暇之时，在背英语单词和雅思整理错题时，很难找到专门应对机考辅助的工具，于是我便用codex辅助做了一个
+# IELTS Learning Lab
 
+> A local-first IELTS practice application and a small research prototype for schema-constrained, automatically validated LLM vocabulary generation.
 
+[Open the zero-key demo](https://yizihao8288-coder.github.io/ielts-learning-lab/demo/) · [Research status](https://yizihao8288-coder.github.io/ielts-learning-lab/results/) · [中文说明](README.zh-CN.md)
 
-这是一个本地运行的 IELTS 单词练习工具。你输入单词后，可以在进入练习前选择三种模式：
+![Listening practice interface](site/assets/app-listening.png)
 
-- 听力模式：朗读单词和例句，你从选项中选出听到的单词，然后查看释义和例句。
-- 填空模式：朗读完整例句，页面把目标单词挖空，你需要手写出缺失单词。
-- 阅读模式：朗读单词一次，直接显示带高亮目标词的例句，你从选项中选出这个词的中文释义。
+## Why this project exists
 
-## 主要功能
+Vocabulary generators can return valid JSON while still producing unusable learning content: the requested word may change, a Chinese definition may contain no Chinese, or an example may omit the target phrase. IELTS Learning Lab separates two questions:
 
-- 支持每行输入一个单词，也支持用英文/中文逗号、分号分隔多个单词。
-- 自动生成 IELTS 风格英文例句。
-- 支持自定义输入：`word|example|中文释义|English definition`。
-- 听力模式支持 3、4、5、6 个选项，干扰项会优先选择与正确单词拼写或音形接近的词。
-- 填空模式会显示挖空例句，并检查大小写不敏感的拼写结果。
-- 阅读模式会用中文释义出题；没有内置释义的词需要用自定义格式补充中文释义。
-- 收藏本会按听力、填空、阅读三个标签保存各自答错的单词；同一模式下再次答对会自动移出收藏本，也可以手动移除。
-- 已答对记录支持单词级收藏和删除；收藏后会移动到对应模式的收藏本。
-- 支持导出 / 导入本地训练数据，方便从旧的 `file://` 页面迁移到本地服务页面。
-- 支持保存和恢复上次训练进度。
-- 默认每题自动朗读第一遍；答题前两个模式都可以点击“朗读 / 重听”重复当前题。
-- 支持调整朗读语速，并优先选择更自然的英式浏览器语音；Windows 本地语音会加入更自然的停顿。
-- 全部在本地运行，不会上传你的单词列表。
+1. **Is the output structurally valid?**
+2. **Is it usable as a vocabulary learning item?**
 
-## 启动方式
+The product remains useful without any model. Listening, dictation, reading, writing, favourites, mistake review, browser storage and browser speech all work in the static demo. A local server can optionally request a generated item, validate it, and perform at most one repair.
 
-双击项目目录中的：
+## Try it
 
-```text
-启动雅思训练器.bat
+### Browser demo — no installation or API key
+
+Use the [GitHub Pages demo](https://yizihao8288-coder.github.io/ielts-learning-lab/demo/). Data stays in that browser. The static build never calls the Python API.
+
+### Local app — Windows
+
+1. Install Python 3.10 or newer.
+2. Double-click `启动雅思训练器.bat`.
+3. The app opens at `http://127.0.0.1:8765`.
+
+### Local app — macOS or Linux
+
+```bash
+python3 run.py
 ```
 
-启动后浏览器会打开：
+No package installation is required for core use. `run.py` binds only to `127.0.0.1`; generated runtime files remain under `.runtime/` or in ignored local state files.
+
+## Research prototype
+
+**Question.** In IELTS vocabulary item generation, does strict JSON Schema plus semantic validation and one repair improve final usability over a plain JSON prompt?
+
+The shared validator checks:
+
+- all four fields exist and are strings;
+- the returned word matches the requested word or phrase;
+- the Chinese meaning contains Chinese characters;
+- the English meaning has a bounded length;
+- the 8–35 word example contains the complete target;
+- placeholders, meta-talk and duplicate content are absent.
+
+| Condition | Generation constraint | Post-generation handling |
+|---|---|---|
+| `baseline` | JSON requested in the prompt | validation only |
+| `schema` | strict JSON Schema | validation only |
+| `guarded` | strict JSON Schema | validation + at most one repair |
+
+**Current evidence status:** the pipeline and 12 automated tests are implemented; the planned 100-word × 3-condition × 3-repeat model evaluation and human blind review have **not** been run. No model-quality result is claimed yet. See [the protocol](docs/research-protocol.md).
+
+Related methodology: [Wang et al. (2023)](https://aclanthology.org/2023.nlp4dh-1.7/), [JSONSchemaBench](https://arxiv.org/abs/2501.10868), and [Structured Output Benchmark](https://arxiv.org/abs/2604.25359).
+
+## System boundary
 
 ```text
-http://127.0.0.1:8765/index.html
+Static demo                         Optional local enhancement
+Browser UI                          run.py (standard library)
+├─ practice modes                   ├─ local save/load
+├─ local dictionary                 ├─ POST /api/v1/generate-item
+├─ browser storage                  └─ guarded generation pipeline
+└─ browser speech                       ├─ strict schema
+                                         ├─ semantic validation
+                                         └─ one repair maximum
 ```
 
-使用时请保持启动窗口打开。关闭窗口后，本地服务会停止，网页也无法继续访问。
+The API key is read only from the server environment. It is never embedded in the page, saved in snapshots, or written to experiment records. A target word is sent to the model only after the user clicks the online-generation button.
 
-## 输入格式
+## API
 
-推荐每行一个单词：
+```http
+POST /api/v1/generate-item
+Content-Type: application/json
+
+{"word":"research"}
+```
+
+Success returns `item` and `provenance`. Missing credentials, network errors, rate limits and failed second validation return an explicit error plus `"fallback":"local_dictionary"`. The legacy `GET /define?word=...` route remains available.
+
+Optional server configuration:
 
 ```text
-accommodation
-evidence
-significant
-maintenance
+OPENAI_API_KEY=...       # never commit this
+OPENAI_MODEL=...         # defaults to gpt-5.6-luna
+IELTS_PORT=8765
 ```
 
-也可以一行输入多个单词：
+The Responses API request uses `reasoning.effort=none`, `store=false`, and strict `json_schema` output for the schema and guarded conditions. See the [official model documentation](https://developers.openai.com/api/docs/models/gpt-5.6-luna) and [Responses API reference](https://developers.openai.com/api/reference/resources/responses/methods/create).
 
-```text
-accommodation, evidence, significant, maintenance
+## Verification
+
+```bash
+python -m unittest discover -s tests -v
+python -m py_compile run.py research/pipeline.py
+node --check app.js
 ```
 
-需要指定例句和释义时：
+Continuous integration repeats Python tests, JavaScript syntax checks, PowerShell parsing, and static-site assembly. The current local suite covers validator rules, repair limits, API input, no-key fallback, request size and path safety.
 
-```text
-accommodation|The university could not provide enough {word} for first-year students.|住宿；住处|A place where someone lives or stays.
-```
+A deliberately small API smoke experiment (3 words × 3 conditions × 1 repeat) can be run with `python -m research.run_experiment`. The full planned call requires the explicit flags `--limit 100 --repeats 3`. Recompute metrics with `python -m research.evaluate PATH_TO_JSONL`.
 
-## 英式发音要求
+## Privacy and limitations
 
-本工具需要 Windows 安装英式文本转语音语音包。安装路径通常是：
+- Personal answer history, timing records, API keys, caches and browser state are excluded from the public repository.
+- The public 99-word source is used without personal response fields; the former CSV remains local and untracked.
+- Browser speech and OCR availability vary by browser. OCR may fetch model data from a third-party CDN when the user invokes it.
+- Automated constraints do not prove definition correctness or pedagogical quality. Human review is still required before making research claims.
+- The present human-study status is “not run”, not “expert reviewed”.
 
-```text
-Windows 设置 -> 时间和语言 -> 语音 -> 管理语音 / 添加语音
-```
+## Authorship and AI assistance
 
-选择并安装：
+Zihao Yi defined the learning problem, supplied the original application and vocabulary data, selected the research question, reviewed product behaviour, and is responsible for any future human ratings and conclusions. Codex was used as an AI-assisted engineering tool for implementation, refactoring, test scaffolding and documentation. The author should be able to explain every submitted component; this repository does not claim that all code was typed without assistance.
 
-```text
-English (United Kingdom)
-```
+## Citation and licence
 
-安装完成后，如果页面仍然没有识别到英式语音，请重启浏览器；必要时重启 Windows。
-
-## 文件说明
-
-- `index.html`：页面结构。
-- `styles.css`：页面样式。
-- `app.js`：模式选择、出题、朗读、判分和复盘逻辑。
-- `serve-ielts.ps1`：本地静态服务，同时调用 Windows 英式 TTS 生成朗读音频，并保存 / 恢复训练状态。
-- `keep-ielts-server.ps1`：后台保持本地服务运行。
-- `启动雅思训练器.bat`：一键启动脚本。
-- `启动雅思训练器.ps1`：启动本地服务并打开浏览器。
-- `停止雅思训练器.bat` / `停止雅思训练器.ps1`：停止本地服务。
+Citation metadata is in [`CITATION.cff`](CITATION.cff). Released under the [MIT License](LICENSE).

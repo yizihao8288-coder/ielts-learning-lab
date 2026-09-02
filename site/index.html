@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23c95735'/%3E%3Ctext x='32' y='45' text-anchor='middle' font-size='42' font-style='italic' fill='white'%3EI%3C/text%3E%3C/svg%3E">
+    <meta name="description" content="IELTS Learning Lab — a local-first practice app and constraint-aware LLM generation research prototype.">
+    <title>IELTS Learning Lab</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="nav">
+      <a class="brand" href="./"><span>I</span> IELTS Learning Lab</a>
+      <nav aria-label="Primary">
+        <a href="./demo/">Demo</a>
+        <a href="./results/">Research status</a>
+        <a href="https://github.com/yizihao8288-coder/ielts-learning-lab">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <p class="kicker">LOCAL-FIRST NLP / LLM RESEARCH PROTOTYPE</p>
+          <h1>Valid JSON is not necessarily a valid learning item.</h1>
+          <p class="lede">IELTS Learning Lab combines a complete browser-based practice app with strict schema generation, semantic checks, and a one-repair guardrail. The public demo needs no account and no API key.</p>
+          <div class="actions">
+            <a class="button primary" href="./demo/">Open the live demo</a>
+            <a class="button secondary" href="./results/">See research status</a>
+          </div>
+          <p class="privacy">Zero-key demo · Browser-local data · No target words sent to a server</p>
+        </div>
+        <aside class="question">
+          <p>Research question</p>
+          <h2>Does schema + semantic validation + one repair improve vocabulary-item usability over a plain JSON prompt?</h2>
+          <ul>
+            <li>Same model and fields</li>
+            <li>Structure and content scored separately</li>
+            <li>No model-quality claim before data collection</li>
+          </ul>
+        </aside>
+      </section>
+
+      <section class="product" aria-labelledby="product-title">
+        <div class="section-heading">
+          <p class="kicker">RUNNABLE PRODUCT</p>
+          <h2 id="product-title">Start practising in one click</h2>
+          <p>Listening, dictation, reading, writing, favourites, mistake review, browser storage and speech remain available without a model.</p>
+        </div>
+        <figure>
+          <img src="assets/app-listening.png" alt="IELTS Learning Lab listening practice screen">
+          <figcaption>Actual application interface — listening mode with answer review.</figcaption>
+        </figure>
+      </section>
+
+      <section class="pipeline" aria-labelledby="pipeline-title">
+        <div class="section-heading">
+          <p class="kicker">SMALL, EXPLAINABLE PIPELINE</p>
+          <h2 id="pipeline-title">Four decisions, each inspectable</h2>
+        </div>
+        <ol class="steps">
+          <li><span>01</span><strong>Generate</strong><small>Four fixed learning fields</small></li>
+          <li><span>02</span><strong>Check structure</strong><small>Strict JSON Schema</small></li>
+          <li><span>03</span><strong>Check meaning</strong><small>Eight explicit rules</small></li>
+          <li><span>04</span><strong>Repair once</strong><small>Then fall back locally</small></li>
+        </ol>
+      </section>
+
+      <section class="status-card">
+        <div>
+          <p class="kicker">EVIDENCE STATUS</p>
+          <h2>Implementation verified. Model comparison not yet run.</h2>
+          <p>Twelve automated tests cover the validator, benchmark selection, repair ceiling, API inputs, no-key fallback, request limits and path safety. The proposed 900-output evaluation remains a preregistered next step.</p>
+        </div>
+        <a class="button secondary" href="./results/">Read the honest status page</a>
+      </section>
+    </main>
+
+    <footer><p>Built by Zihao Yi · AI-assisted engineering disclosed in the repository · MIT License</p></footer>
+  </body>
+</html>
