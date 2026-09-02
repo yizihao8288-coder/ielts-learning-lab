@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ielts listening trainer</title>
-    <link rel="stylesheet" href="styles.css?v=20260721-activity-calendar1" />
+    <link rel="stylesheet" href="styles.css?v=20260820-listening-parts1" />
   </head>
   <body>
     <div class="site-intro" id="siteIntro" role="status" aria-live="polite" aria-label="IELTS practice system loading">
@@ -439,6 +439,18 @@ significant
           <div><strong id="listeningMistakeMastered">0</strong><span>已掌握</span></div>
           <div><strong id="listeningMistakeReviews">0</strong><span>累计复习</span></div>
         </div>
+
+        <nav class="listening-mistake-part-bar" aria-label="按 IELTS Listening Part 分类">
+          <div class="listening-mistake-part-tabs" id="listeningMistakePartTabs">
+            <button type="button" data-listening-mistake-part="all" aria-pressed="true">全部 <span>0</span></button>
+            <button type="button" data-listening-mistake-part="part1" aria-pressed="false">Part 1 <span>0</span></button>
+            <button type="button" data-listening-mistake-part="part2" aria-pressed="false">Part 2 <span>0</span></button>
+            <button type="button" data-listening-mistake-part="part3" aria-pressed="false">Part 3 <span>0</span></button>
+            <button type="button" data-listening-mistake-part="part4" aria-pressed="false">Part 4 <span>0</span></button>
+            <button type="button" data-listening-mistake-part="unassigned" aria-pressed="false">未分类 <span>0</span></button>
+          </div>
+          <button class="secondary-button listening-mistake-start-part" id="listeningMistakeStartPartReview" type="button">开始复习全部错题</button>
+        </nav>
 
         <section class="listening-mistake-toolbar" aria-label="筛选错题">
           <label class="listening-mistake-search">
@@ -1064,6 +1076,7 @@ significant
           <div>
             <p class="eyebrow">Listening mistake</p>
             <h2 id="listeningMistakeDialogTitle">新建听力错题</h2>
+            <p class="listening-mistake-autosave-note">自动保存草稿 · 点击灰色侧边不会关闭</p>
           </div>
           <button class="listening-mistake-dialog-close" id="listeningMistakeDialogClose" type="button" aria-label="关闭">×</button>
         </header>
@@ -1074,6 +1087,17 @@ significant
           <label class="listening-mistake-field listening-mistake-field-wide">
             <span>来源标题</span>
             <input id="listeningMistakeTitle" type="text" maxlength="120" required placeholder="例如 Cambridge IELTS 18 Test 2 Section 3" />
+          </label>
+
+          <label class="listening-mistake-field">
+            <span>听力 Part</span>
+            <select id="listeningMistakePart" required>
+              <option value="part1">Part 1</option>
+              <option value="part2">Part 2</option>
+              <option value="part3">Part 3</option>
+              <option value="part4">Part 4</option>
+              <option value="unassigned">未分类（请稍后整理）</option>
+            </select>
           </label>
 
           <label class="listening-mistake-field">
@@ -1155,7 +1179,7 @@ significant
         <footer>
           <p id="listeningMistakeFormStatus" aria-live="polite"></p>
           <div>
-            <button class="secondary-button" id="listeningMistakeCancel" type="button">取消</button>
+            <button class="secondary-button" id="listeningMistakeCancel" type="button">稍后继续</button>
             <button class="primary-button" id="listeningMistakeSave" type="submit">保存错题</button>
           </div>
         </footer>
@@ -1437,6 +1461,6 @@ significant
     </dialog>
 
     <script src="file-recovery-state.js?v=20260726-mistake-vault1"></script>
-    <script src="app.js?v=20260727-offline-word-import1"></script>
+    <script src="app.js?v=20260820-ocr-clean2"></script>
   </body>
 </html>

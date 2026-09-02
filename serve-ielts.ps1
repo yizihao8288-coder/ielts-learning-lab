@@ -5,6 +5,9 @@ $Port = 8765
 $Address = [System.Net.IPAddress]::Parse("127.0.0.1")
 $StateFile = Join-Path $Root "trainer-state.json"
 $StateBackupDirectory = Join-Path $Root "data-backups"
+$EdgePackageRoot = Join-Path $Root ".runtime\python-packages"
+$EdgeTtsScript = Join-Path $Root "edge_tts_speak.py"
+$EdgePython = "D:\programming _Learning\python.exe"
 
 $MimeTypes = @{
   ".html" = "text/html; charset=utf-8"
@@ -135,9 +138,50 @@ function Read-RequestBody {
 }
 
 function Get-InstalledVoiceList {
+  $Voices = @()
+  if ([System.IO.File]::Exists($EdgePython) -and [System.IO.File]::Exists((Join-Path $EdgePackageRoot "edge_tts\__init__.py"))) {
+    $Voices += @(
+      [PSCustomObject]@{ name = "Edge:en-GB-SoniaNeural"; displayName = "Sonia · 雅思英音"; lang = "en-GB"; accentLabel = "英式"; source = "Edge Neural"; aiGenerated = $true },
+      [PSCustomObject]@{ name = "Edge:en-GB-RyanNeural"; displayName = "Ryan · 雅思英音"; lang = "en-GB"; accentLabel = "英式"; source = "Edge Neural"; aiGenerated = $true },
+      [PSCustomObject]@{ name = "Edge:en-AU-NatashaNeural"; displayName = "Natasha · 雅思澳音"; lang = "en-AU"; accentLabel = "澳式"; source = "Edge Neural"; aiGenerated = $true },
+      [PSCustomObject]@{ name = "Edge:en-AU-WilliamMultilingualNeural"; displayName = "William · 雅思澳音"; lang = "en-AU"; accentLabel = "澳式"; source = "Edge Neural"; aiGenerated = $true },
+      [PSCustomObject]@{ name = "Edge:en-NZ-MollyNeural"; displayName = "Molly · 雅思新西兰音"; lang = "en-NZ"; accentLabel = "新西兰"; source = "Edge Neural"; aiGenerated = $true },
+      [PSCustomObject]@{ name = "Edge:en-NZ-MitchellNeural"; displayName = "Mitchell · 雅思新西兰音"; lang = "en-NZ"; accentLabel = "新西兰"; source = "Edge Neural"; aiGenerated = $true }
+    )
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace($env:OPENAI_API_KEY) -and $env:OPENAI_API_KEY.StartsWith("sk-")) {
+    $Voices += @(
+      [PSCustomObject]@{
+        name = "OpenAI:marin:en-GB"
+        displayName = "Marin · 雅思英音"
+        lang = "en-GB"
+        accentLabel = "英式"
+        source = "OpenAI"
+        aiGenerated = $true
+      },
+      [PSCustomObject]@{
+        name = "OpenAI:cedar:en-AU"
+        displayName = "Cedar · 雅思澳音"
+        lang = "en-AU"
+        accentLabel = "澳式"
+        source = "OpenAI"
+        aiGenerated = $true
+      },
+      [PSCustomObject]@{
+        name = "OpenAI:coral:en-NZ"
+        displayName = "Coral · 雅思新西兰音"
+        lang = "en-NZ"
+        accentLabel = "新西兰"
+        source = "OpenAI"
+        aiGenerated = $true
+      }
+    )
+  }
+
   $Synth = [System.Speech.Synthesis.SpeechSynthesizer]::new()
   try {
-    return @(
+    $Voices += @(
       $Synth.GetInstalledVoices() |
         Where-Object { $_.Enabled } |
         ForEach-Object {
@@ -150,8 +194,143 @@ function Get-InstalledVoiceList {
           }
         }
     )
+    return $Voices
   } finally {
     $Synth.Dispose()
+  }
+}
+
+function Get-OpenAiVoiceProfile {
+  param([string] $VoiceName)
+
+  switch ($VoiceName) {
+    "OpenAI:marin:en-GB" {
+      return @{ voice = "marin"; accent = "an authentic, educated British English accent used in an IELTS Listening recording" }
+    }
+    "OpenAI:cedar:en-AU" {
+      return @{ voice = "cedar"; accent = "an authentic Australian English accent used in an IELTS Listening recording" }
+    }
+    "OpenAI:coral:en-NZ" {
+      return @{ voice = "coral"; accent = "an authentic New Zealand English accent used in an IELTS Listening recording" }
+    }
+    default { return $null }
+  }
+}
+
+function New-EdgeTtsAudio {
+  param(
+    [string] $Text,
+    [string] $VoiceName,
+    [double] $Rate,
+    [string] $Style = "ielts",
+    [double] $Intonation = 0.75
+  )
+
+  if (-not $VoiceName.StartsWith("Edge:")) { return $null }
+  if (-not [System.IO.File]::Exists($EdgePython) -or -not [System.IO.File]::Exists($EdgeTtsScript)) { return $null }
+
+  $NeuralVoice = $VoiceName.Substring(5)
+  $RatePercent = [Math]::Max(-35, [Math]::Min(20, [int][Math]::Round(($Rate - 1) * 100)))
+  if ($Style -eq "clear") { $RatePercent = [Math]::Max(-35, $RatePercent - 8) }
+  $RateArgument = if ($RatePercent -ge 0) { "+$RatePercent%" } else { "$RatePercent%" }
+  $PitchHz = if ($Style -eq "original") { 0 } elseif ($Text.TrimEnd().EndsWith("?")) { [int][Math]::Round(4 * $Intonation) } else { -1 }
+  $PitchArgument = if ($PitchHz -ge 0) { "+$($PitchHz)Hz" } else { "$($PitchHz)Hz" }
+
+  $StartInfo = [System.Diagnostics.ProcessStartInfo]::new()
+  $StartInfo.FileName = $EdgePython
+  $StartInfo.UseShellExecute = $false
+  $StartInfo.CreateNoWindow = $true
+  $StartInfo.RedirectStandardInput = $true
+  $StartInfo.RedirectStandardOutput = $true
+  $StartInfo.RedirectStandardError = $true
+  $StartInfo.ArgumentList.Add($EdgeTtsScript)
+  $StartInfo.ArgumentList.Add("--voice")
+  $StartInfo.ArgumentList.Add($NeuralVoice)
+  $StartInfo.ArgumentList.Add("--rate=$RateArgument")
+  $StartInfo.ArgumentList.Add("--pitch=$PitchArgument")
+  $StartInfo.Environment["PYTHONPATH"] = $EdgePackageRoot
+  $StartInfo.Environment["PYTHONPYCACHEPREFIX"] = Join-Path $Root ".runtime\pycache"
+  $StartInfo.Environment["TEMP"] = Join-Path $Root ".runtime\temp"
+  $StartInfo.Environment["TMP"] = Join-Path $Root ".runtime\temp"
+
+  $Process = [System.Diagnostics.Process]::new()
+  $Process.StartInfo = $StartInfo
+  $Output = [System.IO.MemoryStream]::new()
+  try {
+    if (-not $Process.Start()) { throw "Unable to start neural speech helper" }
+    $ErrorTask = $Process.StandardError.ReadToEndAsync()
+    $Process.StandardInput.Write($Text)
+    $Process.StandardInput.Close()
+    $Process.StandardOutput.BaseStream.CopyTo($Output)
+    $Process.WaitForExit()
+    $ErrorText = $ErrorTask.GetAwaiter().GetResult()
+    if ($Process.ExitCode -ne 0 -or $Output.Length -eq 0) {
+      throw "Neural speech helper failed: $ErrorText"
+    }
+    return $Output.ToArray()
+  } finally {
+    $Output.Dispose()
+    $Process.Dispose()
+  }
+}
+
+function New-OpenAiTtsAudio {
+  param(
+    [string] $Text,
+    [string] $VoiceName,
+    [double] $Rate,
+    [string] $Style = "ielts",
+    [string] $Kind = "sentence",
+    [double] $Intonation = 0.75
+  )
+
+  $Profile = Get-OpenAiVoiceProfile $VoiceName
+  if ($null -eq $Profile -or [string]::IsNullOrWhiteSpace($env:OPENAI_API_KEY)) {
+    return $null
+  }
+
+  $Pace = if ($Rate -lt 0.82) { "a deliberately slow pace" } elseif ($Rate -gt 1.03) { "a brisk but natural pace" } else { "a natural IELTS pace" }
+  $StyleDirection = if ($Style -eq "clear") {
+    "Prioritize clarity and slightly stronger word boundaries, while keeping connected speech natural."
+  } elseif ($Style -eq "original") {
+    "Keep the delivery neutral and understated."
+  } else {
+    "Use realistic sentence stress, connected speech, subtle pitch movement, and conversational rhythm. Let questions rise naturally and statements resolve naturally."
+  }
+  $KindDirection = if ($Kind -eq "word") {
+    "Pronounce only the supplied word or phrase once, accurately, with no introduction or explanation."
+  } elseif ($Kind -eq "passage") {
+    "Read the passage as a coherent IELTS Listening excerpt, respecting speaker intent and punctuation."
+  } else {
+    "Read the sentence as a natural line from an IELTS Listening conversation."
+  }
+  $Intensity = [Math]::Max(0.25, [Math]::Min(1, $Intonation))
+  $Instructions = "Speak with $($Profile.accent), at $Pace. $StyleDirection $KindDirection Use expressive but believable intonation at intensity $Intensity. Never read transcript navigation markers or question labels such as [17], [Q4], or 'question four'. Do not sound like an announcer or a robot."
+
+  $RequestBody = @{
+    model = "gpt-4o-mini-tts"
+    voice = $Profile.voice
+    input = $Text
+    instructions = $Instructions
+    response_format = "wav"
+  } | ConvertTo-Json -Depth 4
+
+  $Client = [System.Net.Http.HttpClient]::new()
+  try {
+    $Client.DefaultRequestHeaders.Authorization = [System.Net.Http.Headers.AuthenticationHeaderValue]::new("Bearer", $env:OPENAI_API_KEY)
+    $Content = [System.Net.Http.StringContent]::new($RequestBody, [Text.Encoding]::UTF8, "application/json")
+    $Response = $Client.PostAsync("https://api.openai.com/v1/audio/speech", $Content).GetAwaiter().GetResult()
+    try {
+      if (-not $Response.IsSuccessStatusCode) {
+        throw "OpenAI speech request failed with status $([int] $Response.StatusCode)"
+      }
+      return $Response.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult()
+    } finally {
+      $Response.Dispose()
+      $Content.Dispose()
+    }
+  } finally {
+    $Client.Dispose()
   }
 }
 
@@ -197,6 +376,31 @@ function New-TtsAudio {
     [string] $Kind = "sentence",
     [double] $Intonation = 0.75
   )
+
+  if ($VoiceName.StartsWith("Edge:")) {
+    try {
+      $EdgeAudio = New-EdgeTtsAudio $Text $VoiceName $Rate $Style $Intonation
+      if ($null -ne $EdgeAudio -and $EdgeAudio.Length -gt 0) {
+        return $EdgeAudio
+      }
+    } catch {
+      Write-Warning "Online neural speech generation failed; using the installed offline voice instead."
+    }
+    $VoiceName = ""
+  }
+
+  $OpenAiProfile = Get-OpenAiVoiceProfile $VoiceName
+  if ($null -ne $OpenAiProfile) {
+    try {
+      $OpenAiAudio = New-OpenAiTtsAudio $Text $VoiceName $Rate $Style $Kind $Intonation
+      if ($null -ne $OpenAiAudio -and $OpenAiAudio.Length -gt 0) {
+        return $OpenAiAudio
+      }
+    } catch {
+      Write-Warning "Natural speech generation failed; using the installed offline voice instead."
+    }
+    $VoiceName = ""
+  }
 
   $Synth = [System.Speech.Synthesis.SpeechSynthesizer]::new()
   $Stream = [System.IO.MemoryStream]::new()
@@ -441,6 +645,7 @@ try {
       if ($RequestPath -eq "tts") {
         $Query = Get-QueryMap $QueryString
         $Text = if ($Query.ContainsKey("text")) { $Query["text"] } else { "" }
+        $Text = (($Text -replace '[\[【]\s*(?:Q(?:uestion)?\s*)?\d{1,3}[A-Za-z]?\s*[\]】]', ' ') -replace '\s+', ' ').Trim()
         $VoiceName = if ($Query.ContainsKey("voice")) { $Query["voice"] } else { "" }
         $Rate = if ($Query.ContainsKey("rate")) { [double] $Query["rate"] } else { 0.85 }
         $Style = if ($Query.ContainsKey("style")) { $Query["style"] } else { "ielts" }
@@ -454,7 +659,8 @@ try {
         }
 
         $Body = New-TtsAudio $Text $VoiceName $Rate $Style $Kind $Intonation
-        Send-Response $Stream 200 "OK" "audio/wav" $Body
+        $AudioType = if ($Body.Length -ge 3 -and [Text.Encoding]::ASCII.GetString($Body, 0, 3) -eq "ID3") { "audio/mpeg" } elseif ($Body.Length -ge 2 -and $Body[0] -eq 255 -and ($Body[1] -band 224) -eq 224) { "audio/mpeg" } else { "audio/wav" }
+        Send-Response $Stream 200 "OK" $AudioType $Body
         continue
       }
 

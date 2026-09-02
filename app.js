@@ -1304,6 +1304,7 @@ const LISTENING_MISTAKE_DELETED_BACKUP_KEYS = [
   "ieltsListeningMistakeDeletedIdsBackupV1A",
   "ieltsListeningMistakeDeletedIdsBackupV1B",
 ];
+const LISTENING_MISTAKE_DRAFT_STORAGE_KEY = "ieltsListeningMistakeDraftV1";
 const READING_MISTAKE_STORAGE_KEY = "ieltsReadingMistakeLibraryV1";
 const READING_MISTAKE_DELETED_STORAGE_KEY = "ieltsReadingMistakeDeletedIdsV1";
 const READING_MISTAKE_BACKUP_KEYS = [
@@ -1345,6 +1346,25 @@ const listeningMistakeMethodLabels = {
   transcript: "对照 transcript",
   shadowing: "影子跟读",
 };
+const listeningMistakePartLabels = {
+  part1: "Part 1",
+  part2: "Part 2",
+  part3: "Part 3",
+  part4: "Part 4",
+  unassigned: "未分类",
+};
+const listeningOcrCommonEnglishWords = new Set(`
+  a about after again all also am an and any are as at be because been before being
+  between both but by can could did do does doing done during each either enough even
+  every few first for from get give go had has have having he her here him his how i if
+  in into is it its just last like many may me might more most much must my need new no
+  not now of off on once one only or other our out over people right said same she should
+  since so some still such take than that the their them then there these they thing this
+  those through time to too two under up us use very want was we well were what when where
+  which while who why will with would yes you your business customer customers good music
+  restaurant repeat contrary plays play tends attract study research student students
+  university course project question answer man woman speaker interviewer tutor professor
+`.trim().split(/\s+/));
 const readingMistakeQuestionTypeLabels = {
   trueFalseNotGiven: "True / False / Not Given",
   yesNoNotGiven: "Yes / No / Not Given",
@@ -1630,6 +1650,8 @@ const listeningMistakeTotal = document.querySelector("#listeningMistakeTotal");
 const listeningMistakeReviewing = document.querySelector("#listeningMistakeReviewing");
 const listeningMistakeMastered = document.querySelector("#listeningMistakeMastered");
 const listeningMistakeReviews = document.querySelector("#listeningMistakeReviews");
+const listeningMistakePartTabs = document.querySelector("#listeningMistakePartTabs");
+const listeningMistakeStartPartReview = document.querySelector("#listeningMistakeStartPartReview");
 const listeningMistakeSearch = document.querySelector("#listeningMistakeSearch");
 const listeningMistakeErrorFilter = document.querySelector("#listeningMistakeErrorFilter");
 const listeningMistakeStatusFilter = document.querySelector("#listeningMistakeStatusFilter");
@@ -1643,6 +1665,7 @@ const listeningMistakeDialogClose = document.querySelector("#listeningMistakeDia
 const listeningMistakeCancel = document.querySelector("#listeningMistakeCancel");
 const listeningMistakeId = document.querySelector("#listeningMistakeId");
 const listeningMistakeTitle = document.querySelector("#listeningMistakeTitle");
+const listeningMistakePart = document.querySelector("#listeningMistakePart");
 const listeningMistakeErrorType = document.querySelector("#listeningMistakeErrorType");
 const listeningMistakeStatus = document.querySelector("#listeningMistakeStatus");
 const listeningMistakeMethod = document.querySelector("#listeningMistakeMethod");
@@ -1749,6 +1772,7 @@ const state = {
   listeningMistakes: loadListeningMistakes(),
   listeningMistakeSelectedId: "",
   listeningMistakeQuery: "",
+  listeningMistakePartFilter: "all",
   listeningMistakeErrorFilter: "all",
   listeningMistakeStatusFilter: "all",
   listeningMistakeMethodFilter: "all",
@@ -1772,6 +1796,8 @@ let listeningQuestionImageData = null;
 let listeningTranscriptImageData = null;
 let listeningTranscriptOcrToken = 0;
 let listeningTranscriptOcrInProgress = false;
+let listeningMistakeDraftSaveTimer = 0;
+let listeningMistakeDraftDirty = false;
 let readingMediaDatabasePromise = null;
 let readingQuestionImageChanges = [];
 let readingEvidenceImageChanges = [];
@@ -2386,19 +2412,23 @@ function normaliseListeningMistakeImage(image) {
 }
 
 function normaliseListeningMistake(record = {}) {
+  const part = listeningMistakePartLabels[record.part] ? record.part : "unassigned";
   const errorType = listeningMistakeErrorLabels[record.errorType] ? record.errorType : "word";
   const status = listeningMistakeStatusLabels[record.status] ? record.status : "unmastered";
   const reviewMethod = listeningMistakeMethodLabels[record.reviewMethod] ? record.reviewMethod : "relisten";
+  const originalTranscriptText = String(record.transcriptText || "").trim();
+  const cleanedTranscriptText = cleanListeningTranscriptOcrResult({ text: originalTranscriptText }).text;
   return {
     id: String(record.id || ""),
     title: String(record.title || "").trim(),
+    part,
     errorType,
     note: String(record.note || "").trim(),
     status,
     reviewMethod,
     questionText: String(record.questionText || "").trim(),
     questionImage: normaliseListeningMistakeImage(record.questionImage),
-    transcriptText: String(record.transcriptText || "").trim(),
+    transcriptText: cleanedTranscriptText || originalTranscriptText,
     transcriptImage: normaliseListeningMistakeImage(record.transcriptImage),
     createdAt: Number(record.createdAt) || Date.now(),
     updatedAt: Number(record.updatedAt) || Number(record.createdAt) || Date.now(),
@@ -2569,6 +2599,8 @@ function renderListeningMistakeImage(image, label) {
 function getFilteredListeningMistakes() {
   const query = normaliseKey(state.listeningMistakeQuery || "");
   return state.listeningMistakes.filter((item) => {
+    const matchesPart = state.listeningMistakePartFilter === "all"
+      || item.part === state.listeningMistakePartFilter;
     const matchesQuery = !query || [item.title, item.note]
       .map((value) => normaliseKey(value || ""))
       .some((value) => value.includes(query));
@@ -2578,7 +2610,21 @@ function getFilteredListeningMistakes() {
       || item.status === state.listeningMistakeStatusFilter;
     const matchesMethod = state.listeningMistakeMethodFilter === "all"
       || item.reviewMethod === state.listeningMistakeMethodFilter;
-    return matchesQuery && matchesError && matchesStatus && matchesMethod;
+    return matchesPart && matchesQuery && matchesError && matchesStatus && matchesMethod;
+  });
+}
+
+function getListeningMistakesForPart(part = state.listeningMistakePartFilter) {
+  return state.listeningMistakes.filter((item) => part === "all" || item.part === part);
+}
+
+function getListeningMistakeReviewQueue(part = state.listeningMistakePartFilter) {
+  return getListeningMistakesForPart(part).sort((a, b) => {
+    const statusOrder = { unmastered: 0, reviewing: 1, mastered: 2 };
+    return (statusOrder[a.status] ?? 3) - (statusOrder[b.status] ?? 3)
+      || a.reviewCount - b.reviewCount
+      || a.lastReviewedAt - b.lastReviewedAt
+      || a.createdAt - b.createdAt;
   });
 }
 
@@ -2607,8 +2653,27 @@ function renderListeningMistakeSummary() {
   listeningMistakeNavCount.textContent = String(total);
 }
 
+function renderListeningMistakePartBar() {
+  const activePart = state.listeningMistakePartFilter;
+  listeningMistakePartTabs.querySelectorAll("[data-listening-mistake-part]").forEach((button) => {
+    const part = button.dataset.listeningMistakePart;
+    const count = getListeningMistakesForPart(part).length;
+    button.classList.toggle("active", part === activePart);
+    button.setAttribute("aria-pressed", part === activePart ? "true" : "false");
+    const countNode = button.querySelector("span");
+    if (countNode) countNode.textContent = String(count);
+  });
+  const activeLabel = activePart === "all" ? "全部错题" : `${listeningMistakePartLabels[activePart]}栏`;
+  listeningMistakeStartPartReview.textContent = `开始复习${activeLabel}`;
+  listeningMistakeStartPartReview.disabled = !getListeningMistakesForPart(activePart).length;
+}
+
 function renderListeningMistakeList() {
   const items = getFilteredListeningMistakes();
+  if (items.length && !items.some((item) => item.id === state.listeningMistakeSelectedId)) {
+    state.listeningMistakeSelectedId = items[0].id;
+  }
+  if (!items.length) state.listeningMistakeSelectedId = "";
   if (!items.length) {
     listeningMistakeList.innerHTML = `
       <div class="listening-mistake-list-empty">
@@ -2626,11 +2691,12 @@ function renderListeningMistakeList() {
         type="button"
         data-listening-mistake-open="${encodeURIComponent(item.id)}"
       >
-        <span class="listening-mistake-list-index">${String(state.listeningMistakes.indexOf(item) + 1).padStart(2, "0")}</span>
+        <span class="listening-mistake-list-index">${String(items.indexOf(item) + 1).padStart(2, "0")}</span>
         <span class="listening-mistake-list-copy">
           <strong>${escapeHtml(item.title)}</strong>
           <small>${escapeHtml(item.note || "暂无备注")}</small>
           <span>
+            <em class="part-${item.part}">${escapeHtml(listeningMistakePartLabels[item.part])}</em>
             <em>${escapeHtml(listeningMistakeErrorLabels[item.errorType])}</em>
             <em class="status-${item.status}">${escapeHtml(listeningMistakeStatusLabels[item.status])}</em>
           </span>
@@ -2657,7 +2723,7 @@ function renderListeningMistakeDetail() {
   listeningMistakeDetail.innerHTML = `
     <header class="listening-mistake-detail-header">
       <div>
-        <p class="eyebrow">${escapeHtml(listeningMistakeErrorLabels[item.errorType])}</p>
+        <p class="eyebrow">${escapeHtml(listeningMistakePartLabels[item.part])} · ${escapeHtml(listeningMistakeErrorLabels[item.errorType])}</p>
         <h3>${escapeHtml(item.title)}</h3>
       </div>
       <div class="listening-mistake-detail-actions">
@@ -2667,6 +2733,7 @@ function renderListeningMistakeDetail() {
     </header>
 
     <div class="listening-mistake-detail-meta">
+      <div><span>听力部分</span><strong>${escapeHtml(listeningMistakePartLabels[item.part])}</strong></div>
       <label>
         <span>掌握状态</span>
         <select data-listening-mistake-status="${encodeURIComponent(item.id)}">
@@ -2706,11 +2773,11 @@ function renderListeningMistakeDetail() {
     <footer class="listening-mistake-review-footer">
       <div>
         <strong>完成一次复习</strong>
-        <span>自动更新日期，并将复习次数加 1。</span>
+        <span>自动记录本题，并跳到当前 Part 栏的下一题。</span>
       </div>
       <button class="primary-button" type="button" data-listening-mistake-review="${encodeURIComponent(item.id)}">
         <span class="button-icon" aria-hidden="true">✓</span>
-        完成一次复习
+        ${getListeningMistakeReviewQueue().length > 1 ? "完成并复习下一题" : "完成一次复习"}
       </button>
     </footer>
   `;
@@ -2718,8 +2785,131 @@ function renderListeningMistakeDetail() {
 
 function renderListeningMistakeLibrary() {
   renderListeningMistakeSummary();
+  renderListeningMistakePartBar();
   renderListeningMistakeList();
   renderListeningMistakeDetail();
+}
+
+function getListeningMistakeDraftFromForm() {
+  return {
+    version: 1,
+    id: listeningMistakeId.value,
+    title: listeningMistakeTitle.value,
+    part: listeningMistakePart.value,
+    errorType: listeningMistakeErrorType.value,
+    status: listeningMistakeStatus.value,
+    reviewMethod: listeningMistakeMethod.value,
+    questionImage: listeningQuestionImageData,
+    transcriptText: listeningTranscriptText.value,
+    transcriptImage: listeningTranscriptImageData,
+    note: listeningMistakeNote.value,
+    updatedAt: Date.now(),
+  };
+}
+
+function hasMeaningfulListeningMistakeDraft(draft) {
+  if (draft.id) return true;
+  return Boolean(
+    draft.title.trim()
+    || draft.transcriptText.trim()
+    || draft.note.trim()
+    || draft.questionImage
+    || draft.transcriptImage
+    || draft.part !== "part1"
+    || draft.errorType !== "word"
+    || draft.status !== "unmastered"
+    || draft.reviewMethod !== "relisten"
+  );
+}
+
+function clearListeningMistakeDraft() {
+  window.clearTimeout(listeningMistakeDraftSaveTimer);
+  listeningMistakeDraftSaveTimer = 0;
+  listeningMistakeDraftDirty = false;
+  try {
+    window.localStorage.removeItem(LISTENING_MISTAKE_DRAFT_STORAGE_KEY);
+  } catch {}
+}
+
+function saveListeningMistakeDraftNow({ silent = false } = {}) {
+  window.clearTimeout(listeningMistakeDraftSaveTimer);
+  listeningMistakeDraftSaveTimer = 0;
+  if (!listeningMistakeDraftDirty) return false;
+
+  const draft = getListeningMistakeDraftFromForm();
+  if (!hasMeaningfulListeningMistakeDraft(draft)) {
+    clearListeningMistakeDraft();
+    if (!silent) {
+      listeningMistakeFormStatus.dataset.tone = "neutral";
+      listeningMistakeFormStatus.textContent = "当前没有需要保存的草稿。";
+    }
+    return true;
+  }
+
+  let savedImages = true;
+  try {
+    window.localStorage.setItem(LISTENING_MISTAKE_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  } catch {
+    savedImages = false;
+    try {
+      window.localStorage.setItem(
+        LISTENING_MISTAKE_DRAFT_STORAGE_KEY,
+        JSON.stringify({ ...draft, questionImage: null, transcriptImage: null, imageSaveFailed: true }),
+      );
+    } catch {
+      if (!silent) {
+        listeningMistakeFormStatus.dataset.tone = "error";
+        listeningMistakeFormStatus.textContent = "草稿自动保存失败：浏览器存储空间不足。";
+      }
+      return false;
+    }
+  }
+
+  listeningMistakeDraftDirty = false;
+  if (!silent) {
+    listeningMistakeFormStatus.dataset.tone = savedImages ? "saved" : "error";
+    const time = new Intl.DateTimeFormat("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date());
+    listeningMistakeFormStatus.textContent = savedImages
+      ? `草稿已自动保存 · ${time}`
+      : `文字草稿已保存 · ${time}（截图空间不足，请尽快正式保存）`;
+  }
+  return true;
+}
+
+function scheduleListeningMistakeDraftSave() {
+  listeningMistakeDraftDirty = true;
+  window.clearTimeout(listeningMistakeDraftSaveTimer);
+  listeningMistakeDraftSaveTimer = window.setTimeout(() => saveListeningMistakeDraftNow(), 450);
+}
+
+function loadListeningMistakeDraft() {
+  try {
+    const draft = JSON.parse(window.localStorage.getItem(LISTENING_MISTAKE_DRAFT_STORAGE_KEY) || "null");
+    return draft && typeof draft === "object" ? draft : null;
+  } catch {
+    return null;
+  }
+}
+
+function restoreListeningMistakeDraft(item = null) {
+  const draft = loadListeningMistakeDraft();
+  if (!draft || String(draft.id || "") !== String(item?.id || "")) return false;
+  listeningMistakeTitle.value = String(draft.title || "");
+  listeningMistakePart.value = listeningMistakePartLabels[draft.part] ? draft.part : "part1";
+  listeningMistakeErrorType.value = listeningMistakeErrorLabels[draft.errorType] ? draft.errorType : "word";
+  listeningMistakeStatus.value = listeningMistakeStatusLabels[draft.status] ? draft.status : "unmastered";
+  listeningMistakeMethod.value = listeningMistakeMethodLabels[draft.reviewMethod] ? draft.reviewMethod : "relisten";
+  listeningTranscriptText.value = String(draft.transcriptText || "");
+  listeningMistakeNote.value = String(draft.note || "");
+  setListeningMistakeFormImage("question", draft.questionImage || null);
+  setListeningMistakeFormImage("transcript", draft.transcriptImage || null);
+  listeningMistakeDraftDirty = false;
+  const savedAt = Number(draft.updatedAt) || Date.now();
+  listeningMistakeFormStatus.dataset.tone = draft.imageSaveFailed ? "error" : "saved";
+  listeningMistakeFormStatus.textContent = draft.imageSaveFailed
+    ? `已恢复 ${formatListeningMistakeDate(savedAt)} 的文字草稿；上次截图因空间不足未保存。`
+    : `已恢复 ${formatListeningMistakeDate(savedAt)} 的自动保存草稿。`;
+  return true;
 }
 
 function openListeningMistakeForm(item = null) {
@@ -2728,6 +2918,7 @@ function openListeningMistakeForm(item = null) {
   listeningTranscriptOcrInProgress = false;
   listeningMistakeId.value = item?.id || "";
   listeningMistakeTitle.value = item?.title || "";
+  listeningMistakePart.value = item?.part || (["part1", "part2", "part3", "part4"].includes(state.listeningMistakePartFilter) ? state.listeningMistakePartFilter : "part1");
   listeningMistakeErrorType.value = item?.errorType || "word";
   listeningMistakeStatus.value = item?.status || "unmastered";
   listeningMistakeMethod.value = item?.reviewMethod || "relisten";
@@ -2740,6 +2931,8 @@ function openListeningMistakeForm(item = null) {
   setListeningMistakeFormImage("question", item?.questionImage || null);
   setListeningMistakeFormImage("transcript", item?.transcriptImage || null);
   listeningMistakeFormStatus.textContent = "";
+  delete listeningMistakeFormStatus.dataset.tone;
+  restoreListeningMistakeDraft(item);
   listeningMistakeDialogTitle.textContent = item ? "编辑听力错题" : "新建听力错题";
   listeningMistakeDialog.hidden = false;
   document.body.classList.add("listening-mistake-dialog-open");
@@ -2757,8 +2950,7 @@ function openListeningMistakeForm(item = null) {
 
 function closeListeningMistakeForm() {
   if (listeningMistakeDialog.hidden) return;
-  listeningTranscriptOcrToken += 1;
-  listeningTranscriptOcrInProgress = false;
+  saveListeningMistakeDraftNow();
   listeningMistakeDialog.hidden = true;
   document.body.classList.remove("listening-mistake-dialog-open");
   addListeningMistakeButton.focus();
@@ -2766,6 +2958,7 @@ function closeListeningMistakeForm() {
 
 function submitListeningMistakeForm(event) {
   event.preventDefault();
+  delete listeningMistakeFormStatus.dataset.tone;
   if (listeningTranscriptOcrInProgress) {
     listeningMistakeFormStatus.textContent = "英文正在识别，请稍候完成后再保存。";
     return;
@@ -2782,6 +2975,7 @@ function submitListeningMistakeForm(event) {
   const record = normaliseListeningMistake({
     id: existing?.id || createListeningMistakeId(),
     title,
+    part: listeningMistakePart.value,
     errorType: listeningMistakeErrorType.value,
     status: listeningMistakeStatus.value,
     reviewMethod: listeningMistakeMethod.value,
@@ -2804,7 +2998,9 @@ function submitListeningMistakeForm(event) {
     state.listeningMistakes.unshift(record);
   }
   state.listeningMistakeSelectedId = record.id;
+  state.listeningMistakePartFilter = record.part;
   if (!persistMistakeLibraries()) return;
+  clearListeningMistakeDraft();
   void saveTraining(false);
   closeListeningMistakeForm();
   renderListeningMistakeLibrary();
@@ -2827,6 +3023,8 @@ function completeListeningMistakeReview(id) {
   item.lastReviewedAt = Date.now();
   item.reviewCount += 1;
   item.updatedAt = Date.now();
+  const nextItem = getListeningMistakeReviewQueue().find((entry) => entry.id !== id);
+  if (nextItem) state.listeningMistakeSelectedId = nextItem.id;
   persistMistakeLibraries();
   void saveTraining(false);
   renderListeningMistakeLibrary();
@@ -2840,7 +3038,7 @@ function deleteListeningMistake(id) {
     [id],
   );
   state.listeningMistakes = state.listeningMistakes.filter((entry) => entry.id !== id);
-  state.listeningMistakeSelectedId = state.listeningMistakes[0]?.id || "";
+  state.listeningMistakeSelectedId = getListeningMistakeReviewQueue()[0]?.id || "";
   persistMistakeLibraries();
   void saveTraining(false);
   renderListeningMistakeLibrary();
@@ -2955,6 +3153,117 @@ function cleanListeningOcrText(text) {
     .trim();
 }
 
+function getListeningOcrLineRecords(data = {}) {
+  const blockLines = (data.blocks || [])
+    .flatMap((block) => block?.paragraphs || [])
+    .flatMap((paragraph) => paragraph?.lines || [])
+    .map((line) => ({
+      text: cleanListeningOcrText(line?.text),
+      confidence: Number(line?.confidence),
+      top: Number(line?.bbox?.y0),
+      left: Number(line?.bbox?.x0),
+    }))
+    .filter((line) => line.text);
+
+  if (blockLines.length) {
+    return blockLines.sort((left, right) => {
+      const topDifference = (Number.isFinite(left.top) ? left.top : 0)
+        - (Number.isFinite(right.top) ? right.top : 0);
+      if (Math.abs(topDifference) > 4) return topDifference;
+      return (Number.isFinite(left.left) ? left.left : 0)
+        - (Number.isFinite(right.left) ? right.left : 0);
+    });
+  }
+
+  return cleanListeningOcrText(data.text)
+    .split("\n")
+    .map((text) => ({ text: text.trim(), confidence: NaN }))
+    .filter((line) => line.text);
+}
+
+function analyseListeningOcrLine(lineRecord = {}) {
+  const text = String(lineRecord.text || "").trim();
+  const withoutMarkers = text.replace(/[\[【]\s*(?:Q(?:uestion)?\s*)?\d{1,3}[A-Za-z]?\s*[\]】]/gi, " ");
+  const words = withoutMarkers.match(/[A-Za-z]+(?:['’-][A-Za-z]+)*/g) || [];
+  const letterText = words.join("");
+  const uppercaseLetters = (letterText.match(/[A-Z]/g) || []).length;
+  const uppercaseRatio = letterText.length ? uppercaseLetters / letterText.length : 0;
+  const knownWordCount = words.filter((word) => {
+    const normalised = word.toLowerCase().replace(/[^a-z]/g, "");
+    return listeningOcrCommonEnglishWords.has(normalised);
+  }).length;
+  const knownWordRatio = words.length ? knownWordCount / words.length : 0;
+  const oddCaseWordCount = words.filter((word) => {
+    if (word.length < 5) return false;
+    const upperCount = (word.match(/[A-Z]/g) || []).length;
+    const lowerCount = (word.match(/[a-z]/g) || []).length;
+    return upperCount >= 2 && lowerCount >= 1 && /[a-z][A-Z]/.test(word);
+  }).length;
+  const longUnknownUpperWords = words.filter((word) => {
+    const normalised = word.toLowerCase().replace(/[^a-z]/g, "");
+    if (normalised.length < 6 || listeningOcrCommonEnglishWords.has(normalised)) return false;
+    const upperCount = (word.match(/[A-Z]/g) || []).length;
+    return upperCount / Math.max(1, normalised.length) >= 0.65;
+  }).length;
+  const capitalisedWordCount = words.filter((word) => /^[A-Z]/.test(word)).length;
+  const punctuationCount = (text.match(/[.!?]/g) || []).length;
+  const speakerLabel = /^(?:man|woman|speaker|interviewer|student|tutor|professor)\s*:/i.test(withoutMarkers);
+  const confidence = Number(lineRecord.confidence);
+  const lowConfidence = Number.isFinite(confidence) && confidence < 48;
+  const containsCjk = /[\u3400-\u9fff\uf900-\ufaff]/u.test(text);
+  const containsNoiseSymbol = /[|{}_^~]/.test(text);
+  const pseudoWordSignal = oddCaseWordCount > 0 || longUnknownUpperWords >= 2;
+  const unnaturalCapitalisation = words.length >= 2
+    && uppercaseRatio > 0.68
+    && knownWordRatio < 0.34
+    && !speakerLabel;
+  const fragmentedCapitalisation = words.length >= 4
+    && capitalisedWordCount / words.length >= 0.6
+    && knownWordRatio < 0.34
+    && punctuationCount >= 2
+    && !speakerLabel;
+  const allCapsSentenceNoise = unnaturalCapitalisation
+    && words.length >= 3
+    && punctuationCount >= 1;
+  const suspicious = containsCjk || (
+    words.length >= 2
+    && !speakerLabel
+    && (
+      fragmentedCapitalisation
+      || allCapsSentenceNoise
+      || [containsNoiseSymbol, pseudoWordSignal, unnaturalCapitalisation, lowConfidence]
+        .filter(Boolean).length >= 2
+    )
+  );
+
+  return { suspicious, wordCount: words.length, containsCjk };
+}
+
+function cleanListeningTranscriptOcrResult(data = {}) {
+  const lines = getListeningOcrLineRecords(data);
+  const keptLines = [];
+  let keptWordCount = 0;
+  let removedLineCount = 0;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    const analysis = analyseListeningOcrLine(line);
+    const hasUsefulEnglishBefore = keptWordCount >= 4;
+    if (analysis.containsCjk || (analysis.suspicious && hasUsefulEnglishBefore)) {
+      removedLineCount += 1;
+      continue;
+    }
+    if (!analysis.wordCount && !/[\d]/.test(line.text)) continue;
+    keptLines.push(line.text);
+    keptWordCount += analysis.wordCount;
+  }
+
+  return {
+    text: cleanListeningOcrText(keptLines.join("\n")),
+    removedLineCount,
+  };
+}
+
 function createClipboardImageFile(blob) {
   const mimeType = blob?.type?.startsWith("image/") ? blob.type : "image/png";
   const extension = mimeType.split("/")[1]?.replace("jpeg", "jpg") || "png";
@@ -3054,7 +3363,7 @@ function renderListeningMistakeFormImage(kind) {
   `;
 }
 
-function setListeningMistakeFormImage(kind, image = null) {
+function setListeningMistakeFormImage(kind, image = null, { saveDraft = false } = {}) {
   const normalised = normaliseListeningMistakeImage(image);
   if (kind === "question") {
     listeningQuestionImageData = normalised;
@@ -3064,6 +3373,7 @@ function setListeningMistakeFormImage(kind, image = null) {
     listeningTranscriptImage.value = "";
   }
   renderListeningMistakeFormImage(kind);
+  if (saveDraft) scheduleListeningMistakeDraftSave();
 }
 
 function compressListeningMistakeImage(file, maxSide = 1600) {
@@ -3106,12 +3416,16 @@ async function recogniseListeningTranscriptImage(image, token) {
   const recognise = async () => {
     listeningOcrStatusTarget = listeningTranscriptOcrStatus;
     const worker = await getListeningOcrWorker();
-    const result = await worker.recognize(image.dataUrl);
-    const text = cleanListeningOcrText(result?.data?.text);
+    const result = await worker.recognize(image.dataUrl, {}, { blocks: true });
+    const cleanedResult = cleanListeningTranscriptOcrResult(result?.data);
+    const text = cleanedResult.text;
     if (token !== listeningTranscriptOcrToken) return;
     listeningTranscriptText.value = text;
+    scheduleListeningMistakeDraftSave();
     listeningTranscriptOcrStatus.textContent = text
-      ? `已识别 ${countWords(text)} 个英文词，可直接保存并朗读。`
+      ? cleanedResult.removedLineCount
+        ? `已识别 ${countWords(text)} 个英文词，并自动忽略 ${cleanedResult.removedLineCount} 行疑似中文误识别内容。`
+        : `已识别 ${countWords(text)} 个英文词，可直接保存并朗读。`
       : "没有识别到英文，请换一张更清晰的截图。";
   };
 
@@ -3154,7 +3468,7 @@ async function handleListeningMistakeImage(file, kind) {
       kind === "transcript" ? LISTENING_TRANSCRIPT_OCR_MAX_SIDE : 1600,
     );
     const image = { ...compressed, name: file.name || "截图", updatedAt: Date.now() };
-    setListeningMistakeFormImage(kind, image);
+    setListeningMistakeFormImage(kind, image, { saveDraft: true });
     if (kind === "question") {
       status.textContent = "题目截图已保存，复习时会直接显示。";
     } else {
@@ -5871,6 +6185,9 @@ function preferredVoiceScore(voice) {
   const name = `${voice.name} ${voice.lang} ${voice.source || ""}`.toLocaleLowerCase("en-GB");
   let score = 0;
   if (voice.lang.toLocaleLowerCase("en-GB").startsWith("en-gb")) score += 100;
+  if (/^en-(au|nz)/i.test(voice.lang)) score += 96;
+  if (name.includes("openai")) score += 90;
+  if (name.includes("edge:")) score += 82;
   if (name.includes("natural")) score += 58;
   if (name.includes("neural")) score += 48;
   if (name.includes("online")) score += 30;
@@ -5886,15 +6203,15 @@ function preferredVoiceScore(voice) {
   return score;
 }
 
-function isBritishVoice(voice) {
-  return voice.lang.toLocaleLowerCase("en-GB").startsWith("en-gb");
+function isIeltsEnglishVoice(voice) {
+  return /^en-(gb|au|nz)/i.test(String(voice.lang || ""));
 }
 
 async function loadVoices() {
   state.voices = "speechSynthesis" in window ? window.speechSynthesis.getVoices() : [];
   await loadServerVoices();
 
-  const browserVoices = state.voices.filter(isBritishVoice).map((voice) => ({
+  const browserVoices = state.voices.filter(isIeltsEnglishVoice).map((voice) => ({
     name: voice.name,
     lang: voice.lang,
     source: "browser",
@@ -5902,7 +6219,7 @@ async function loadVoices() {
     nativeVoice: voice,
     value: `browser:${voice.name}`,
   }));
-  const serverVoices = state.serverVoices.filter(isBritishVoice).map((voice) => ({
+  const serverVoices = state.serverVoices.filter(isIeltsEnglishVoice).map((voice) => ({
     ...voice,
     source: "server",
     value: `server:${voice.name}`,
@@ -5916,10 +6233,10 @@ async function loadVoices() {
   if (!britishVoices.length) {
     const option = document.createElement("option");
     option.value = "";
-    option.textContent = "未识别 English (United Kingdom)";
+    option.textContent = "未识别 IELTS 英语语音";
     voiceSelect.append(option);
     voiceStatus.textContent = "未识别英式语音";
-    voiceStatus.title = "当前浏览器或 Windows 没有提供 en-GB 语音";
+    voiceStatus.title = "当前浏览器或 Windows 没有提供英式、澳式或新西兰英语语音";
     voiceStatus.className = "voice-pill warn";
     return;
   }
@@ -5928,13 +6245,22 @@ async function loadVoices() {
     const option = document.createElement("option");
     option.value = voice.value;
     const quality = preferredVoiceScore(voice) >= 145 ? "自然" : "基础";
-    option.textContent = `${voice.name} · ${quality}英式`;
+    const accentLabel = voice.accentLabel || (voice.lang.toLowerCase().startsWith("en-au") ? "澳式" : voice.lang.toLowerCase().startsWith("en-nz") ? "新西兰" : "英式");
+    const aiLabel = voice.source === "server" && /^(OpenAI|Edge):/.test(String(voice.name)) ? " · AI 生成" : "";
+    option.textContent = `${voice.displayName || voice.name} · ${quality}${accentLabel}${aiLabel}`;
     voiceSelect.append(option);
   });
 
   const savedVoice = loadSpeechSettings().voiceValue;
-  if (savedVoice && [...voiceSelect.options].some((option) => option.value === savedVoice)) {
+  const speechUpgradeKey = "ielts-speech-natural-voices-v1";
+  const shouldUpgradeLegacyVoice = !window.localStorage.getItem(speechUpgradeKey)
+    && britishVoices.some((voice) => voice.source === "server" && /^(OpenAI|Edge):/.test(String(voice.name)));
+  if (!shouldUpgradeLegacyVoice && savedVoice && [...voiceSelect.options].some((option) => option.value === savedVoice)) {
     voiceSelect.value = savedVoice;
+  }
+  if (shouldUpgradeLegacyVoice) {
+    window.localStorage.setItem(speechUpgradeKey, "1");
+    saveSpeechSettings();
   }
 
   updateVoiceStatus(getSelectedVoice());
@@ -5948,7 +6274,7 @@ async function loadServerVoices() {
     const data = await response.json();
     state.serverVoices = Array.isArray(data.voices) ? data.voices : [];
     const britishVoices = state.serverVoices
-      .filter(isBritishVoice)
+      .filter(isIeltsEnglishVoice)
       .sort((a, b) => preferredVoiceScore(b) - preferredVoiceScore(a));
 
     return Boolean(britishVoices.length);
@@ -5962,12 +6288,12 @@ function getSelectedVoice() {
 
   if (voiceSelect.value.startsWith("server:")) {
     const selectedName = voiceSelect.value.replace(/^server:/, "");
-    const voice = state.serverVoices.find((item) => item.name === selectedName && isBritishVoice(item));
+    const voice = state.serverVoices.find((item) => item.name === selectedName && isIeltsEnglishVoice(item));
     return voice ? { ...voice, source: "server", value: voiceSelect.value } : null;
   }
 
   const selectedName = voiceSelect.value.replace(/^browser:/, "");
-  const voice = state.voices.find((item) => item.name === selectedName && isBritishVoice(item));
+  const voice = state.voices.find((item) => item.name === selectedName && isIeltsEnglishVoice(item));
   return voice
     ? {
         name: voice.name,
@@ -5981,7 +6307,7 @@ function getSelectedVoice() {
 }
 
 function getPreferredBrowserVoice() {
-  const voice = state.voices.filter(isBritishVoice).sort((a, b) => preferredVoiceScore(b) - preferredVoiceScore(a))[0];
+  const voice = state.voices.filter(isIeltsEnglishVoice).sort((a, b) => preferredVoiceScore(b) - preferredVoiceScore(a))[0];
   return voice
     ? {
         name: voice.name,
@@ -6003,6 +6329,8 @@ async function resolveSpeechVoice() {
 }
 
 function voiceSourceLabel(voice) {
+  if (String(voice.name || "").startsWith("OpenAI:")) return "AI 神经语音";
+  if (String(voice.name || "").startsWith("Edge:")) return "在线神经语音";
   return voice.source === "server" ? "Windows" : "浏览器";
 }
 
@@ -6016,7 +6344,9 @@ function updateVoiceStatus(voice) {
 
   const natural = preferredVoiceScore(voice) >= 145;
   const styleLabel = speechStyle.value === "clear" ? "清晰慢速" : speechStyle.value === "original" ? "原声音色" : "IELTS 语调";
-  voiceStatus.textContent = natural ? `自然英式 · ${styleLabel}` : `基础英式 · ${styleLabel}`;
+  const accentLabel = voice.accentLabel || (String(voice.lang).toLowerCase().startsWith("en-au") ? "澳式" : String(voice.lang).toLowerCase().startsWith("en-nz") ? "新西兰" : "英式");
+  const aiLabel = /^(OpenAI|Edge):/.test(String(voice.name || "")) ? " · AI 生成" : "";
+  voiceStatus.textContent = `${natural ? "自然" : "基础"}${accentLabel} · ${styleLabel}${aiLabel}`;
   voiceStatus.title = `${voice.name} (${voice.lang}, ${voiceSourceLabel(voice)})`;
   voiceStatus.className = "voice-pill settings-voice-status ready";
 }
@@ -6038,6 +6368,9 @@ function detectSpeechKind(text, requestedKind = "auto") {
 function prepareSpeechText(text, kind) {
   let prepared = String(text || "")
     .replace(/\r/g, "")
+    // Transcript and question markers are visual navigation aids, not spoken content.
+    // Examples: [17], [Q4], [Question 4], and OCR variants such as 【18】.
+    .replace(/[\[【]\s*(?:Q(?:uestion)?\s*)?\d{1,3}[A-Za-z]?\s*[\]】]/gi, " ")
     .replace(/[ \t]+/g, " ")
     .replace(/\s*\n+\s*/g, (match) => (/\n{2,}/.test(match) ? ". " : " "))
     .replace(/\.{2,}/g, ".")
@@ -10697,18 +11030,47 @@ addListeningMistakeButton.addEventListener("click", () => openListeningMistakeFo
 listeningMistakeSearch.addEventListener("input", () => {
   state.listeningMistakeQuery = listeningMistakeSearch.value;
   renderListeningMistakeList();
+  renderListeningMistakeDetail();
+});
+listeningMistakePartTabs.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-listening-mistake-part]");
+  if (!button) return;
+  const part = button.dataset.listeningMistakePart;
+  if (part !== "all" && !listeningMistakePartLabels[part]) return;
+  state.listeningMistakePartFilter = part;
+  state.listeningMistakeSelectedId = getListeningMistakeReviewQueue(part)[0]?.id || "";
+  renderListeningMistakeLibrary();
+});
+listeningMistakeStartPartReview.addEventListener("click", () => {
+  const firstItem = getListeningMistakeReviewQueue()[0];
+  if (!firstItem) return;
+  state.listeningMistakeQuery = "";
+  state.listeningMistakeErrorFilter = "all";
+  state.listeningMistakeStatusFilter = "all";
+  state.listeningMistakeMethodFilter = "all";
+  listeningMistakeSearch.value = "";
+  listeningMistakeErrorFilter.value = "all";
+  listeningMistakeStatusFilter.value = "all";
+  listeningMistakeMethodFilter.value = "all";
+  state.listeningMistakeSelectedId = firstItem.id;
+  renderListeningMistakeList();
+  renderListeningMistakeDetail();
+  listeningMistakeDetail.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 listeningMistakeErrorFilter.addEventListener("change", () => {
   state.listeningMistakeErrorFilter = listeningMistakeErrorFilter.value;
   renderListeningMistakeList();
+  renderListeningMistakeDetail();
 });
 listeningMistakeStatusFilter.addEventListener("change", () => {
   state.listeningMistakeStatusFilter = listeningMistakeStatusFilter.value;
   renderListeningMistakeList();
+  renderListeningMistakeDetail();
 });
 listeningMistakeMethodFilter.addEventListener("change", () => {
   state.listeningMistakeMethodFilter = listeningMistakeMethodFilter.value;
   renderListeningMistakeList();
+  renderListeningMistakeDetail();
 });
 listeningMistakeList.addEventListener("click", (event) => {
   const button = event.target.closest("[data-listening-mistake-open]");
@@ -10750,20 +11112,26 @@ listeningMistakeForm.addEventListener("submit", submitListeningMistakeForm);
 listeningMistakeDialogClose.addEventListener("click", closeListeningMistakeForm);
 listeningMistakeCancel.addEventListener("click", closeListeningMistakeForm);
 listeningMistakeDialog.addEventListener("click", (event) => {
-  if (event.target === listeningMistakeDialog) closeListeningMistakeForm();
+  if (event.target === listeningMistakeDialog) {
+    listeningMistakeFormStatus.dataset.tone = "saved";
+    listeningMistakeFormStatus.textContent = "已防止误触关闭；草稿会继续自动保存。";
+    listeningMistakeTitle.focus({ preventScroll: true });
+  }
 });
+listeningMistakeForm.addEventListener("input", scheduleListeningMistakeDraftSave);
+listeningMistakeForm.addEventListener("change", scheduleListeningMistakeDraftSave);
 listeningMistakeForm.addEventListener("click", (event) => {
   const removeButton = event.target.closest("[data-listening-form-image-remove]");
   if (!removeButton) return;
   const kind = removeButton.dataset.listeningFormImageRemove;
   if (kind === "question") {
-    setListeningMistakeFormImage("question");
+    setListeningMistakeFormImage("question", null, { saveDraft: true });
     listeningQuestionOcrStatus.textContent = "已移除题目截图。";
   }
   if (kind === "transcript") {
     listeningTranscriptOcrToken += 1;
     listeningTranscriptOcrInProgress = false;
-    setListeningMistakeFormImage("transcript");
+    setListeningMistakeFormImage("transcript", null, { saveDraft: true });
     listeningTranscriptText.value = "";
     listeningTranscriptOcrStatus.textContent = "已移除 Transcript 截图。";
   }
@@ -11290,11 +11658,15 @@ window.setInterval(() => {
   scheduleLearningInsightsRender();
 }, 60000);
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState !== "visible") return;
+  if (document.visibilityState !== "visible") {
+    saveListeningMistakeDraftNow({ silent: true });
+    return;
+  }
   lastInsightTodayKey = getInsightDateKey(Date.now());
   scheduleLearningInsightsRender();
 });
 window.addEventListener("pagehide", () => {
+  saveListeningMistakeDraftNow({ silent: true });
   persistMistakeLibraries();
   saveSnapshotToLocal(buildTrainingSnapshot());
   captureWritingStudioForm();
