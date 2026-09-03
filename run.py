@@ -31,6 +31,9 @@ from research.pipeline import GenerationError, OpenAIResponsesClient, generate_i
 
 
 ROOT = Path(__file__).resolve().parent
+# Mutable files stay beside the project rather than in a user's system folders.
+# The two legacy state paths remain at the root so existing local data still loads;
+# transient files and optional packages belong under .runtime/.
 RUNTIME = ROOT / ".runtime"
 TEMP_DIR = RUNTIME / "temp"
 PYTHON_PACKAGES = RUNTIME / "python-packages"
@@ -59,6 +62,7 @@ EDGE_VOICES = (
 
 
 def prepare_runtime() -> None:
+    """Redirect temporary Python writes into the project-owned runtime folder."""
     for path in (RUNTIME, TEMP_DIR, PYTHON_PACKAGES):
         path.mkdir(parents=True, exist_ok=True)
     os.environ["TEMP"] = str(TEMP_DIR)
@@ -84,6 +88,7 @@ def deployment_config() -> bytes:
 
 
 def safe_static_path(raw_path: str) -> Path | None:
+    """Resolve a public asset without exposing private state or parent paths."""
     decoded = unquote(raw_path).replace("\\", "/")
     pure = PurePosixPath(decoded.lstrip("/"))
     if any(part in ("", ".", "..") for part in pure.parts):
@@ -128,6 +133,7 @@ def backup_state_if_due() -> None:
 
 
 def write_state_atomic(value: dict[str, Any]) -> None:
+    """Replace the saved snapshot only after a complete same-disk write."""
     BACKUP_DIR.mkdir(parents=True, exist_ok=True)
     backup_state_if_due()
     encoded = json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
@@ -321,6 +327,8 @@ class IELTSRequestHandler(BaseHTTPRequestHandler):
         try:
             result = generate_item(word, condition="guarded", client=OpenAIResponsesClient())
         except GenerationError as exc:
+            # Generation is optional: callers get a named, recoverable fallback
+            # instead of treating a missing key or network failure as an app crash.
             self._send_error(exc.status, exc.code, str(exc), fallback="local_dictionary")
             return
         if not result.final_validation.usable or result.item is None:

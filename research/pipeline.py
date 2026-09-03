@@ -3,6 +3,9 @@
 The module deliberately uses only Python's standard library.  The local app and
 the reproducibility scripts therefore exercise exactly the same validation and
 repair logic without requiring an SDK installation.
+
+Parsing, schema checks and learning-content checks remain separate on purpose:
+a response can be valid JSON without being useful to a learner.
 """
 
 from __future__ import annotations
@@ -93,6 +96,8 @@ class GenerationResult:
     prompt_hash: str
 
     def to_record(self) -> dict[str, Any]:
+        # Keep raw outputs beside derived metrics so results can be audited and
+        # recalculated later without calling the model again.
         return {
             "condition": self.condition,
             "word": self.word,
@@ -157,6 +162,7 @@ def validate_item(raw: str | Mapping[str, Any] | None, target_word: str) -> Vali
     if item is None:
         return ValidationReport(True, False, False, False, ("top_level_object",))
 
+    # First ask whether every condition produced the same comparable data shape.
     missing = [field for field in REQUIRED_FIELDS if field not in item]
     extras = sorted(set(item) - set(REQUIRED_FIELDS))
     wrong_types = [field for field in REQUIRED_FIELDS if field in item and not isinstance(item[field], str)]
@@ -174,6 +180,7 @@ def validate_item(raw: str | Mapping[str, Any] | None, target_word: str) -> Vali
     if not schema_ok:
         return ValidationReport(True, False, False, False, tuple(failures))
 
+    # Only structurally comparable items reach the learning-content checks.
     word = normalise_space(item["word"])
     meaning_zh = normalise_space(item["meaning_zh"])
     meaning_en = normalise_space(item["meaning_en"])
@@ -311,6 +318,8 @@ def _first_payload(word: str, condition: str, model: str) -> dict[str, Any]:
         "max_output_tokens": 350,
         "store": False,
     }
+    # The prompt and fields stay fixed; only the response constraint changes.
+    # This keeps the three experiment conditions meaningfully comparable.
     if condition in ("schema", "guarded"):
         payload["text"] = {
             "format": {
@@ -363,6 +372,8 @@ def generate_item(word: str, condition: str = "guarded", client: OpenAIResponses
         ensure_ascii=False,
         sort_keys=True,
     )
+    # A hash identifies the exact prompt design without copying credentials or
+    # unrelated environment details into the frozen experiment record.
     prompt_hash = hashlib.sha256(prompt_material.encode("utf-8")).hexdigest()
     first_response = active_client.create(first_payload)
     first_item, _ = parse_item(first_response.output_text)
@@ -375,6 +386,8 @@ def generate_item(word: str, condition: str = "guarded", client: OpenAIResponses
     total_latency = first_response.latency_ms
     total_usage = dict(first_response.usage)
 
+    # One repair tests whether targeted feedback helps while keeping cost and
+    # latency bounded; repeated retries would turn this into a different system.
     if condition == "guarded" and not first_validation.usable:
         repair_count = 1
         repair_response = active_client.create(
