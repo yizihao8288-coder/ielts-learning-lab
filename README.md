@@ -1,12 +1,24 @@
 # IELTS Learning Lab
 
 > I built the IELTS vocabulary desk I kept wishing existed. Then one stubborn product problem turned into a research question.
+>
+> 我先做了一个自己真正会用的 IELTS 词汇训练器，后来又从中发现了一个值得研究的问题。
 
-[Try it in your browser](https://yizihao8288-coder.github.io/ielts-learning-lab/demo/) · [See the research status](https://yizihao8288-coder.github.io/ielts-learning-lab/results/) · [中文说明](README.zh-CN.md)
+[Live demo / 在线体验](https://yizihao8288-coder.github.io/ielts-learning-lab/demo/) · [Research status / 研究进度](https://yizihao8288-coder.github.io/ielts-learning-lab/results/) · [完整中文说明](README.zh-CN.md)
 
 ![Listening practice interface](site/assets/app-listening.png)
 
-## This started with my own IELTS mistakes
+## Introduction / 项目简介
+
+### 中文
+
+这个项目来自我准备 IELTS 时遇到的实际问题：词表很多，但很难找到一个符合自己复习习惯的工具。我希望能在同一个地方听单词、练拼写、阅读例句、收藏内容，并反复练习容易出错的词，所以做了这个训练器。
+
+它现在包含听力、填空、阅读、写作、收藏、错题复习、导入导出、本地保存和浏览器朗读。老师不需要注册账号或配置 API Key，打开在线版就可以直接体验。
+
+后来我开始尝试自动生成释义和例句，也发现模型即使返回了格式正确的数据，内容仍然可能不适合学习。因此，我进一步加入了格式检查、内容检查和失败修复，并把它作为项目中继续探索的问题。
+
+### English
 
 While preparing for IELTS, I found plenty of word lists but no single place that matched the way I actually reviewed: listen to a word, type it, read it in context, save it, and come back to the mistakes later. I wanted those actions to belong to one learning loop instead of several disconnected tools, so I built one.
 
