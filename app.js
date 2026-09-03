@@ -1,3 +1,5 @@
+// Pages and file:// start from a locked-down configuration. The local server
+// replaces this object at runtime, so opening the demo can never call an API by accident.
 const ieltsLabConfig = window.IELTS_LAB_CONFIG || Object.freeze({
   deployment: window.location.protocol === "file:" ? "file" : "static",
   serverFeatures: false,
@@ -1285,6 +1287,8 @@ const writingPatternPacks = [
   },
 ];
 
+// 这些名称也是旧版浏览器数据的“地址”。随意改名会让已有收藏和错题看起来像被清空，
+// 所以数据结构升级时应新增版本和迁移逻辑，而不是直接重命名 key。
 const BOOK_STORAGE_KEY = "ieltsTrainerFavoriteBookV1";
 const FAVORITE_DELETED_STORAGE_KEY = "ieltsTrainerFavoriteDeletedV1";
 const USER_NOTES_STORAGE_KEY = "ieltsTrainerUserNotesV1";
@@ -2465,6 +2469,8 @@ function loadStoredJsonCopies(primaryKey, backupKeys = []) {
 }
 
 function saveRotatingJson(primaryKey, backupKeys, value) {
+  // localStorage 没有事务：先确保新主副本写成功，再轮换旧副本。
+  // 空间不足时宁可少一份备份，也不能牺牲刚保存成功的数据。
   const nextRaw = JSON.stringify(value);
   const previousRaw = window.localStorage.getItem(primaryKey);
   try {
@@ -3102,7 +3108,7 @@ async function createListeningOcrWorker(Tesseract) {
   let timedOut = false;
   let timer = 0;
   const creation = Tesseract.createWorker("eng", 1, {
-    // Keep the model in memory for this session. Persistent browser caching may write to the system drive.
+    // OCR 模型只留在当前会话的内存中；关闭持久缓存可避免把大模型文件写到系统盘。
     cacheMethod: "none",
     langPath: "https://tessdata.projectnaptha.com/4.0.0_fast",
     logger: updateListeningOcrProgress,
@@ -4575,6 +4581,8 @@ function mergeReadingMistakeSnapshots(primary = [], secondary = [], deletedIds =
 }
 
 function mergeTrainingSnapshots(first, second) {
+  // 本地副本、服务端副本和恢复文件可能各自包含新增记录。
+  // 不能只用“最新整份快照”覆盖，而要按记录时间与删除标记合并，尽量避免学习记录丢失。
   const validFirst = first && typeof first === "object" ? first : null;
   const validSecond = second && typeof second === "object" ? second : null;
   if (!validFirst && !validSecond) return null;
@@ -5620,6 +5628,7 @@ async function speakWordDetail(kind) {
 }
 
 async function generateWordDetailOnline() {
+  // 只有用户主动点击“在线生成”才会进入这里；打开详情页本身不会发送目标单词。
   const detail = state.detailEntry;
   if (!detail || !hasLocalServerFeatures()) {
     wordDetailStatus.textContent = "当前是零密钥静态演示，已继续使用本地词典。";
@@ -5637,6 +5646,7 @@ async function generateWordDetailOnline() {
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok || !data.item) {
+      // 本地释义已经显示在页面上，因此在线失败只需要说明原因，不应打断练习。
       const message = data?.error?.message || "在线生成暂不可用";
       wordDetailStatus.textContent = `${message} 已保留本地词典内容。`;
       return false;
@@ -5887,6 +5897,8 @@ function escapeRegExp(value) {
 }
 
 function getTargetWordPattern(word) {
+  // 例句练习允许常见词形变化（如 research/researches），但仍使用单词边界，
+  // 避免把目标词误匹配成另一个更长单词的一部分。
   const cleaned = normaliseWord(word);
   const escaped = escapeRegExp(cleaned).replace(/\s+/g, "\\s+");
   if (!/^[A-Za-z][A-Za-z'-]*(?:\s+[A-Za-z][A-Za-z'-]*)*$/.test(cleaned)) return escaped;

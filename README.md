@@ -31,6 +31,12 @@ That is why this repository has two connected halves:
 - a practice tool I can genuinely use;
 - a small experiment about making generated vocabulary entries structurally valid **and** useful enough to review.
 
+## Design choices / 设计取舍
+
+- **Works without a key / 无密钥也能使用。** I kept the core practice features in the browser so a teacher or learner can open the demo immediately. / 我把核心练习功能留在浏览器中，让老师或学习者打开网页就能体验。
+- **Format and content are checked separately / 分开检查格式和内容。** Correct JSON does not guarantee a correct definition or a useful example. / JSON 格式正确，不代表释义正确或例句适合学习。
+- **Repair once, then fall back / 最多修复一次。** If the generated item still fails, the app keeps the local dictionary content instead of retrying indefinitely. / 如果生成内容仍未通过检查，应用会保留本地词典内容，而不是不断重试。
+
 ## Open it before reading more
 
 The [public demo](https://yizihao8288-coder.github.io/ielts-learning-lab/demo/) runs entirely in the browser. Nothing needs to be installed, and the static version never calls a model or the Python server.
